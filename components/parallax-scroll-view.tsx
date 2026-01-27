@@ -43,7 +43,6 @@ export default function ParallaxScrollView({
       ],
     };
   });
-
   return (
     <Animated.ScrollView
       ref={scrollRef}

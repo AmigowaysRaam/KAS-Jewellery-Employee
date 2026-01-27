@@ -1,23 +1,23 @@
 {
   "expo": {
-    "name": "KasHrms",
+    "name": "KAS Jewellery Employee",
     "slug": "KasHrms",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/ic_launcher_round.png",
     "scheme": "kashrms",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "automatic", 
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.ramm-sanker.KasHrms"
+      "bundleIdentifier": "com.kasemployee"
     },
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/images/android-icon-foreground.png",
-        "backgroundImage": "./assets/images/android-icon-background.png",
-        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+        "foregroundImage": "./assets/images/ic_launcher_round.png",
+        "backgroundImage": "./assets/images/ic_launcher_round.png",
+        "monochromeImage": "./assets/images/ic_launcher_round.png"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
@@ -25,19 +25,19 @@
     },
     "web": {
       "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/images/ic_launcher_round.png"
     },
     "plugins": [
       "expo-router",
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash-icon.png",
+          "image": "./assets/images/ic_launcher_round.png",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff",
           "dark": {
-            "backgroundColor": "#000000"
+            "backgroundColor": "#ffffff"
           }
         }
       ]
@@ -45,6 +45,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "98da5af2-4a84-4eaa-9528-46861b536c05"
+      }
     }
   }
 }
