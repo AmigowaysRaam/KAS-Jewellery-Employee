@@ -4,37 +4,35 @@
     "slug": "KasHrms",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/ic_launcher_round.png",
+    "icon": "./assets/images/KASEmpLogo.png",
     "scheme": "kashrms",
-    "userInterfaceStyle": "automatic", 
+    "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.kasemployee"
+      "bundleIdentifier": "kasemployee"
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/images/ic_launcher_round.png",
-        "backgroundImage": "./assets/images/ic_launcher_round.png",
-        "monochromeImage": "./assets/images/ic_launcher_round.png"
+        "backgroundColor": "#ffffff",
+        "foregroundImage": "./assets/images/KASEmpLogo.png"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.kasemployee"
+      "package": "kasemployee"
     },
     "web": {
       "output": "static",
-      "favicon": "./assets/images/ic_launcher_round.png"
+      "favicon": "./assets/images/KASEmpLogo.png"
     },
     "plugins": [
       "expo-router",
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/ic_launcher_round.png",
-          "imageWidth": 200,
-          "resizeMode": "contain",
+          "image": "./assets/images/KASEmpLogo.png",
+          "imageWidth": 210,
+          "resizeMode": "cover",
           "backgroundColor": "#ffffff",
           "dark": {
             "backgroundColor": "#ffffff"

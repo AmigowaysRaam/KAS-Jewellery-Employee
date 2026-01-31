@@ -1,6 +1,7 @@
+import { useNavigation } from "@react-navigation/native";
 import React, { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { Animated, Image, StyleSheet, Text, View } from "react-native";
+import { Animated, Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { COLORS } from "../../app/resources/colors";
 import { hp, wp } from "../../app/resources/dimensions";
 // Merge all info into a single object
@@ -63,33 +64,37 @@ const AssignedTask = ({ homepageData }) => {
     month: "short",
     year: "numeric",
   });
+  const navigation = useNavigation()
   const renderTaskCard = (key, value, animValue, keyPrefix) => {
     const taskInfo = TASKS_INFO[key];
     return (
-      <Animated.View
-        key={`${keyPrefix}-${key}`}
-        style={[
-          styles.taskCard,
-          { backgroundColor: taskInfo.bgColor },
-          {
-            opacity: animValue,
-            transform: [
-              {
-                translateY: animValue.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [20, 0],
-                }),
-              },
-            ],
-          },
-        ]}
-      >
-        <Image style={styles.icon} source={taskInfo.icon} />
-        <View style={{ marginHorizontal: wp(2) }}>
-          <Text style={styles.taskLabel}>{t(taskInfo.labelKey)}</Text>
-          <Text style={styles.taskValue}>{`${value || 0} Task`}</Text>
-        </View>
-      </Animated.View>
+      <Pressable onPress={() => navigation.navigate("AssignTaskListScreen", { status: taskInfo.labelKey.replace(/\s+/g, '') })}>
+        <Animated.View
+          key={`${keyPrefix}-${key}`}
+          style={[
+            styles.taskCard,
+            { backgroundColor: taskInfo.bgColor },
+            {
+              opacity: animValue,
+              transform: [
+                {
+                  translateY: animValue.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [20, 0],
+                  }),
+                },
+              ],
+            },
+          ]}
+        >
+          <Image style={styles.icon} source={taskInfo.icon} />
+          <View style={{ marginHorizontal: wp(2) }}>
+            <Text style={styles.taskLabel}>{t(taskInfo.labelKey)}</Text>
+            <Text style={styles.taskValue}>{`${value || 0} Task`}</Text>
+          </View>
+        </Animated.View>
+      </Pressable>
+
     );
   };
   return (
@@ -150,6 +155,7 @@ const AssignedTask = ({ homepageData }) => {
     </View>
   );
 };
+
 export default AssignedTask;
 const styles = StyleSheet.create({
   wrapper: { marginHorizontal: wp(2) },

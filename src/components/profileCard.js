@@ -1,7 +1,8 @@
+import { useNavigation } from "@react-navigation/native";
 import React, { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
-  Animated, Image, StyleSheet, Text, TouchableOpacity, View
+  Animated, Image, Pressable, StyleSheet, Text, TouchableOpacity, View
 } from "react-native";
 import Icon from "react-native-vector-icons/Ionicons";
 import { useDispatch, useSelector } from "react-redux";
@@ -16,11 +17,11 @@ const ProfileCard = ({ onClose, loadingMenu, onEditProfile }) => {
   const profileDetails = useSelector(
     (state) => state?.auth?.profileDetails?.data
   );
-  const [loading, setLoading] = useState(true);
-  // --- Animation setup ---
+  const [loading, setLoading] = useState(false);
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.95)).current;
   const skeletonAnim = useRef(new Animated.Value(0.3)).current;
+  const navigation = useNavigation();
 
   const animateCard = () => {
     Animated.parallel([
@@ -76,13 +77,18 @@ const ProfileCard = ({ onClose, loadingMenu, onEditProfile }) => {
       setLoading(false);
     }
   };
-
   useEffect(() => {
-    fetchHomepageData();
-  }, [loadingMenu]);
+    if (!profileDetails?.id || !profileDetails?.photo)
+      fetchHomepageData();
+  }, []);
 
+  const hanldPROCLick = () => {
+    navigation?.navigate('My Account')
+    onClose()
+      ;
+  }
   return (
-    <View style={styles.wrapper}>
+    <Pressable onPress={() => hanldPROCLick()} style={styles.wrapper}>
       <View
         style={[
           styles.card,
@@ -120,12 +126,12 @@ const ProfileCard = ({ onClose, loadingMenu, onEditProfile }) => {
                   style={styles.profileIcon}
                 />
                 {/* Edit Icon */}
-                <TouchableOpacity
+                {/* <TouchableOpacity
                   style={styles.editIcon}
                   onPress={onEditProfile}
                 >
                   <Icon name="create-sharp" size={wp(4)} color={COLORS.white} />
-                </TouchableOpacity>
+                </TouchableOpacity> */}
               </View>
               <View
                 style={{ marginLeft: wp(3), justifyContent: "center", flex: 1 }}
@@ -155,7 +161,7 @@ const ProfileCard = ({ onClose, loadingMenu, onEditProfile }) => {
           marginTop: wp(2),
         }}
       />
-    </View>
+    </Pressable>
   );
 };
 

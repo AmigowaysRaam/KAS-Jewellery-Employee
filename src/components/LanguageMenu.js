@@ -6,6 +6,7 @@ import {
     StyleSheet, Text, TouchableOpacity, TouchableWithoutFeedback,
     View
 } from "react-native";
+import { ActivityIndicator } from "react-native-paper";
 import Icon from 'react-native-vector-icons/MaterialIcons'; // <-- Icon library
 import { useSelector } from "react-redux";
 import { getStoredLanguage, setAppLanguage } from "../../app/i18ns";
@@ -25,9 +26,14 @@ export default function LanguageMenu({ visible, onClose, onItemPress, loadData }
     const [refreshing, setRefreshing] = useState(false);
     const profileDetails = useSelector((state) => state?.auth?.profileDetails?.data);
     const { showToast } = useToast();
+    const tokenDetail = useSelector((state) => state?.auth?.token?.data);
 
     /** Slide animation */
     useEffect(() => {
+        // Alert.alert('kln', JSON.stringify(tokenDetail))
+        // const siteDetailsData = await fetchData("app-employee-site-settings", "POST", {
+        //     Authorization: `${tokenDetail?.token}`,
+        //   });
         if (visible) {
             loadLanguages();
             Animated.timing(slideAnim, {
@@ -70,12 +76,13 @@ export default function LanguageMenu({ visible, onClose, onItemPress, loadData }
         await loadLanguages();
         setRefreshing(false);
     };
-
     /** Handle language selection */
     const handleSelect = async (item) => {
+
         try {
             const currentLang = await getStoredLanguage();
             const selectedLang = item.lang_code;
+            setLoadingMenu(true)
             // 🚫 If same language → do nothing
             if (currentLang?.toLowerCase() === selectedLang.toLowerCase()) {
                 closeMenu();
@@ -97,6 +104,7 @@ export default function LanguageMenu({ visible, onClose, onItemPress, loadData }
         } catch (error) {
             console.error("Error selecting language:", error);
             closeMenu();
+            setLoadingMenu(false)
         }
     };
 
@@ -120,7 +128,6 @@ export default function LanguageMenu({ visible, onClose, onItemPress, loadData }
     );
     const [lang, setLang] = useState(null);
     useEffect(() => {
-
         loadLanguage();
     }, []);
     /** Render each language */
@@ -164,7 +171,15 @@ export default function LanguageMenu({ visible, onClose, onItemPress, loadData }
                     </View>
                     <View>
                         {loadingMenu ? (
-                            [...Array(2)].map((_, index) => <View key={index}>{renderSkeleton()}</View>)
+                            <>
+                                <View>
+                                    <ActivityIndicator size={wp(4.9)} />
+                                    {
+                                        [...Array(2)].map((_, index) => <View key={index}>{renderSkeleton()}</View>)
+                                    }
+                                </View>
+                            </>
+
                         ) : (
                             <FlatList
                                 data={menuData}
@@ -226,6 +241,6 @@ const styles = StyleSheet.create({
         fontSize: wp(4),
         fontFamily: "Poppins_500Medium",
         textTransform: "capitalize",
-        padding: hp(0.5), borderRadius: wp(2), paddingHorizontal: wp(2)
+        padding: hp(0.5), borderRadius: wp(2), paddingHorizontal: hp(2)
     },
 });

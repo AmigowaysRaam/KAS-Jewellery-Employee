@@ -1,150 +1,333 @@
-import { useNavigation } from "@react-navigation/native";
+import { useFocusEffect, useNavigation, useRoute } from "@react-navigation/native";
+import dayjs from "dayjs";
 import React, { useState } from "react";
-import { FlatList, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import { useTranslation } from "react-i18next";
+import {
+  FlatList, KeyboardAvoidingView, Platform, Pressable, RefreshControl,
+  StyleSheet, Text, View
+} from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
-import { COLORS } from "../../app/resources/colors.js";
-import { hp, wp } from "../../app/resources/dimensions.js";
-import CommonHeader from "./CommonHeader.js";
-import SearchContainer from "./SearchContainer.js";
-import TaskDetailModal from "./TaskDetailModal.js";
-
-export default function AssignTaskListScreen() {
+import { useSelector } from "react-redux";
+import { getStoredLanguage } from "../../app/i18ns.js";
+import { COLORS } from "../../app/resources/colors";
+import { hp, wp } from "../../app/resources/dimensions";
+import { useToast } from "../../constants/ToastContext.js";
+import { fetchData } from "./api/Api";
+import CommonHeader from "./CommonHeader";
+import DateandDownloadTask from "./DateandDownloadTask";
+import SearchContainer from "./SearchContainer";
+import TaskDetailModal from "./TaskDetailModal";
+import ViewButton from "./ViewBtn.js";
+export default function AssignedTasklistScreen() {
   const navigation = useNavigation();
+  const { t } = useTranslation();
+  const route = useRoute();
+  const siteDetails = useSelector((state) => state.auth?.siteDetails?.data[0]);
+  const profileDetails = useSelector((state) => state?.auth?.profileDetails?.data);
+  const { showToast } = useToast();
+  /** Initial states */
+  const initialStatus = route?.params?.status || null;
+  // Get initialStatus label from route params
+  const initialStatusLabel = route?.params?.status ?? null;
+  // Map label to value
+  const initialStatusValue = siteDetails?.ticketstatusList.find(
+    (item) => item.label.toLowerCase() === (initialStatusLabel || '').toLowerCase()
+  )?.value;
+  const initialDateRange = { from: null, to: null };
+  const [tasks, setTasks] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [searchText, setSearchText] = useState("");
+  const [selectedStatus, setSelectedStatus] = useState(route?.params?.status);
+  const [selectedDateRange, setSelectedDateRange] = useState(initialDateRange);
   const [selectedTask, setSelectedTask] = useState(null);
+  const [allowCreateTask, setallowCreateTask] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  /** Fetch tasks from API */
+  const fetchTasks = async (pageNo = 1, isRefresh = false, initialStatus) => {
+    if (!hasMore && !isRefresh) return;
+    const lang = await getStoredLanguage();
 
-  // Move status filter to parent
-  const [selectedStatus, setSelectedStatus] = useState(null);
+    setLoading(pageNo === 1);
+    try {
+      // Map initialStatus label to value
+      const statusObj = siteDetails?.ticketstatusList.find(
+        (item) => item.label.toLowerCase() === (initialStatus || '').toLowerCase()
+      );
+      // Alert.alert(initialStatus)
+      const statusValue = statusObj ? statusObj.value : undefined;
+      const response = await fetchData(
+        "app-employee-list-my-assigned-tasks",
+        "POST",
+        {
+          user_id: profileDetails?.id,
+          per_page: 10,
+          current_page: pageNo,
+          lang: lang,
+          ...(statusValue && { status: statusValue }), // Only send if value exists
+        }
+      );
+      if (response?.text === "Success") {
+        let data = response?.data?.tasks || [];
+        setallowCreateTask(response?.data?.allowCreateTask)
+        if (searchText) {
+          data = data.filter((task) =>
+            (task.title || "").toLowerCase().includes(searchText.toLowerCase())
+          );
+        }
+        if (initialStatus) {
+          data = data.filter(
+            (task) => task.status?.toLowerCase() === initialStatus.toLowerCase()
+          );
+        }
+        if (selectedDateRange.from || selectedDateRange.to) {
+          data = data.filter((task) => {
+            const assigned = dayjs(task.assigned_date, "DD-MM-YYYY hh:mm a");
+            if (selectedDateRange.from && selectedDateRange.to) {
+              return (
+                assigned.isAfter(dayjs(selectedDateRange.from).startOf("day")) &&
+                assigned.isBefore(dayjs(selectedDateRange.to).endOf("day"))
+              );
+            }
+            if (selectedDateRange.from) {
+              return assigned.isAfter(dayjs(selectedDateRange.from).startOf("day"));
+            }
+            if (selectedDateRange.to) {
+              return assigned.isBefore(dayjs(selectedDateRange.to).endOf("day"));
+            }
+            return true;
+          });
+        }
 
-  const TASK_LIST = [
-    { task_title: "Design login page", assign_date: "2026-01-10", due_date: "2026-01-15", status: "In Progress" },
-    { task_title: "Set up database schema", assign_date: "2026-01-08", due_date: "2026-01-12", status: "Completed" },
-    { task_title: "Implement authentication API", assign_date: "2026-01-12", due_date: "2026-01-18", status: "Pending" },
-    { task_title: "Write unit tests", assign_date: "2026-01-14", due_date: "2026-01-20", status: "Pending" },
-    { task_title: "Deploy to staging environment", assign_date: "2026-01-16", due_date: "2026-01-22", status: "Not Started" },
-  ];
-
-  // Filter tasks by search text AND selected status
-  const filteredTasks = TASK_LIST.filter(task => {
-    const matchesText = task.task_title.toLowerCase().includes(searchText.toLowerCase());
-    const matchesStatus = selectedStatus ? task.status === selectedStatus : true;
-    return matchesText && matchesStatus;
-  });
-
-  const getStatusColor = (status) => {
-    switch (status) {
-      case "Completed": return "#2ecc71";
-      case "In Progress": return "#f39c12";
-      case "Pending": return "#e67e22";
-      case "Not Started": return "#7f8c8d";
-      default: return COLORS.primary;
+        setHasMore(data.length === 10);
+        setTasks((prev) => (pageNo === 1 ? data : [...prev, ...data]));
+        setPage(pageNo);
+      } else {
+        showToast(response?.message || "Failed to fetch tasks", "error");
+      }
+    } catch (err) {
+      console.error("Task API Error:", err);
+      showToast("Something went wrong", "error");
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
     }
   };
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchTasks(1, true, selectedStatus);
+    }, [profileDetails?.id, searchText, selectedStatus, selectedDateRange, hasMore, initialStatus,])
+  );
+  /** Pull to refresh */
+  const onRefresh = () => {
+    setRefreshing(true);
+    setHasMore(true);
+    fetchTasks(1, true, selectedStatus);
+  };
+  /** Load more tasks */
+  const loadMore = () => {
+    if (!loading && hasMore) {
+      fetchTasks(page + 1, false, selectedStatus);
+    }
+  };
+  /** Status color */
+  const getStatusColor = (status) => {
+    switch (status) {
+      case "Open":
+        return "#3498db";
+      case "Inprogress":
+        return "#f39c12";
+      default:
+        return COLORS.primary;
+    }
+  };
+  const getPriorityColor = (level) => {
+    switch (level) {
+      case "Critical":
+        return { color: "#C0392B", icon: "x-octagon" }; // very urgent
+      case "High":
+        return { color: "#E74C3C", icon: "alert-circle" };
+      case "Medium":
+        return { color: "#F39C12", icon: "alert-triangle" };
+      case "Low":
+        return { color: "#2ECC71", icon: "check-circle" };
+      default:
+        return { color: "#9E9E9E", icon: "info" };
+    }
+  };
+  /** Open task modal */
   const openTaskModal = (task) => {
     setSelectedTask(task);
     setModalVisible(true);
   };
-  const renderTask = ({ item }) => (
-    <Pressable
-      onPress={() => {
-        // Close dropdown when clicking task
-        setSelectedStatus(selectedStatus); // Keep the pill
-        openTaskModal(item);
-      }}
-      style={[styles.card, { borderLeftColor: COLORS.primary, borderLeftWidth: wp(1) }]}
-    >
-      <View style={styles.cardHeader}>
-        <Text style={styles.taskTitle}>{item.task_title}</Text>
-        <View style={styles.rightHeader}>
-          <Pressable style={styles.voiceButton}>
-            <Icon name="play-arrow" size={wp(6)} color={COLORS.primary} />
-          </Pressable>
-          <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
-            <Text style={styles.statusText}>{item.status}</Text>
-          </View>
-          <Icon name="chevron-right" size={wp(6)} color="#888" style={{ marginLeft: wp(2) }} />
-        </View>
+  const renderSkeleton = () => (
+    <View style={[styles.card, { backgroundColor: "#e0e0e0" }]}>
+      <View style={{ height: hp(2.5), width: "60%", backgroundColor: "#ccc", borderRadius: wp(1), marginBottom: hp(1) }} />
+      <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+        <View style={{ height: hp(1.5), width: "30%", backgroundColor: "#ccc", borderRadius: wp(1) }} />
+        <View style={{ height: hp(1.5), width: "20%", backgroundColor: "#ccc", borderRadius: wp(1) }} />
       </View>
-      <View style={styles.dateRow}>
-        <View style={styles.dateItem}>
-          <Text style={styles.label}>Assigned</Text>
-          <Text style={styles.dateText}>{item.assign_date}</Text>
-        </View>
-        <View style={styles.dateItem}>
-          <Text style={styles.label}>Due</Text>
-          <Text style={styles.dateText}>{item.due_date}</Text>
-        </View>
-      </View>
-    </Pressable>
-  );
-  return (
-    <KeyboardAvoidingView
-    style={{ flex: 1 }}
-    behavior={Platform.OS === "ios" ? "padding" : "height"}
-  >
-    <View style={styles.container}>
-      <CommonHeader title="My Assigned Tasks" showBackButton={false} />
-      <SearchContainer
-        value={searchText}
-        onChangeText={setSearchText}
-        placeholder="Search tasks..."
-        selectedStatus={selectedStatus}
-        onStatusSelect={(status) => setSelectedStatus(status)}
-        modalVisible={modalVisible}
-      />
-      <FlatList
-        data={filteredTasks}
-        keyExtractor={(item, index) => index.toString()}
-        renderItem={renderTask}
-        contentContainerStyle={{ paddingVertical: hp(2) }}
-        showsVerticalScrollIndicator={false}
-        ListEmptyComponent={
-          <View style={{ alignItems: "center", marginTop: hp(5) }}>
-            <Text style={{ color: COLORS.gray, fontSize: wp(4) }}>No tasks found</Text>
-          </View>
-        }
-      />
-      {/* Task Detail Modal */}
-      <TaskDetailModal
-        visible={modalVisible}
-        task={selectedTask}
-        onClose={() => setModalVisible(false)}
-        getStatusColor={getStatusColor}
-      />
     </View>
+  );
+
+  /** Render each task */
+  const renderTask = ({ item }) => {
+    const hasVoice = !!item.audio;
+    // console?.log(item,"item")
+    return (
+      <Pressable
+        onPress={() => openTaskModal(item)}
+        style={[styles.card, { borderLeftColor: getPriorityColor(item.priority)?.color, borderLeftWidth: wp(1) }]}
+      >
+        <View style={styles.cardHeader}>
+          <Text numberOfLines={1} style={styles.taskTitle}>{item.title || t("Untitled Task")}</Text>
+          <View style={styles.rightHeader}>
+            <View style={[styles.voiceIcon, { opacity: hasVoice ? 1 : 0.3 }]}>
+              <Icon name="play-arrow" size={wp(5)} color={COLORS.primary} />
+            </View>
+            <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
+              <Text style={styles.statusText}>{item.status}</Text>
+            </View>
+          </View>
+        </View>
+        <View style={styles.dateRow}>
+          <View style={styles.dateBox}>
+            <Text style={styles.dateLabel}>{t('assigned_date')}</Text>
+            <Text numberOfLines={1} style={styles.dateText}>{item.assigned_date}</Text>
+          </View>
+          <View style={styles.dateBox}>
+            <Text style={styles.dateLabel}>{t('due_date')}</Text>
+            <Text numberOfLines={1} style={styles.dateText}>{item.due_date}</Text>
+          </View>
+        </View>
+        <ViewButton
+          priority={item.priority}
+          onPress={() =>
+            navigation?.navigate('TasKDetailById', { task: item })
+          }
+          label={t("View")}
+        />
+      </Pressable>
+    );
+  };
+
+  const handleStatusSelect = (status) => {
+    if (!status) {
+      if (route?.params.status) {
+        setSelectedStatus(route?.params.status);
+      }
+    } else {
+      setSelectedStatus(status);
+    }
+    setHasMore(true);
+    fetchTasks(1, true);
+  };
+
+  return (
+    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : "height"}>
+      <View style={styles.container}>
+        <CommonHeader title="Assigned Tasks" showBackButton={route?.params ? true : false} onBackPress={() => navigation?.goBack()} />
+        <SearchContainer
+          value={searchText}
+          onChangeText={setSearchText}
+          placeholder="Search tasks..."
+          selectedStatus={selectedStatus}
+          onStatusSelect={(itm) => handleStatusSelect(itm)}
+          modalVisible={modalVisible}
+          selectedStatuss={selectedStatus}
+        />
+
+
+        {loading && page === 1 ? (
+          // Initial load skeleton
+          <FlatList
+            data={[1, 2, 3, 4, 5]}
+            keyExtractor={(item) => item?.toString()}
+            renderItem={renderSkeleton}
+            contentContainerStyle={{ paddingVertical: hp(2) }}
+          />
+        ) : (
+          // Actual task list
+          <FlatList
+            ListHeaderComponent={<>
+              <DateandDownloadTask
+                onDateSelect={setSelectedDateRange}
+                // onDownload={() => console.log("Download clicked")}
+              /></>}
+            contentContainerStyle={{ paddingBottom: hp(8) }}
+            data={tasks}
+            keyExtractor={(item) => item?.s_no?.toString() || Math.random().toString()}
+            renderItem={renderTask}
+            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+            onEndReached={loadMore}
+            onEndReachedThreshold={0.5}
+            ListFooterComponent={() =>
+              loading && page > 1 ? (
+                <View style={{ paddingVertical: hp(2), alignItems: "center" }}>
+                  <ActivityIndicator size="small" color={COLORS.primary} />
+                </View>
+              ) : null
+            }
+            ListEmptyComponent={
+              !loading && tasks.length === 0 && (
+                <View style={{ alignItems: "center", marginTop: hp(5) }}>
+                  <Text style={{ color: COLORS.gray, fontFamily: "Poppins_600SemiBold" }}>
+                    no tasks found
+                  </Text>
+                </View>
+              )
+            }
+          />
+        )}
+        {
+          allowCreateTask == '1' &&
+          <Pressable style={styles.fabButton} onPress={() => navigation?.navigate('CreateTask')}>
+            <Icon name="add" size={wp(4.5)} color="#fff" />
+            <Text style={styles.fabText}>{t('create_new_task')}</Text>
+          </Pressable>
+        }
+        <TaskDetailModal
+          visible={modalVisible}
+          task={selectedTask}
+          onClose={() => setModalVisible(false)}
+          getStatusColor={getStatusColor}
+        />
+      </View>
     </KeyboardAvoidingView>
   );
 }
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#f8f9fb" },
   card: {
-    backgroundColor: "#fff",
-    marginHorizontal: wp(4),
-    marginBottom: hp(2),
-    padding: wp(4),
-    borderRadius: wp(2),
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: hp(0.4) },
-    shadowOpacity: 0.08,
-    shadowRadius: wp(2),
+    backgroundColor: "#fff", marginHorizontal: wp(4),
+    marginBottom: hp(2), padding: wp(4), borderRadius: wp(2),
+    shadowColor: "#000", shadowOpacity: 0.05,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 4,
+    elevation: 2,
   },
-  cardHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  taskTitle: { fontSize: wp(4), fontFamily: "Poppins_600SemiBold", flex: 1, paddingRight: wp(2), color: "#222" },
+  cardHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: hp(1) },
+  taskTitle: { fontSize: wp(4), fontFamily: "Poppins_600SemiBold", flex: 1, color: "#222", textTransform: "capitalize" },
   rightHeader: { flexDirection: "row", alignItems: "center" },
-  voiceButton: {
-    width: wp(9),
-    height: wp(9),
-    borderRadius: wp(4.5),
-    backgroundColor: "#eef4ff",
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: wp(2),
-  },
+  voiceIcon: { width: wp(7), height: wp(7), borderRadius: wp(3.5), backgroundColor: "#eef4ff", justifyContent: "center", alignItems: "center", marginRight: wp(2) },
+  priorityBadge: { paddingHorizontal: wp(3), paddingVertical: hp(0.5), borderRadius: wp(5), marginRight: wp(2) },
+  priorityText: { color: "#fff", fontSize: wp(3.2) },
   statusBadge: { paddingHorizontal: wp(3), paddingVertical: hp(0.5), borderRadius: wp(5) },
-  statusText: { color: "#fff", fontSize: wp(3), fontFamily: "Poppins_500Medium" },
-  dateRow: { flexDirection: "row", justifyContent: "space-between", marginTop: hp(2) },
-  dateItem: { flex: 1 },
-  label: { fontSize: wp(3), fontFamily: "Poppins_400Regular", color: "#888" },
-  dateText: { fontSize: wp(3.5), fontFamily: "Poppins_500Medium", marginTop: hp(0.3), color: "#333" },
+  statusText: { color: "#fff", fontSize: wp(3.2) },
+  dateRow: { flexDirection: "row", justifyContent: "space-between", marginTop: hp(1) },
+  dateBox: {
+    backgroundColor: "#f1f1f1", padding: wp(2), borderRadius: wp(2), flex: 1, marginRight: wp(2),
+    borderColor: COLORS?.primary, borderWidth: wp(0.4)
+  }, dateLabel: { fontSize: wp(3), color: "#555", marginBottom: hp(0.3), fontFamily: "Poppins_400Regular" },
+  dateText: { fontSize: wp(3.5), color: "#333", fontFamily: "Poppins_400Regular" },
+  fabButton: {
+    position: "absolute", bottom: hp(4), right: wp(5), backgroundColor: COLORS.primary, flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: wp(3.2), paddingVertical: hp(1.2), borderRadius: wp(10),
+    shadowColor: "#000", shadowOffset: { width: 0, height: hp(0.5) },
+    shadowOpacity: 0.3, shadowRadius: wp(3), elevation: 5,
+  },
+  fabText: { color: "#fff", fontSize: wp(3.5), fontWeight: "600", marginLeft: wp(2), fontFamily: 'Poppins_600SemiBold', lineHeight: wp(3.5) },
 });

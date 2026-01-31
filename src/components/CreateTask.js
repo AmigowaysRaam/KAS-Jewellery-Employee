@@ -1,0 +1,706 @@
+import DateTimePicker from "@react-native-community/datetimepicker";
+import { useNavigation } from "@react-navigation/native";
+import dayjs from "dayjs";
+import { Audio } from "expo-av";
+import * as ImagePicker from "expo-image-picker";
+import React, { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
+import {
+  Image,
+  Keyboard, KeyboardAvoidingView,
+  Modal, Platform, Pressable, ScrollView,
+  StyleSheet, Text, TextInput, TouchableOpacity,
+  TouchableWithoutFeedback, View
+} from "react-native";
+import { Icon } from "react-native-elements";
+import { ActivityIndicator } from "react-native-paper";
+import { useSelector } from "react-redux";
+import { getStoredLanguage } from "../../app/i18ns";
+import { COLORS } from "../../app/resources/colors";
+import { hp, wp } from "../../app/resources/dimensions";
+import { useToast } from "../../constants/ToastContext";
+import { fetchData } from "./api/Api";
+import AttachmentModal from "./AttacthcModal";
+import CommonHeader from "./CommonHeader";
+import CustomDropdown from "./CustomDropDown";
+import ImageViewerModal from "./ImageViewver";
+import CustomSingleDatePickerModal from "./SingleDateSelect";
+import TeamMembersView from "./TeamMemView";
+
+export default function CreateTask() {
+  const navigation = useNavigation();
+  const scrollRef = useRef(null);
+  const { showToast } = useToast();
+  // -------- TEXT STATES --------
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  // -------- AUDIO STATES --------
+  const [titleAudio, setTitleAudio] = useState(null);
+  const [descAudio, setDescAudio] = useState(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingFor, setRecordingFor] = useState(null);
+  const [recording, setRecording] = useState(null);
+  const [recordTime, setRecordTime] = useState(0);
+  const [playbackSoundTitle, setPlaybackSoundTitle] = useState(null);
+  const [playbackSoundDesc, setPlaybackSoundDesc] = useState(null);
+  const [isPlayingTitle, setIsPlayingTitle] = useState(false);
+  const [isPlayingDesc, setIsPlayingDesc] = useState(false);
+  const [playPositionTitle, setPlayPositionTitle] = useState(0);
+  const [playPositionDesc, setPlayPositionDesc] = useState(0);
+  const [playDurationTitle, setPlayDurationTitle] = useState(0);
+  const [playDurationDesc, setPlayDurationDesc] = useState(0);
+  const siteDetails = useSelector(
+    (state) => state.auth?.siteDetails?.data[0]
+  );
+  const profileDetails = useSelector(
+    (state) => state?.auth?.profileDetails?.data
+  );
+
+  const [isKeyboardVisible, setKeyboardVisible] = useState(false);
+  const [dropDownData, setdropDownData] = useState({ teams: [], users: [] });
+  const [mediaModal, setmediaModal] = useState(false);
+  const [assignedBy, setAssignedBy] = useState(null);
+  const [assignType, setAssignType] = useState("individual");
+  const [selectedTeam, setSelectedTeam] = useState(null);
+  const [priority, setpriority] = useState(null);
+  const [dueDate, setDueDate] = useState(null);
+  const [dueTime, setDueTime] = useState(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showTimePicker, setShowTimePicker] = useState(false);
+  const { t } = useTranslation()
+  const [errors, setErrors] = useState({});
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const [loading, setloading] = useState(false);
+  useEffect(() => {
+    Audio.requestPermissionsAsync();
+  }, []);
+
+  useEffect(() => {
+    fetchDropDownData();
+  }, [selectedTeam]);
+  useEffect(() => {
+    setErrors({});
+  }, [title, description]);
+  useEffect(() => {
+    let interval;
+    if (isRecording) {
+      interval = setInterval(() => setRecordTime((t) => t + 1), 1000);
+    } else {
+      setRecordTime(0);
+    }
+    return () => clearInterval(interval);
+  }, [isRecording]);
+  const [images, setImages] = useState([]);
+
+
+  useEffect(() => {
+    const showSubscription = Keyboard.addListener("keyboardDidShow", (e) => {
+      setKeyboardHeight(e.endCoordinates.height);
+      setKeyboardVisible(true);
+    });
+    const hideSubscription = Keyboard.addListener("keyboardDidHide", () => {
+      setKeyboardHeight(0);
+      setKeyboardVisible(false);
+    });
+    return () => {
+      showSubscription.remove();
+      hideSubscription.remove();
+    };
+  }, []);
+  const fetchDropDownData = async () => {
+    if (!profileDetails?.id) return;
+    setloading(true);
+    try {
+      const lang = await getStoredLanguage();
+      const response = await fetchData(
+        "app-employee-team-members",
+        "POST",
+        {
+          user_id: profileDetails.id,
+          lang: lang ?? "en",
+          team_id: selectedTeam ? selectedTeam?.value : null,
+        }
+      );
+      // Alert.alert(JSON.stringify(response))
+      if (response?.data) {
+        // Alert.alert("cv", JSON.stringify(response.data))
+        setdropDownData(response.data);
+      }
+    } catch (error) {
+      console.error("API Error:", error);
+    } finally {
+      setloading(false);
+    }
+  };
+  // -------- AUDIO RECORDING --------
+  const startRecording = async (forField) => {
+    try {
+      setRecordingFor(forField);
+      setIsRecording(true);
+      const { recording } = await Audio.Recording.createAsync(
+        Audio.RECORDING_OPTIONS_PRESET_HIGH_QUALITY
+      );
+      setRecording(recording);
+    } catch (err) {
+      console.log("Recording error:", err);
+      setIsRecording(false);
+    }
+  };
+  const stopRecording = async () => {
+    try {
+      setIsRecording(false);
+      await recording.stopAndUnloadAsync();
+      const uri = recording.getURI();
+      const { sound, status } = await Audio.Sound.createAsync({ uri });
+      const duration = status.durationMillis
+        ? Math.floor(status.durationMillis / 1000)
+        : 0;
+      await sound.unloadAsync();
+
+      const audioData = {
+        uri,
+        name: recordingFor === "title" ? "TitleAud" : "DescAud",
+        duration,
+      };
+      if (recordingFor === "title") setTitleAudio(audioData);
+      else setDescAudio(audioData);
+
+      setRecording(null);
+      setRecordingFor(null);
+    } catch (err) {
+      console.log("Stop recording error:", err);
+    }
+  };
+  const playAudio = async (audio, type) => {
+    if (!audio) return;
+    try {
+      if (type === "title") {
+        if (playbackSoundTitle) await playbackSoundTitle.unloadAsync();
+        const { sound, status } = await Audio.Sound.createAsync(
+          { uri: audio.uri },
+          { shouldPlay: true }
+        );
+        setPlaybackSoundTitle(sound);
+        setIsPlayingTitle(true);
+        setPlayDurationTitle(status.durationMillis || 0);
+        sound.setOnPlaybackStatusUpdate((status) => {
+          if (status.isLoaded) {
+            setPlayPositionTitle(status.positionMillis);
+            setPlayDurationTitle(status.durationMillis || 0);
+            if (status.didJustFinish) setIsPlayingTitle(false);
+          }
+        });
+      } else {
+        if (playbackSoundDesc) await playbackSoundDesc.unloadAsync();
+        const { sound, status } = await Audio.Sound.createAsync(
+          { uri: audio.uri },
+          { shouldPlay: true }
+        );
+        setPlaybackSoundDesc(sound);
+        setIsPlayingDesc(true);
+        setPlayDurationDesc(status.durationMillis || 0);
+        sound.setOnPlaybackStatusUpdate((status) => {
+          if (status.isLoaded) {
+            setPlayPositionDesc(status.positionMillis);
+            setPlayDurationDesc(status.durationMillis || 0);
+            if (status.didJustFinish) setIsPlayingDesc(false);
+          }
+        });
+      }
+    } catch (err) {
+      console.log("Playback error:", err);
+    }
+  };
+
+  const stopAudio = async (type) => {
+    if (type === "title" && playbackSoundTitle) {
+      await playbackSoundTitle.stopAsync();
+      setIsPlayingTitle(false);
+    } else if (type === "desc" && playbackSoundDesc) {
+      await playbackSoundDesc.stopAsync();
+      setIsPlayingDesc(false);
+    }
+  };
+
+  const deleteAudio = (field) => {
+    if (field === "title") {
+      setTitleAudio(null);
+      if (playbackSoundTitle) playbackSoundTitle.unloadAsync();
+      setIsPlayingTitle(false);
+    } else {
+      setDescAudio(null);
+      if (playbackSoundDesc) playbackSoundDesc.unloadAsync();
+      setIsPlayingDesc(false);
+    }
+  };
+  const formatTime = (ms) => {
+    const totalSeconds = Math.floor(ms / 1000);
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;
+  };
+
+  // -------- VALIDATION & SUBMIT --------
+  const validate = () => {
+    const newErrors = {};
+    if (!title.trim()) newErrors.title = t('title_Required');
+    if (!description.trim()) newErrors.description = t('desc_Required');
+    if (!assignedBy) newErrors.assignedBy = t('pls_Selct_user');
+    if (assignType === "group" && !selectedTeam)
+      newErrors.selectedTeam = t('pls_Selct_team');
+    if (!dueDate) newErrors.dueDate = t('pls_Selct_due_date');
+    if (!dueTime) newErrors.dueTime = t('pls_Selct_due_time');
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+  const [viewerVisible, setViewerVisible] = useState(false);
+  const [viewerUri, setViewerUri] = useState(null);
+  const handleSubmit = async () => {
+    if (!validate()) return;
+
+    const combinedDateTime = dayjs(dueDate)
+      .hour(dueTime.getHours())
+      .minute(dueTime.getMinutes())
+      .second(0);
+
+    if (!profileDetails?.id) return;
+    setloading(true);
+    try {
+      const formData = new FormData();
+      formData.append("user_id", profileDetails.id.toString());
+      formData.append("assign_to_type", assignType);
+      formData.append("assign_to", selectedTeam?.value?.toString() || "");
+      formData.append("title", title);
+      formData.append("description", description);
+      formData.append("assign_by", profileDetails.id.toString());
+      formData.append("priority", priority?.value?.toString() || "1");
+      formData.append("due_date", combinedDateTime.format("YYYY-MM-DD"));
+      formData.append("due_time", combinedDateTime.format("HH:mm")); // 24-hour format
+      images.forEach((img, index) => {
+        formData.append("image[]", {
+          uri: img.uri,
+          name: `task${Date.now()}_${index}.jpg`,
+          type: img.mimeType || "image/jpeg",
+        });
+      });
+      if (descAudio) {
+        formData.append("audio", {
+          uri: descAudio.uri,
+          type: descAudio.type || "audio/mpeg",
+          name: `${descAudio.name}.mp3` || "DummyAudio.mp3",
+        });
+      }
+      const response = await fetch("https://kasjewellery.in/app-employee-create-task", {
+        method: "POST",
+        body: formData,
+        headers: { Accept: "application/json" },
+      });
+
+      const resultJson = await response.json();
+      console.log("Parsed Result:", resultJson);
+
+      if (resultJson?.success) {
+        showToast(resultJson.message, 'success');
+        navigation?.goBack();
+      } else {
+        showToast(resultJson?.message || "Failed to create task", 'error');
+      }
+
+    } catch (error) {
+      console.error("API Error:", error);
+      showToast("Something went wrong while creating task", 'error');
+    } finally {
+      setloading(false);
+    }
+  };
+  const openImageViewer = (uri) => {
+    setViewerUri(uri);
+    setViewerVisible(true);
+  };
+  const pickCamera = async () => {
+    setmediaModal(false);
+    const result = await ImagePicker.launchCameraAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.7 });
+    if (!result.canceled && result.assets?.[0]?.uri) {
+      const img = result.assets[0];
+      setImages(prev => [...prev, { ...img, source: "Camera" }]);
+    }
+  };
+
+  const pickFile = async () => {
+    setmediaModal(false);
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 0.7,
+      allowsMultipleSelection: true,
+      selectionLimit: 3 - images.length
+    });
+    if (!result.canceled && result.assets?.length > 0) {
+      const selected = result.assets.map(a => ({ ...a, source: "Gallery" }));
+      setImages(prev => [...prev, ...selected]);
+    }
+  };
+  const removeImage = (index) => {
+    setImages((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const scrollToBottom = () => {
+    setTimeout(() => {
+      // scrollRef.current?.scrollToEnd({ animated: true });
+    }, 50);
+  };
+  return (
+    <View style={{ flex: 1, backgroundColor: "#fff", opacity: loading ? 0.2 : 1 }} pointerEvents={loading ? "none" : "auto"}>
+      <CommonHeader
+        title={t('create_task')}
+        showBackButton
+        onBackPress={() => navigation.goBack()}
+      />
+      {loading && <ActivityIndicator color={COLORS?.primary} style={{
+        marginTop: hp(5), opacity: 3
+      }} />}
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 60 : 0}
+      >
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <ScrollView
+            ref={scrollRef}
+            contentContainerStyle={{
+              padding: wp(4),
+              paddingBottom: isKeyboardVisible ? keyboardHeight + hp(0) : hp(1), // increase more if keyboard is open
+            }}
+            keyboardShouldPersistTaps="handled"
+          >
+            {/* -------- TITLE -------- */}
+            <View style={styles.inputContainer}>
+              <TextInput
+                maxLength={35}
+                style={styles.input}
+                placeholder={t('enter_task_title')}
+                value={title}
+                onChangeText={setTitle}
+                onFocus={scrollToBottom}
+                placeholderTextColor={COLORS.black}
+              />
+              {/* {titleAudio ? (
+                <View style={styles.audioPreview}>
+                  <Text
+                    style={{
+                      fontFamily: "Poppins_400Regular",
+                      fontSize: wp(3),
+                      marginRight: wp(1),
+                      lineHeight: wp(4)
+
+                    }}
+                  >
+                    {titleAudio.name} (
+                    {titleAudio.duration
+                      ? formatTime(titleAudio.duration * 1000)
+                      : recordTime > 0
+                        ? formatTime(recordTime * 1000)
+                        : "0:00"}
+                    )
+                  </Text>
+
+                  <TouchableOpacity
+                    onPress={() =>
+                      isPlayingTitle
+                        ? stopAudio("title")
+                        : playAudio(titleAudio, "title")
+                    }
+                  >
+                    <Icon
+                      name={isPlayingTitle ? "pause" : "play-arrow"}
+                      size={wp(7)}
+                      color={COLORS.primary}
+                    />
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => deleteAudio("title")}>
+                    <Icon
+                      name="x-circle"
+                      type="feather"
+                      size={wp(5.3)}
+                      color={COLORS.primary}
+                    />
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <Icon
+                  name="mic"
+                  type="feather"
+                  size={wp(5)}
+                  color={COLORS.gray}
+                  containerStyle={styles.inputIcon}
+                  onPress={() => startRecording("title")}
+                />
+              )} */}
+            </View>
+            {errors.title && (
+              <Text style={styles.errorText}>{errors.title}</Text>
+            )}
+            {/* -------- DESCRIPTION -------- */}
+            <View style={styles.inputContainer}>
+              <TextInput
+                style={[styles.input, { height: hp(15), textAlignVertical: "top", paddingRight: wp(12) }]} // Add right padding for mic
+                placeholder={t('enter_task_desc')}
+                value={description}
+                onChangeText={setDescription}
+                multiline
+                onFocus={scrollToBottom}
+                placeholderTextColor={COLORS.black}
+              />
+              {descAudio ? (
+                <View style={styles.audioPreview}>
+                  <Text
+                    style={{
+                      fontFamily: "Poppins_400Regular",
+                      fontSize: wp(3),
+                      marginRight: wp(1),
+                      lineHeight: wp(4)
+
+                    }}
+                  >
+                    {descAudio.name} (
+                    {descAudio.duration
+                      ? formatTime(descAudio.duration * 1000)
+                      : recordTime > 0
+                        ? formatTime(recordTime * 1000)
+                        : "0:00"}
+                    )
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() =>
+                      isPlayingDesc
+                        ? stopAudio("desc")
+                        : playAudio(descAudio, "desc")
+                    }
+                  >
+                    <Icon
+                      name={isPlayingDesc ? "pause" : "play-arrow"}
+                      size={wp(7)}
+                      color={COLORS.primary}
+                    />
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => deleteAudio("desc")}>
+                    <Icon
+                      name="x-circle"
+                      type="feather"
+                      size={wp(5.3)}
+                      color={COLORS.primary}
+                    />
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <TouchableOpacity
+                  style={styles.micIconContainer} // Absolute inside TextInput
+                  onPress={() => startRecording("desc")}
+                >
+                  <Icon name="mic" type="feather" size={wp(5)} color={COLORS.gray} />
+                </TouchableOpacity>
+              )}
+            </View>
+            {errors.description && (
+              <Text style={styles.errorText}>{errors.description}</Text>
+            )}
+            <View style={{ marginBottom: wp(2) }}>
+              <Text style={styles.label}>{t("image")}</Text>
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: wp(2) }}>
+                {images.map((img, idx) => (
+                  <View key={idx} style={{ position: "relative", width: wp(26), height: hp(15), marginRight: wp(2), marginBottom: hp(1) }}>
+                    <Pressable onPress={() => openImageViewer(img.uri)} >
+                      <Image source={{ uri: img.uri }} style={{ width: "100%", height: wp(26), borderRadius: wp(2) }} resizeMode="contain" />
+                    </Pressable>
+
+                    <Pressable
+                      onPress={() => removeImage(idx)}
+                      style={{ position: "absolute", top: -wp(2), right: -wp(2), backgroundColor: "red", borderRadius: wp(3), padding: wp(1) }}
+                    >
+                      <Icon name="trash" type="feather" size={wp(4)} color="#fff" />
+                    </Pressable>
+                  </View>
+                ))}
+                {images.length < 3 && (
+                  <Pressable
+                    onPress={() => setmediaModal(true)}
+                    style={{ borderWidth: wp(0.2), height: hp(10), width: wp(30), alignItems: "center", justifyContent: "center", borderRadius: wp(2) }}
+                  >
+                    <Icon name="plus" type="feather" size={wp(5.5)} color={COLORS.primary} />
+                  </Pressable>
+                )}
+              </View>
+            </View>
+            <Modal transparent visible={isRecording} animationType="fade">
+              <View style={styles.recordingOverlay}>
+                <View style={styles.recordingPopup}>
+                  <Text style={styles.recordingText}>
+                    Recording {recordingFor === "title" ? t('title') : t('descption')}...
+                  </Text>
+                  <Text style={styles.recordingTime}>{recordTime}s</Text>
+                  <TouchableOpacity style={styles.stopButton} onPress={stopRecording}>
+                    <Text style={styles.stopButtonText}>Stop</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </Modal>
+            <CustomDropdown
+              title={`${t('assignBy')} *`}
+              data={dropDownData?.users}
+              placeholder={`${t('select_user')}`}
+              onSelect={(item) => setAssignedBy(item)}
+              selectedItem={selectedTeam}
+            />
+            {errors.assignedBy && <Text style={styles.errorText}>{errors.assignedBy}</Text>}
+            {/* -------- ASSIGN TO -------- */}
+            <Text style={styles.label}>{`${t('assignto')} *`}</Text>
+            <View style={styles.radioContainer}>
+              <Pressable
+                style={styles.radioButton}
+                onPress={() => setAssignType("individual")}
+              >
+                <Icon
+                  name={assignType === "individual" ? "check-circle" : "circle"}
+                  type="feather"
+                  size={wp(5.5)}
+                  color={COLORS.primary}
+                  style={{ marginRight: hp(1) }}
+                />
+                <Text style={styles.radioLabel}>{`${t('individual')}`}</Text>
+              </Pressable>
+              <Pressable
+                style={styles.radioButton}
+                onPress={() => setAssignType("group")}
+              >
+                <Icon
+                  name={assignType === "group" ? "check-circle" : "circle"}
+                  type="feather"
+                  size={wp(5.5)}
+                  color={COLORS.primary}
+                  style={{ marginRight: hp(1) }}
+                />
+                <Text style={styles.radioLabel}>{`${t('group')}`}</Text>
+              </Pressable>
+            </View>
+            <CustomDropdown
+              title={`${t('task_priority')}`}
+              data={siteDetails?.prioritiesList || []}
+              placeholder={`${t('choose_priority')}`}
+              onSelect={(item) => setpriority(item)}
+
+            />
+            {/* Select Team */}
+            {assignType === "group" && (
+              <CustomDropdown
+                title={`${t('select_team')} *`}
+                data={dropDownData?.teams}
+                placeholder={`${t('select_team')}`}
+                onSelect={(item) => setSelectedTeam(item)}
+              />
+            )}
+            {assignType === "group" && selectedTeam?.value &&
+              <View>
+                <TeamMembersView teamMembers={dropDownData} />
+              </View>}
+            <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: hp(0) }}>
+              <View style={{ width: wp(44) }}>
+                <Text style={styles.label}>{`${t('due_date')}*`}</Text>
+                <Pressable onPress={() => setShowDatePicker(true)} style={styles.dateButton}>
+                  <Text style={styles.dateText}>
+                    {dueDate ? dayjs(dueDate).format("DD/MM/YYYY") : "Select Date"}
+                  </Text>
+                </Pressable>
+                {errors.dueDate && <Text style={[styles.errorText, {
+                  marginTop: wp(2)
+                }]}>{errors.dueDate}</Text>}
+              </View>
+              <View style={{ width: wp(44) }}>
+                <Text style={styles.label}>{`${t('due_time')} *`}</Text>
+                <Pressable onPress={() => setShowTimePicker(true)} style={styles.dateButton}>
+                  <Text style={styles.dateText}>
+                    {dueTime ? dayjs(dueTime).format("hh:mm A") : "Select Time"}
+                  </Text>
+                </Pressable>
+                {errors.dueTime && <Text style={[styles.errorText, {
+                  marginTop: wp(4)
+                }]}>{errors.dueTime}</Text>}
+              </View>
+            </View>
+            <CustomSingleDatePickerModal
+              visible={showDatePicker}
+              initialDate={dueDate}
+              onClose={() => setShowDatePicker(false)}
+              onConfirm={(date) => {
+                setDueDate(date);
+                setShowDatePicker(false);
+              }}
+            />
+            {showTimePicker && (
+              <DateTimePicker
+                value={dueTime || new Date()}
+                mode="time"
+                is24Hour={false}
+                display="spinner"
+                onChange={(_, selectedTime) => {
+                  setShowTimePicker(false);
+                  if (selectedTime) setDueTime(selectedTime);
+                }}
+              />
+            )}
+            <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
+              <Text style={styles.submitButtonText}>{`${t('create_task')}`}</Text>
+            </TouchableOpacity>
+          </ScrollView>
+        </TouchableWithoutFeedback>
+        <AttachmentModal
+          visible={mediaModal}
+          onClose={() => setmediaModal(false)}
+          onCamera={pickCamera}
+          onFile={pickFile}
+          // onAudioRecorded={handleAudioRecorded}
+          hideMic={true}
+        />
+        <ImageViewerModal
+          visible={viewerVisible}
+          uri={viewerUri}
+          onClose={() => setViewerVisible(false)}
+        />
+      </KeyboardAvoidingView>
+    </View>
+  );
+}
+const styles = StyleSheet.create({
+  inputContainer: { marginBottom: hp(2), position: "relative" },
+  input: { borderWidth: 1, borderColor: COLORS.gray, borderRadius: wp(1), padding: wp(3), fontSize: wp(3.5), fontFamily: "Poppins_400Regular", color: COLORS.black, }, inputIcon: { position: "absolute", right: wp(3), top: hp(1.5) }, audioPreview: {
+    flexDirection: "row", marginTop: hp(1),
+    justifyContent: "space-around", borderWidth: wp(0.4), paddingHorizontal: wp(1), maxWidth: wp(48), alignItems: "center", borderRadius: wp(24), borderColor: COLORS?.primary
+  }, errorText: {
+    color: "red", fontSize: wp(3), marginTop: hp(-0.8),
+    fontFamily: 'Poppins_400Regular', fontWeight: "600", marginHorizontal: wp(2)
+  }, recordingOverlay: {
+    flex: 1, backgroundColor: "rgba(0,0,0,0.6)", justifyContent: "center",
+    alignItems: "center",
+  }, recordingPopup: {
+    backgroundColor: "#fff", borderRadius: wp(3),
+    alignItems: "center", width: wp(60), height: wp(60), borderRadius: wp(30), alignItems: "center", justifyContent: "center", borderWidth: wp(1), borderColor: COLORS?.primary
+  }, recordingText: {
+    fontSize: wp(3.5), marginBottom: hp(1), fontFamily: "Poppins_400Regular",
+  }, recordingTime: {
+    fontSize: wp(5), marginBottom: hp(2), fontFamily: "Poppins_400Regular",
+  }, stopButton: { backgroundColor: COLORS.primary, paddingHorizontal: wp(6), paddingVertical: hp(1), borderRadius: wp(2), }, stopButtonText: { color: "#fff", fontSize: wp(4.5), fontFamily: "Poppins_400Regular", },
+  label: { fontSize: wp(4), fontFamily: "Poppins_400Regular", marginBottom: hp(0.5) },
+  radioContainer: { flexDirection: "row", marginBottom: hp(2) },
+  radioButton: { flexDirection: "row", alignItems: "center", marginRight: wp(4) },
+  radioCircle: {
+    width: wp(4), height: wp(4), borderRadius: wp(2), borderWidth: 1, borderColor: COLORS.gray, marginRight: wp(1.5),
+  },
+  radioLabel: { fontSize: wp(3.8), fontFamily: "Poppins_400Regular", lineHeight: hp(4) },
+  dateButton: { borderWidth: 1, borderRadius: wp(1), padding: wp(3), },
+  micIconContainer: {
+    position: "absolute", right: wp(3), top: hp(1.5),
+    zIndex: 10,
+  }, dateText: { fontSize: wp(3.5), fontFamily: "Poppins_400Regular", color: COLORS.black }, submitButton: {
+    backgroundColor: COLORS.primary, padding: wp(3),
+    borderRadius: wp(2), marginVertical: hp(2), alignItems: "center",
+  },
+  submitButtonText: { color: "#fff", fontSize: wp(4.5), fontFamily: "Poppins_600SemiBold", lineHeight: hp(4) },
+});

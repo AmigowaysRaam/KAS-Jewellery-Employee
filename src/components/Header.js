@@ -1,3 +1,4 @@
+import { useNavigation } from "@react-navigation/native";
 import React, { useEffect, useRef } from "react";
 import {
   Animated, Image, Pressable, StyleSheet, Text, View,
@@ -11,6 +12,7 @@ export default function Header({
 }) {
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const notifCountNum = Number(notificationCount) || 0; // convert string to number
+  const navigation = useNavigation();
   useEffect(() => {
     if (notifCountNum > 0) {
       Animated.sequence([
@@ -51,7 +53,10 @@ export default function Header({
         </Pressable>
 
         {/* Notification Icon */}
-        <Pressable style={styles.iconContainer}>
+        <Pressable style={styles.iconContainer} onPress={() => navigation.navigate(
+
+          'Notification'
+        )}>
           <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
             <Image
               source={require("../../assets/notifi.png")}

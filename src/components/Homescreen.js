@@ -1,11 +1,7 @@
 import React, { useEffect, useState } from "react";
 import {
-  ActivityIndicator,
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View
+  ActivityIndicator, RefreshControl, ScrollView,
+  StyleSheet, Text, View
 } from "react-native";
 import { useSelector } from "react-redux";
 import { getStoredLanguage } from "../../app/i18ns";
@@ -22,8 +18,8 @@ export default function Homescreen() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [langMenuMOdal, setOpenLangMenu] = useState(false);
   const [homepageData, setHomepageData] = useState(null);
-  const [loading, setLoading] = useState(true); // initial loader
-  const [refreshing, setRefreshing] = useState(false); // pull-to-refresh loader
+  const [loading, setLoading] = useState(true); 
+  const [refreshing, setRefreshing] = useState(false); 
   const siteDetails = useSelector((state) => state.auth?.siteDetails?.data[0]);
   const profileDetails = useSelector((state) => state?.auth?.profileDetails?.data);
   useEffect(() => {
@@ -34,7 +30,6 @@ export default function Homescreen() {
   const [lang, setLang] = useState(null);
   const fetchHomepageData = async () => {
     const lang = await getStoredLanguage();
-    // Alert.alert("Language Code", `Current language code: ${lang}`);
     if (!profileDetails?.id) return;
     try {
       if (!refreshing) setLoading(true);
@@ -57,9 +52,7 @@ export default function Homescreen() {
   };
   useEffect(() => {
     fetchHomepageData();
-    // Alert.alert("Language Code", JSON.stringify(homepageData?.notification_count));
   }, []);
-
   const onRefresh = () => {
     setRefreshing(true);
     fetchHomepageData();
@@ -70,7 +63,7 @@ export default function Homescreen() {
         openMenu={() => setIsMenuOpen(!isMenuOpen)}
         headerL={siteDetails?.["header-logo"]}
         openLanguageMenu={() => setOpenLangMenu(true)}
-        notificationCount={homepageData?.notification_count} 
+        notificationCount={homepageData?.notification_count}
       />
       <ScrollView
         style={styles.scrollContainer}

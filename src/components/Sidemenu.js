@@ -118,11 +118,27 @@ export default function SideMenu({ visible, onClose, onItemPress }) {
     };
     const handleNavigation = (key) => {
         if (key && key == "my_task") {
-            navigation.navigate('My Task');
+            navigation.navigate("MyTaskListScreen", { status: null });
         }
         if (key && key == "my_assign_task") {
             navigation.navigate('Assign Task');
         }
+        if (key && key == "notification") {
+            navigation.navigate('Notification');
+        }
+        if (key && key == "our_stores") {
+            navigation.navigate('OurStoreScreen');
+        }
+        if (key && key == "terms_conditions") {
+            navigation.navigate('TermsScreen');
+        }
+        if (key && key == "privacy_policy") {
+            navigation.navigate('PrivacyPolicyScreen');
+        }
+        if (key && key == "settings") {
+            navigation.navigate('SettingsScreen');
+        }
+        
     }
     const renderMenuItem = ({ item }) => (
         <TouchableOpacity

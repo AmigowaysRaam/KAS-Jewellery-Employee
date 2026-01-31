@@ -15,7 +15,6 @@ export default function SplashScreen() {
   const [siteData, setSiteData] = React.useState(null);
   const scaleAnim = useRef(new Animated.Value(0)).current; // logo scale
   const pulseAnim = useRef(new Animated.Value(0)).current; // dots pulse
-
   useEffect(() => {
     Animated.sequence([
       Animated.timing(scaleAnim, {

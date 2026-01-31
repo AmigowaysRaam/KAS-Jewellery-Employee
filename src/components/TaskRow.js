@@ -1,16 +1,19 @@
-import { useFocusEffect } from "@react-navigation/native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import React, { useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Animated,
   Image,
   ImageBackground,
+  Pressable,
   StyleSheet,
   Text,
   View,
 } from "react-native";
 import { COLORS } from "../../app/resources/colors";
 import { hp, wp } from "../../app/resources/dimensions";
+
+
 
 const TAB_ICONS = {
   "My Tasks": require("../../assets/myTaskFill.png"),
@@ -19,6 +22,7 @@ const TAB_ICONS = {
 
 const TaskRow = () => {
   const { t } = useTranslation();
+  const navigation = useNavigation()
 
   // Animation refs for each card
   const leftAnim = useRef(new Animated.Value(-wp(50))).current; // Start offscreen left
@@ -65,33 +69,36 @@ const TaskRow = () => {
         const translateX = isLeft ? leftAnim : rightAnim;
         const opacity = isLeft ? opacityLeft : opacityRight;
         return (
-          <Animated.View
-            key={task}
-            style={{
-              transform: [{ translateX }],
-              opacity,
-            }}
-          >
-            <View style={styles.wrapper}>
-              <ImageBackground
-                resizeMode="cover"
-                source={require("../../assets/buttonLgrd.png")}
-                style={styles.card}
-                imageStyle={styles.cardImage}
-              >
-                <Image
-                  tintColor={COLORS.white}
-                  source={TAB_ICONS[task]}
-                  style={styles.icon}
-                  resizeMode="contain"
-                />
-                <Text style={styles.greeting}>{t(task)}</Text>
-              </ImageBackground>
-            </View>
-          </Animated.View>
+          <Pressable onPress={() => navigation.navigate(task == 'My Tasks' ? "MyTaskListScreen" : 'AssignTaskListScreen', { status: null })
+          }>
+            <Animated.View
+              key={task}
+              style={{
+                transform: [{ translateX }],
+                opacity,
+              }}
+            >
+              <View style={styles.wrapper}>
+                <ImageBackground
+                  resizeMode="cover"
+                  source={require("../../assets/buttonLgrd.png")}
+                  style={styles.card}
+                  imageStyle={styles.cardImage}
+                >
+                  <Image
+                    tintColor={COLORS.white}
+                    source={TAB_ICONS[task]}
+                    style={styles.icon}
+                    resizeMode="contain"
+                  />
+                  <Text style={styles.greeting}>{t(task)}</Text>
+                </ImageBackground>
+              </View>
+            </Animated.View>
+          </Pressable>
         );
       })}
-    </View>
+    </View >
   );
 };
 export default TaskRow;
