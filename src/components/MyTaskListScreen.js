@@ -203,7 +203,10 @@ export default function MyTaskListScreen({ route }) {
         style={[styles.card, { borderLeftColor: getPriorityColor(item.priority)?.color, borderLeftWidth: wp(1) }]}
       >
         <View style={styles.cardHeader}>
-          <Text style={styles.taskTitle}>{item.title || t("Untitled Task")}</Text>
+          <Text numberOfLines={1} style={styles.taskTitle}>{item.title || t("Untitled Task")}</Text>
+          {__DEV__ &&
+            <Text style={styles.taskTitle}>{item.id || t("Untitled Task")}</Text>
+          }
           <View style={styles.rightHeader}>
             <View style={[styles.voiceIcon, { opacity: hasVoice ? 1 : 0.3 }]}>
               <Icon name="play-arrow" size={wp(5)} color={COLORS.primary} />

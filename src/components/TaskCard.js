@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
     Animated, Dimensions, Pressable,
@@ -8,14 +8,20 @@ import Icon from "react-native-vector-icons/MaterialIcons";
 import { useSelector } from "react-redux";
 import { COLORS } from "../../app/resources/colors";
 import { hp, wp } from "../../app/resources/dimensions";
+import { useToast } from "../../constants/ToastContext";
 import StatusSelectModal from "./statusSelectModal";
 import TaskDetailModal from "./TaskDetailModal";
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
-export default function TaskCard({ task }) {
+export default function TaskCard({ task, loadData }) {
     const { t } = useTranslation();
     const siteDetails = useSelector(
         (state) => state.auth?.siteDetails?.data[0]
     );
+    const profileDetails = useSelector(
+        (state) => state?.auth?.profileDetails?.data
+    );
+    const { showToast } = useToast();
+
     const [showDetailModal, setShowDetailModal] = useState(false);
     const [showStatusModal, setShowStatusModal] = useState(false);
     const translateY = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
@@ -66,9 +72,33 @@ export default function TaskCard({ task }) {
             useNativeDriver: true,
         }).start(() => setShowDetailModal(false));
     };
-    useEffect(() => {
-        // Alert, alert("", JSON.stringify(task))
-    }, [])
+
+    const handleUpdateStatus = async (sta) => {
+        // setLoading(true);
+        try {
+            const formData = new FormData();
+            formData.append("id", task.id);
+            formData.append("status", sta);
+            formData.append("user_id", profileDetails?.id);
+            const response = await fetch("https://kasjewellery.in/app-employee-update-task", {
+                method: "POST",
+                headers: { Accept: "application/json" },
+                body: formData,
+            });
+            const result = await response.json();
+            if (result?.success) {
+                loadData()
+                showToast(result.message || t("task_updated_successfully"), "success");
+            } else {
+                showToast(result?.message || t("failed_to_update_task"), "error");
+            }
+        } catch (err) {
+            console.log(err);
+            showToast(t("something_went_wrong"), "error");
+        } finally {
+            // setLoading(false);
+        }
+    };
     return (
         <>
             {/* ================= TASK CARD ================= */}
@@ -86,7 +116,6 @@ export default function TaskCard({ task }) {
                     <Text style={[styles.title, { color: priorityStyle.color }]}>
                         {task?.title || t("untitled")}
                     </Text>
-
                     {/* STATUS BUTTON */}
                     <Pressable
                         onPress={() => setShowStatusModal(true)}
@@ -124,7 +153,7 @@ export default function TaskCard({ task }) {
                 statuses={siteDetails?.ticketstatusList || []}
                 onClose={() => setShowStatusModal(false)}
                 onSelect={(status) => {
-                    alert(`Status changed to ${status}`);
+                    handleUpdateStatus(status);
                 }}
             />
             <TaskDetailModal
@@ -145,11 +174,11 @@ const styles = StyleSheet.create({
         marginVertical: hp(0.7), borderWidth: wp(0.5),
     }, title: {
         fontSize: wp(4.2), fontWeight: "600",
-        marginBottom: hp(1), textTransform: "capitalize"
+        marginBottom: hp(1), textTransform: "capitalize", maxWidth: wp(44)
     }, statusBtn: {
         flexDirection: "row", alignItems: "center",
         alignSelf: "flex-start", paddingHorizontal: wp(5),
-        paddingVertical: hp(0.6), borderRadius: wp(2),
+        paddingVertical: hp(1), borderRadius: wp(2),
     }, statusText: {
         color: "#fff", fontSize: wp(3.8),
         marginRight: wp(2), fontWeight: "600",

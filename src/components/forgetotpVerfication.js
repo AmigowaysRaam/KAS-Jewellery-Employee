@@ -139,13 +139,12 @@ export default function ForgetOtpVerification({ route }) {
       >
         <View style={styles.container}>
           <LogoAnimated />
-
           <View style={{ width: wp(80), marginBottom: wp(4) }}>
             <Text style={styles.title}>{t("otp_verification")}</Text>
             <Text style={styles.subtitle}>
               {`${t("enter_the_otp_sent_to")} +91 ${data?.phone_number} ${t("to_reset_your_mpin")}`}
             </Text>
-            <Text style={styles.subtitle}>{sentOtp}</Text>
+            {/* <Text style={styles.subtitle}>{sentOtp}</Text> */}
           </View>
 
           <View style={styles.otpContainer}>

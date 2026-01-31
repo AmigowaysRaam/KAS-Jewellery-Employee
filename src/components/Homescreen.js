@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from "react";
 import {
-  ActivityIndicator, RefreshControl, ScrollView,
+  RefreshControl, ScrollView,
   StyleSheet, Text, View
 } from "react-native";
 import { useSelector } from "react-redux";
 import { getStoredLanguage } from "../../app/i18ns";
 import { COLORS } from "../../app/resources/colors";
+import HomeSkeleton from "../../homeSkelton";
 import { fetchData } from "./api/Api";
 import AssignedTask from "./AssignedTask";
 import Banner from "./Banner";
@@ -18,8 +19,8 @@ export default function Homescreen() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [langMenuMOdal, setOpenLangMenu] = useState(false);
   const [homepageData, setHomepageData] = useState(null);
-  const [loading, setLoading] = useState(true); 
-  const [refreshing, setRefreshing] = useState(false); 
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const siteDetails = useSelector((state) => state.auth?.siteDetails?.data[0]);
   const profileDetails = useSelector((state) => state?.auth?.profileDetails?.data);
   useEffect(() => {
@@ -78,10 +79,7 @@ export default function Homescreen() {
         }
       >
         {loading ? (
-          <View style={styles.loaderContainer}>
-            <ActivityIndicator size="large" color={COLORS.primary} />
-            <Text style={styles.loaderText}>Loading Homepage...</Text>
-          </View>
+          <HomeSkeleton />
         ) : homepageData ? (
           <>
             <Banner homepageData={homepageData} />

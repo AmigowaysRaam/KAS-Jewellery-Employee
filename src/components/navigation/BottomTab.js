@@ -1,5 +1,6 @@
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import React, { useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Animated, Image, ImageBackground, StyleSheet, Text,
   TouchableOpacity
@@ -22,6 +23,7 @@ const TAB_COUNT = 4;
 function CustomTabBar({ state, navigation }) {
   const indicatorAnim = useRef(new Animated.Value(0)).current;
   const tabWidth = wp(100) / TAB_COUNT;
+  const { t } = useTranslation();
   useEffect(() => {
     Animated.spring(indicatorAnim, {
       toValue: state.index * tabWidth,
@@ -81,7 +83,7 @@ function CustomTabBar({ state, navigation }) {
                 { color: isFocused ? "#fff" : "#C5A8A8" },
               ]}
             >
-              {route.name}
+              {t(route.name)}
             </Text>
           </TouchableOpacity>
         );

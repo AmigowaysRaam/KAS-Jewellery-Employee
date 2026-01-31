@@ -72,7 +72,7 @@ const TaskRow = () => {
           <Pressable onPress={() => navigation.navigate(task == 'My Tasks' ? "MyTaskListScreen" : 'AssignTaskListScreen', { status: null })
           }>
             <Animated.View
-              key={task}
+              key={index}
               style={{
                 transform: [{ translateX }],
                 opacity,

@@ -122,9 +122,11 @@ export default function LanguageMenu({ visible, onClose, onItemPress, loadData }
 
     /** Skeleton loader */
     const renderSkeleton = () => (
-        <View
-            style={[styles.menuItem, { backgroundColor: "#eee", height: hp(5), marginVertical: wp(1) }]}
-        />
+        <>
+            <View
+                style={[styles.menuItem, { backgroundColor: "#eee", height: hp(5), marginVertical: wp(1) }]}
+            />
+        </>
     );
     const [lang, setLang] = useState(null);
     useEffect(() => {
@@ -166,7 +168,7 @@ export default function LanguageMenu({ visible, onClose, onItemPress, loadData }
                     {/* Close icon */}
                     <View >
                         <TouchableOpacity style={styles.closeButton} onPress={closeMenu}>
-                            <Icon name="close" size={wp(5)} color="#333" />
+                            <Icon name="close" size={wp(7)} color="#333" />
                         </TouchableOpacity>
                     </View>
                     <View>
@@ -208,8 +210,8 @@ const styles = StyleSheet.create({
     },
     container: {
         position: "absolute",
-        top: hp(12),
-        width: wp(50),
+        top: hp(14),
+        width: wp(55),
         backgroundColor: COLORS.white,
         paddingVertical: hp(1),
         paddingHorizontal: wp(2),
@@ -238,7 +240,7 @@ const styles = StyleSheet.create({
         borderBottomColor: "#ccc",
     },
     menuText: {
-        fontSize: wp(4),
+        fontSize: wp(5),
         fontFamily: "Poppins_500Medium",
         textTransform: "capitalize",
         padding: hp(0.5), borderRadius: wp(2), paddingHorizontal: hp(2)

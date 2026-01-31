@@ -33,7 +33,7 @@ export default function CustomDropdown({
                 setSelectedItems(selectedObjs);
             } else {
                 // Single select
-                const selectedObj = data.find(d => d.label === selected);
+                const selectedObj = data.find(d => d.value === selected ||  d.label === selected);
                 if (selectedObj) setSelectedItems([selectedObj]);
             }
         }

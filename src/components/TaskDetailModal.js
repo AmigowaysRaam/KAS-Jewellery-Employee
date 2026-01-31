@@ -156,26 +156,28 @@ const TaskDetailModal = ({ visible, task, onClose, getStatusColor }) => {
         <Pressable style={styles.overlay} onPress={onClose} />
         <Animated.View style={[styles.modalContainer, { transform: [{ translateY }] }]}>
           <Pressable style={styles.closeButton} onPress={onClose}>
-            <Icon name="close" size={wp(7)} color="#fff" />
+            <Icon name="close" size={wp(8)} color="#fff" />
           </Pressable>
           <Text style={styles.modalTitle}>{task?.title}</Text>
-          {task.description != '' && <View style={styles.descriptionContainer}>
-            <ScrollView
-              style={styles.descriptionScroll}
-              contentContainerStyle={{ paddingVertical: hp(1) }}
-              showsVerticalScrollIndicator={true}
-            >
-              {parseHTML(task.description)}
-            </ScrollView>
-          </View>
-          }
+
+          {task?.description ? (
+            <View style={styles.descriptionContainer}>
+              <ScrollView
+                style={styles.descriptionScroll}
+                contentContainerStyle={{ paddingVertical: hp(1) }}
+                showsVerticalScrollIndicator={true}
+              >
+                {parseHTML(task.description)}
+              </ScrollView>
+            </View>
+          ) : null}
           <View style={styles.statusEditRow}>
             <View style={[styles.statusBadge, { backgroundColor: getStatusColor(task.status) }]}>
-              <Icon name="info" size={wp(4)} color="#fff" style={{ marginRight: wp(1) }} />
+              <Icon name="info" size={wp(5)} color="#fff" style={{ marginRight: wp(1) }} />
               <Text style={styles.statusText}>{task.status}</Text>
             </View>
             <TouchableOpacity style={styles.editButton} onPress={handleEdit}>
-              <Icon name="edit" size={wp(5)} color="#fff" />
+              <Icon name="edit" size={wp(5)} color={COLORS?.white} />
               <Text style={styles.editText}>{t("edit")}</Text>
             </TouchableOpacity>
           </View>
@@ -211,15 +213,15 @@ const TaskDetailModal = ({ visible, task, onClose, getStatusColor }) => {
           <View style={styles.datesRow}>
             <View style={styles.dateItem}>
               <View style={styles.dateRow}>
-                <Icon name="calendar-today" size={wp(4)} color="#888" style={{ marginRight: wp(1) }} />
-                <Text style={styles.label}>Assigned</Text>
+                <Icon name="calendar-today" size={wp(4)} color={COLORS?.primary} style={{ marginRight: wp(1) }} />
+                <Text style={styles.label}>{t("assigned_date")}</Text>
               </View>
               <Text style={styles.dateText}>{task.assigned_date}</Text>
             </View>
             <View style={styles.dateItem}>
               <View style={styles.dateRow}>
-                <Icon name="event" size={wp(4)} color="#888" style={{ marginRight: wp(1) }} />
-                <Text style={styles.label}>Due</Text>
+                <Icon name="event" size={wp(4)} color={COLORS?.primary} style={{ marginRight: wp(1) }} />
+                <Text style={styles.label}>{t("due_date")}</Text>
               </View>
               <Text style={styles.dateText}>{task.due_date}</Text>
             </View>
@@ -267,9 +269,7 @@ const TaskDetailModal = ({ visible, task, onClose, getStatusColor }) => {
     </Modal>
   );
 };
-
 export default TaskDetailModal;
-
 const styles = StyleSheet.create({
   overlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.4)" },
 
@@ -289,18 +289,18 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 15,
   },
-
   closeButton: {
     position: "absolute",
     top: -wp(5),
     right: wp(5),
-    width: wp(10),
-    height: wp(10),
-    borderRadius: wp(5),
+    width: wp(11),
+    height: wp(11),
+    borderRadius: wp(5.5),
     backgroundColor: COLORS.primary,
     justifyContent: "center",
     alignItems: "center",
     zIndex: 10,
+    borderWidth: wp(0.8), borderColor: "#FFF"
   },
 
   modalTitle: {
@@ -326,7 +326,6 @@ const styles = StyleSheet.create({
     lineHeight: hp(3),
     marginBottom: hp(1),
   },
-
   statusEditRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -366,7 +365,7 @@ const styles = StyleSheet.create({
   datesRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: hp(2) },
   dateItem: { flex: 1 },
   dateRow: { flexDirection: "row", alignItems: "center" },
-  label: { fontSize: wp(3.2), fontFamily: "Poppins_400Regular", color: "#888" },
+  label: { fontSize: wp(3.2), fontFamily: "Poppins_400Regular", color: COLORS?.primary },
   dateText: { fontSize: wp(3.8), fontFamily: "Poppins_500Medium", marginTop: hp(0.3), color: "#333" },
 
   audioContainer: {

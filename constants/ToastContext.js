@@ -1,16 +1,15 @@
 import React, { createContext, useContext, useRef, useState } from "react";
 import {
-    Animated,
-    StyleSheet,
-    Text
+    Animated, Image,
+    StyleSheet, Text, View,
 } from "react-native";
-import Icon from "react-native-vector-icons/Ionicons";
 import { hp, wp } from "../app/resources/dimensions";
+const appIcon = require("../assets/amigowayslogo.jpg");
 const ToastContext = createContext();
 export const useToast = () => useContext(ToastContext);
+
 export const ToastProvider = ({ children }) => {
     const [toast, setToast] = useState(null);
-
     const slideAnim = useRef(new Animated.Value(-hp(10))).current;
     const opacityAnim = useRef(new Animated.Value(0)).current;
 
@@ -48,14 +47,15 @@ export const ToastProvider = ({ children }) => {
         }, duration);
     };
 
-    const getIcon = (type) => {
+    // Background colors by type
+    const getBackgroundColor = (type) => {
         switch (type) {
             case "success":
-                return "checkmark-circle";
+                return "#2ecc71";
             case "error":
-                return "close-circle";
+                return "#e74c3c";
             default:
-                return "information-circle";
+                return "#34495e"; // info
         }
     };
 
@@ -66,61 +66,56 @@ export const ToastProvider = ({ children }) => {
                 <Animated.View
                     style={[
                         styles.toast,
-                        styles[toast.type],
+                        { backgroundColor: getBackgroundColor(toast.type) },
                         {
                             transform: [{ translateY: slideAnim }],
                             opacity: opacityAnim,
                         },
                     ]}
                 >
-                    <Icon
-                        name={getIcon(toast.type)}
-                        size={wp(5)}
-                        color="#fff"
-                        style={styles.icon}
-                    />
-                    <Text numberOfLines={1} style={styles.text}>{toast.message}</Text>
+                    <Image source={appIcon} style={styles.icon} />
+                    <View style={styles.textContainer}>
+                        <Text numberOfLines={2} style={styles.text}>
+                            {toast.message}
+                        </Text>
+                    </View>
                 </Animated.View>
             )}
         </ToastContext.Provider>
     );
 };
-
 const styles = StyleSheet.create({
     toast: {
         position: "absolute",
+        top: hp(4),
         alignSelf: "center",
         flexDirection: "row",
         alignItems: "center",
         paddingHorizontal: wp(5),
-        paddingVertical: wp(2),
-        borderRadius: wp(10),
+        paddingVertical: hp(1.2),
+        borderRadius: wp(12),
         zIndex: 9999,
         maxWidth: wp(90),
-        // Shadow
         shadowColor: "#000",
         shadowOpacity: 0.25,
         shadowRadius: 6,
         shadowOffset: { width: 0, height: 4 },
         elevation: 8,
     },
+    textContainer: {
+        flexShrink: 1,
+    },
     text: {
         color: "#fff",
         fontSize: wp(3.6),
         fontFamily: "Poppins_400Regular",
-        lineHeight: wp(6),
-        maxWidth: wp(65),
+        lineHeight: wp(5.5),
     },
     icon: {
-        marginRight: wp(2),
-    },
-    success: {
-        backgroundColor: "#2ecc71",
-    },
-    error: {
-        backgroundColor: "#e74c3c",
-    },
-    info: {
-        backgroundColor: "#34495e",
+        width: wp(7),
+        height: wp(7),
+        borderRadius: wp(3.5),
+        marginRight: wp(3),
+        resizeMode: "cover",
     },
 });

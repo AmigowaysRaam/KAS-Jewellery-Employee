@@ -150,7 +150,7 @@ export default function OtpVerfication({ route }) {
             <Text style={styles.subtitle}>
               {`${t("please_enter_otp")} +91 ${data[0]?.phone_number}`}
             </Text>
-            {<Text style={styles.subtitle}>{sentOtp}</Text>}
+            {/* {<Text style={styles.subtitle}>{sentOtp}</Text>} */}
             {/* <Text>{JSON.stringify(data[0])}</Text> */}
           </View>
 

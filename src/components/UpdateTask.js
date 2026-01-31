@@ -196,11 +196,12 @@ export default function UpdateTask({ route }) {
         });
         const ticket = response?.data?.ticket_detail;
         setTicketDetails(ticket);
-        // Alert.alert('',JSON.stringify(ticket,null,2))
+        // Alert.alert('', JSON.stringify(ticket, null, 2))
         const plainText = ticket?.description?.replace(/<[^>]+>/g, "") || "";
         setDescription(plainText);
-        setSelectedStatus(ticket?.status);
-        setSelectedPriority(ticket?.priority);
+        setSelectedStatus(ticket?.statusv);
+        setSelectedPriority(ticket?.priorityv);
+        // Alert.alert(ticket?.priorityv)
         setDescAudio({ uri: ticket?.audio });
         setImages(
           ticket?.image?.map((uri) => ({ uri, source: "API" })) || []
@@ -222,11 +223,15 @@ export default function UpdateTask({ route }) {
     if (!selectedStatus) errors.status = t("pls_selct_status");
     if (!selectedPriority) errors.priority = t("pls_selct_priotty");
     setErrors(errors);
+    setNewErrors(errors)
     return Object.keys(errors).length === 0;
   };
   // Update task
   const handleUpdateTask = async () => {
-    if (!validate()) return;
+    if (!validate()) {
+      showToast(t("failed_to_update_task"), "error");
+      return
+    };
     setLoading(true);
     try {
       const formData = new FormData();
@@ -234,7 +239,7 @@ export default function UpdateTask({ route }) {
       formData.append("description", description);
       formData.append("status", selectedStatus);
       formData.append("priority", selectedPriority);
-      // Append images
+      formData.append("user_id", profileDetails?.id);
       images.forEach((img, index) => {
         const uriParts = img.uri.split(".");
         const fileType = uriParts[uriParts.length - 1];
@@ -244,7 +249,14 @@ export default function UpdateTask({ route }) {
           type: `image/${fileType}`,
         });
       });
-      const response = await fetch("https://kasjewellery.in/app-employee-update-task-description", {
+      // if (descAudio) {
+      //   formData.append("audio", {
+      //     uri: descAudio.uri,
+      //     type: descAudio.type || "audio/mpeg",
+      //     name: `${descAudio.name}.mp3` || "DummyAudio.mp3",
+      //   });
+      // }
+      const response = await fetch("https://kasjewellery.in/app-employee-update-task", {
         method: "POST",
         headers: { Accept: "application/json" },
         body: formData,
@@ -289,13 +301,10 @@ export default function UpdateTask({ route }) {
       setImages((prev) => [...prev, ...selected]);
     }
   };
-
   const removeImage = (index) => {
     setImages((prev) => prev.filter((_, i) => i !== index));
   };
-
   const listData = ["title", "status", "priority", "description", "images", "button"];
-
   const renderItem = ({ item }) => {
     switch (item) {
       case "title":
@@ -314,7 +323,7 @@ export default function UpdateTask({ route }) {
               data={siteDetails?.ticketstatusList || []}
               placeholder={t("task_status")}
               selected={selectedStatus}
-              onSelect={setSelectedStatus}
+              onSelect={(item) => setSelectedStatus(item?.value)}
               Value={selectedStatus}
             />
             {newErrors.status && <Text style={styles.errorText}>{newErrors.status}</Text>}
@@ -328,7 +337,7 @@ export default function UpdateTask({ route }) {
               data={siteDetails?.prioritiesList || []}
               placeholder={t("choose_priority")}
               selected={selectedPriority}
-              onSelect={setSelectedPriority}
+              onSelect={(item) => setSelectedPriority(item?.value)}
             />
             {newErrors.priority && <Text style={styles.errorText}>{newErrors.priority}</Text>}
           </>
@@ -435,13 +444,13 @@ export default function UpdateTask({ route }) {
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <CommonHeader title={t("update_task")} showBackButton onBackPress={() => navigation.goBack()} />
-
       {loading ? (
         <FlatList
           style={styles.container}
           data={[1, 2, 3, 4, 5]}
-          renderItem={() => <View style={[styles.skeletonBox, { width: "100%", height: hp(12), marginBottom: hp(1.5) }]} />}
+          renderItem={() => <View style={[styles.skeletonBox, { width: "100%", height: hp(7), marginBottom: hp(1.5) }]} />}
           keyExtractor={(item, index) => `skeleton-${index}`}
+          ListFooterComponent={<ActivityIndicator size={wp(8)} color={COLORS?.primary} />}
           contentContainerStyle={{ padding: wp(5), flexGrow: 1 }}
         />
       ) : (
@@ -459,9 +468,6 @@ export default function UpdateTask({ route }) {
           }}
         />
       )}
-
-      {/* Image Picker Modal */}
-      {/* Image Picker Modal */}
       <Modal transparent visible={modalVisible} animationType="fade">
         <Pressable
           style={styles.modalBackground}

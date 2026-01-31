@@ -1,10 +1,11 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import * as ImagePicker from "expo-image-picker";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
+  Image,
   Keyboard, KeyboardAvoidingView,
   Platform, StyleSheet, Text, TextInput,
   TouchableOpacity, View
@@ -25,7 +26,6 @@ export default function TaskMessages({ route }) {
   const { showToast } = useToast();
   const { task } = route?.params || {};
   const { t } = useTranslation()
-
   const profileDetails = useSelector(state => state?.auth?.profileDetails?.data);
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(false); // header/task loader
@@ -50,35 +50,55 @@ export default function TaskMessages({ route }) {
       hideSub.remove();
     };
   }, []);
-
   const openImageViewer = (uri) => {
     setViewerUri(uri);
     setViewerVisible(true);
   };
+  const loadCommentsD = async () => {
+    const lang = await getStoredLanguage();
+    setLoading(true);
+    try {
+      const response = await fetchData("app-employee-task-detail", "POST", {
+        id: task?.id,
+        lang: lang,
+        user_id: profileDetails?.id
+      });
+      setticketDetails(response?.data?.ticket_detail);
+      setComments(response?.data?.ticket_comments || []);
+      // Alert.alert('', JSON.stringify(task?.id, null, 2))
+    } catch (err) {
+      console.log(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  // Fetch task comments/details
-  useEffect(() => {
-    const loadComments = async () => {
-      const lang = await getStoredLanguage();
-      setLoading(true);
-      try {
-        const response = await fetchData("app-employee-task-detail", "POST", {
-          id: task?.id,
-          lang: lang,
-          user_id: profileDetails?.id
-        });
-        setticketDetails(response?.data?.ticket_detail);
-        // Alert.alert('TEST', JSON.stringify(response?.data?.ticket_detail?.image))
-        setComments(response?.data?.comments || []);
-      } catch (err) {
-        console.log(err);
-      } finally {
-        setLoading(false);
+  useFocusEffect(
+    useCallback(() => {
+      const loadComments = async () => {
+        const lang = await getStoredLanguage();
+        setLoading(true);
+        try {
+          const response = await fetchData("app-employee-task-detail", "POST", {
+            id: task?.id,
+            lang: lang,
+            user_id: profileDetails?.id
+          });
+          setticketDetails(response?.data?.ticket_detail);
+          setComments(response?.data?.ticket_comments || []);
+        } catch (err) {
+          console.log(err);
+        } finally {
+          setLoading(false);
+        }
+      };
+      if (task?.id) {
+        loadComments();
       }
-    };
-    if (task?.id) loadComments();
-  }, [task]);
+    }, [task])
+  );
   const pickCamera = async () => {
+
     setModalVisible(false);
     const result = await ImagePicker.launchCameraAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.7 });
     if (!result.canceled && result.assets?.[0]?.uri) {
@@ -119,7 +139,7 @@ export default function TaskMessages({ route }) {
       formData.append("task_id", task.id.toString());
       formData.append("description", text.trim());
       images.forEach((img, index) => {
-        formData.append("images[]", {
+        formData.append("image[]", {
           uri: img.uri,
           name: `comment_${Date.now()}_${index}.jpg`,
           type: img.mimeType || "image/jpeg",
@@ -153,6 +173,7 @@ export default function TaskMessages({ route }) {
         setText("");
         setImages([]);
         setAudioAttachment(null);
+        loadCommentsD();
         setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 200);
       } else {
         showToast(resultJson?.message || "Failed to send comment", "error");
@@ -179,8 +200,8 @@ export default function TaskMessages({ route }) {
         task={task}
         flatListRef={flatListRef}
         openImageViewer={openImageViewer}
+        loadData={loadCommentsD}
       />
-
       {/* INPUT AREA */}
       <View style={styles.inputContainer}>
         {audioAttachment && (
@@ -222,13 +243,13 @@ export default function TaskMessages({ route }) {
           </TouchableOpacity>
         </View>
       </View>
-
       <AttachmentModal
         visible={modalVisible}
         onClose={() => setModalVisible(false)}
         onCamera={pickCamera}
         onFile={pickFile}
         onAudioRecorded={handleAudioRecorded}
+        hideMic={true}
       />
       <ImageViewerModal
         visible={viewerVisible}

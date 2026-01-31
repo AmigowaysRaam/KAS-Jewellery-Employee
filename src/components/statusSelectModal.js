@@ -2,11 +2,12 @@ import React, { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import {
     Animated,
+    FlatList,
     Modal,
     Pressable,
     StyleSheet,
     Text,
-    View
+    View,
 } from "react-native";
 import { COLORS } from "../../app/resources/colors";
 import { hp, wp } from "../../app/resources/dimensions";
@@ -38,6 +39,23 @@ export default function StatusSelectModal({
         }).start(onClose);
     };
 
+    const renderOption = ({ item }) => (
+        <Pressable
+            style={({ pressed }) => [
+                styles.option,
+                pressed && { backgroundColor: "#f0f0f0" },
+            ]}
+            onPress={() => {
+                onSelect?.(item?.value);
+                closeModal();
+            }}
+        >
+            <Text style={styles.optionText}>
+                {item?.label || item?.name || item}
+            </Text>
+        </Pressable>
+    );
+
     return (
         <Modal
             visible={visible}
@@ -45,83 +63,85 @@ export default function StatusSelectModal({
             animationType="none"
             onRequestClose={closeModal}
         >
-            {/* Overlay */}
             <Pressable style={styles.overlay} onPress={closeModal} />
-            {/* Bottom Sheet */}
             <Animated.View style={[styles.sheet, { transform: [{ translateY }] }]}>
-                {/* Handle */}
-                <View style={styles.header}>
-                    {/* <Pressable style={styles.closeBtn} onPress={() =>
-                        Alert.alert("jkhjkhjkh")}>
-                        <Ionicons name="close" size={wp(8)} color="#333" />
-                    </Pressable> */}
+                {/* Handle for better UX */}
+                <View style={styles.handleContainer}>
+                    <View style={styles.handle} />
                 </View>
-                {/* Title */}
+
                 <Text style={styles.title}>{t("select_status")}</Text>
 
-                {/* Status Options */}
                 <View style={styles.optionsContainer}>
                     {statuses.length === 0 ? (
                         <Text style={styles.empty}>{t("no_status_available")}</Text>
                     ) : (
-                        statuses.map((status, index) => (
-                            <Pressable
-                                key={index}
-                                style={styles.option}
-                                onPress={() => {
-                                    onSelect?.(status?.value);
-                                    closeModal();
-                                }}
-                            >
-                                <Text style={styles.optionText}>
-                                    {status?.label || status?.name || status}
-                                </Text>
-                            </Pressable>
-                        ))
+                        <FlatList
+                            data={statuses}
+                            keyExtractor={(_, index) => index.toString()}
+                            renderItem={renderOption}
+                            bounces={false}
+                        />
                     )}
                 </View>
             </Animated.View>
         </Modal>
     );
 }
+
 const styles = StyleSheet.create({
     overlay: {
         ...StyleSheet.absoluteFillObject,
         backgroundColor: "rgba(0,0,0,0.35)",
     },
     sheet: {
-        position: "absolute", bottom: 0,
-        width: "100%", backgroundColor: "#fff", borderTopLeftRadius: wp(5),
-        borderTopRightRadius: wp(5), paddingHorizontal: wp(4),
-        paddingBottom: hp(4), paddingTop: hp(2),
+        position: "absolute",
+        bottom: 0,
+        width: "100%",
+        backgroundColor: "#fff",
+        borderTopLeftRadius: wp(6),
+        borderTopRightRadius: wp(6),
+        paddingHorizontal: wp(5),
+        paddingBottom: hp(4),
+        paddingTop: hp(2.5),
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: -4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 10,
+        elevation: 10,
     },
-    header: {
-        flexDirection: "row", justifyContent: "center",
+    handleContainer: {
         alignItems: "center",
-        paddingVertical: wp(2)
-
+        marginBottom: hp(1.5),
     },
     handle: {
-        width: wp(12), height: hp(0.6), backgroundColor: "#ccc",
+        width: wp(12),
+        height: hp(0.7),
+        backgroundColor: "#ccc",
         borderRadius: wp(3),
-
-    },
-    closeBtn: {
-        position: "absolute", right: 0,
-        top: hp(1.6),
     },
     title: {
-        fontSize: wp(4.6), fontFamily: "Poppins_600SemiBold",
+        fontSize: wp(4.6),
+        fontFamily: "Poppins_600SemiBold",
         color: COLORS.primary,
-        marginBottom: hp(2),
-    }, optionsContainer: {
-
-    }, option: {
-        paddingVertical: hp(1.8), borderBottomWidth: 1, width: wp(90),
-        borderColor: "#eee", paddingHorizontal: wp(2)
-    }, optionText: {
+        textAlign: "center",
+        marginBottom: hp(2.5),
+    },
+    optionsContainer: {
+        maxHeight: hp(50),
+    },
+    option: {
+        paddingVertical: hp(1),
+        borderBottomWidth: 1,
+        borderColor: "#eee",
+        borderRadius: wp(2),
+        marginVertical: hp(0.5),
+        paddingHorizontal: wp(2.5),
+    },
+    optionText: {
         fontSize: wp(4),
-        fontFamily: "Poppins_600SemiBold", color: "#333",
+        fontFamily: "Poppins_600SemiBold",
+        color: "#333",
         textAlign: "center",
     },
     empty: {

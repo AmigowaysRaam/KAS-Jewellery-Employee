@@ -254,7 +254,7 @@ export default function AssignedTasklistScreen() {
             ListHeaderComponent={<>
               <DateandDownloadTask
                 onDateSelect={setSelectedDateRange}
-                // onDownload={() => console.log("Download clicked")}
+              // onDownload={() => console.log("Download clicked")}
               /></>}
             contentContainerStyle={{ paddingBottom: hp(8) }}
             data={tasks}
@@ -309,7 +309,10 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   cardHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: hp(1) },
-  taskTitle: { fontSize: wp(4), fontFamily: "Poppins_600SemiBold", flex: 1, color: "#222", textTransform: "capitalize" },
+  taskTitle: {
+    fontSize: wp(4), fontFamily: "Poppins_600SemiBold", flex: 1, color: "#222", textTransform: "capitalize",
+    maxWidth: wp(52)
+  },
   rightHeader: { flexDirection: "row", alignItems: "center" },
   voiceIcon: { width: wp(7), height: wp(7), borderRadius: wp(3.5), backgroundColor: "#eef4ff", justifyContent: "center", alignItems: "center", marginRight: wp(2) },
   priorityBadge: { paddingHorizontal: wp(3), paddingVertical: hp(0.5), borderRadius: wp(5), marginRight: wp(2) },
