@@ -1,10 +1,10 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { getMessaging } from "@react-native-firebase/messaging";
 import { useNavigation } from "@react-navigation/native";
 import React, { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
-  ActivityIndicator,
-  KeyboardAvoidingView, Platform, Pressable, TextInput as RNTextInput,
+  ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, TextInput as RNTextInput,
   ScrollView, StyleSheet, Text, TouchableOpacity, View
 } from "react-native";
 import { useDispatch } from "react-redux";
@@ -22,10 +22,22 @@ export default function MpinLoginScreen() {
   const [error, setError] = useState("");
   const [userId, setUserId] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [fcmToken, setfcmToken] = useState(null);
+
   const mpinRef = useRef([]);
   /* 🔄 LOAD USER ID FROM ASYNC STORAGE */
   useEffect(() => {
     loadUserId();
+  }, []);
+  useEffect(() => {
+    if (Platform.OS !== 'android') return;
+    const getToken = async () => {
+      const token = await getMessaging().getToken();
+      console.log('FCM Token:', token);
+      setfcmToken(token)
+      // Alert.alert('FCM Token', token);
+    };
+    getToken();
   }, []);
   const loadUserId = async () => {
     try {
@@ -116,6 +128,7 @@ export default function MpinLoginScreen() {
         {
           user_id: userId,
           mpin: mpinValue,
+          fcm_token: fcmToken
         }
       );
       if (response?.text === "Success") {

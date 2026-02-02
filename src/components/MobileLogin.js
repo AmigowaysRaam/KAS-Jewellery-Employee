@@ -2,7 +2,8 @@ import { useNavigation } from "@react-navigation/native";
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
-  ActivityIndicator, Keyboard, KeyboardAvoidingView,
+  ActivityIndicator,
+  Keyboard, KeyboardAvoidingView,
   Platform, StyleSheet, Text, TouchableOpacity,
   TouchableWithoutFeedback, View
 } from "react-native";
@@ -25,7 +26,7 @@ export default function MobileLogin() {
 
   useEffect(() => {
     if (__DEV__) {
-      setPhone("9999999999");
+      setPhone("9876543210");
     }
     loadTranslationsFromAPI("en");
   }, []);
@@ -47,9 +48,14 @@ export default function MobileLogin() {
       const mobileLData = await fetchData('app-employee-login', 'POST', {
         phone_number: phone
       });
+      // Alert.alert("", JSON.stringify(mobileLData))
       if (mobileLData?.text === "Success") {
         showToast(mobileLData?.message, "success");
         navigation.replace("OtpVerfication", mobileLData);
+      }
+      else {
+        showToast(mobileLData?.message, "error");
+        // navigation.replace("OtpVerfication", mobileLData);
       }
     } catch (err) {
       console.log("Error saving profile:", err);
@@ -79,7 +85,7 @@ export default function MobileLogin() {
             <TextInput
               maxLength={10}
               keyboardType="phone-pad"
-              style={[styles.input, { flex: 1, fontFamily: "Poppins_400Regular",lineHeight: hp(2.5) }]}
+              style={[styles.input, { flex: 1, fontFamily: "Poppins_400Regular", lineHeight: hp(2.5) }]}
               value={phone}
               onChangeText={(text) => setPhone(text.replace(/[^0-9]/g, ""))}
               placeholder={t("enter_mobile_number")}
@@ -116,65 +122,40 @@ export default function MobileLogin() {
 }
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: "#fff",
-    alignItems: "center",
+    flex: 1, backgroundColor: "#fff", alignItems: "center",
     paddingTop: hp(10),
   },
   logoContainer: {
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: "center", justifyContent: "center",
     marginBottom: hp(2),
-  },
-  logo: {
-    width: wp(80),
-    height: hp(28),
-  },
+  }, logo: { width: wp(80), height: hp(28), },
   phoneInputWrapper: {
     flexDirection: "row",
-    width: wp(90),
-    height: hp(6),
-    borderRadius: wp(1),
-    backgroundColor: "#EEEEEE",
-    alignItems: "center",
-    marginBottom: hp(1),
+    width: wp(90), height: hp(6), borderRadius: wp(1), backgroundColor: "#EEEEEE",
+    alignItems: "center", marginBottom: hp(1),
     overflow: "hidden",
   },
   countryCodeContainer: {
-    paddingHorizontal: wp(3),
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#DDD",
+    paddingHorizontal: wp(3), justifyContent: "center",
+    alignItems: "center", backgroundColor: "#DDD",
     height: "100%",
   },
   countryCodeText: {
-    fontSize: wp(4),
-    color: "#000",
-    fontFamily: "Poppins_400Regular",
+    fontSize: wp(4), color: "#000",
+    fontFamily: "Poppins_600SemiBold", lineHeight: hp(2)
   },
   input: {
-    height: "100%",
-    color: "#000",
-    paddingHorizontal: wp(2),
+    height: "100%", color: "#000", paddingHorizontal: wp(2),
   },
   errorText: {
-    width: wp(90),
-    color: "red",
-    marginBottom: hp(1),
+    width: wp(90), color: "red", marginBottom: hp(1),
     fontSize: wp(3.5),
     fontFamily: "Poppins_400Regular",
-  },
-  button: {
-    width: wp(90),
-    height: hp(5.5),
-    backgroundColor: COLORS.primary,
-    borderRadius: wp(1),
-    alignItems: "center",
-    justifyContent: "center",
+  }, button: {
+    width: wp(90), height: hp(5.5),
+    backgroundColor: COLORS.primary, borderRadius: wp(1),
+    alignItems: "center", justifyContent: "center",
     marginTop: hp(2),
   },
-  buttonText: {
-    color: "#fff",
-    lineHeight: wp(8),
-  },
+  buttonText: { color: "#fff", lineHeight: wp(8), },
 });

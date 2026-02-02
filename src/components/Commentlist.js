@@ -6,17 +6,19 @@ import TaskCard from "./TaskCard";
 export default function CommentList({ comments, loading, ticketDetails, task, flatListRef, openImageViewer,
   loadData
 }) {
-  const renderComment = ({ item }) => (
+  const renderComment = ({ item, index }) => (
     <View style={styles.commentRow}>
       {/* <Text style={styles.commentUser}>{JSON.stringify(item?.audio, null, 2)}</Text> */}
-      <View style={styles.commentBubble}>
+      <View style={[styles.commentBubble, {
+        backgroundColor: index % 2 == 0 ? "#f1f1f1" : "#ccc"
+      }]}>
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
           <Text numberOfLines={1} style={styles.commentUser}>{item.user_name}</Text>
           <Text style={[{
             fontSize: wp(2.5), color: COLORS?.primary, fontFamily: "Poppins_600SemiBold",
           }]}>{item.created}</Text>
         </View>
-        {item.description && <Text style={styles.commentText}>{item?.description}</Text>}
+        {item?.description && <Text style={styles.commentText}>{item?.description}</Text>}
         {item?.images?.length > 0 && (
           <ScrollView
             horizontal
@@ -24,7 +26,6 @@ export default function CommentList({ comments, loading, ticketDetails, task, fl
             style={{ marginVertical: hp(1) }}
           >
             {item.images.map((uri, idx) => (
-              // openImageViewer
               <Pressable
                 key={idx}
                 onPress={() => openImageViewer(uri)}>
@@ -64,6 +65,7 @@ export default function CommentList({ comments, loading, ticketDetails, task, fl
       ref={flatListRef}
       data={comments}
       renderItem={renderComment}
+      keyExtractor={(item, index) => item.id?.toString() || index.toString()}
       ListHeaderComponent={renderHeader}
       keyboardShouldPersistTaps="handled"
       contentContainerStyle={{ paddingHorizontal: wp(3), paddingBottom: hp(5) }}
@@ -73,7 +75,7 @@ export default function CommentList({ comments, loading, ticketDetails, task, fl
 const styles = StyleSheet.create({
   sectionTitle: { fontSize: wp(4), fontFamily: "Poppins_600SemiBold", marginTop: hp(1), color: COLORS.primary },
   commentRow: { marginBottom: hp(1) },
-  commentBubble: { backgroundColor: "#f1f1f1", borderRadius: wp(2), padding: wp(3) },
+  commentBubble: { borderRadius: wp(2), padding: wp(3) },
   commentUser: { fontFamily: "Poppins_600SemiBold", fontSize: wp(3.4), marginBottom: hp(0.5), color: COLORS?.primary, textTransform: "uppercase", maxWidth: wp(60) },
   commentText: { fontFamily: "Poppins_400Regular", fontSize: wp(4), color: "#000" },
   commentImage: {

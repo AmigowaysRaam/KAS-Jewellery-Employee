@@ -10,24 +10,52 @@ import {
   Poppins_900Black, Poppins_900Black_Italic,
   useFonts,
 } from "@expo-google-fonts/poppins";
+
 import NetInfo from "@react-native-community/netinfo";
-import { NavigationContainer } from "@react-navigation/native";
-import React, { useEffect, useState } from "react";
+import Constants from "expo-constants";
+import * as Device from "expo-device";
+import * as Notifications from "expo-notifications";
+import React, { useEffect, useRef, useState } from "react";
 import {
-  Linking, Platform,
+  Alert,
+  Linking,
+  Platform,
   StyleSheet,
-  Text, TextInput,
+  Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+
+import { createNavigationContainerRef, NavigationContainer } from "@react-navigation/native";
 import { Provider } from "react-redux";
-import { ToastProvider } from './constants/ToastContext';
+import { ToastProvider } from "./constants/ToastContext";
 import StackNavi from "./src/components/navigation/StackNavi";
 import { store } from "./src/components/store/store";
+
+export const navigationRef = createNavigationContainerRef();
+
+export function navigate(name, params) {
+  if (navigationRef.isReady()) {
+    navigationRef.navigate(name, params);
+  }
+}
+
+/* 🔔 SHOW NOTIFICATION EVEN IN FOREGROUND */
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+  }),
+});
+
 export default function App() {
   const [isConnected, setIsConnected] = useState(true);
-  /** 🔤 Load ALL fonts */
+  const notificationListener = useRef(null);
+  const responseListener = useRef(null);
+  /** 🔤 Fonts */
   const [fontsLoaded] = useFonts({
     Poppins_100Thin, Poppins_100Thin_Italic,
     Poppins_200ExtraLight, Poppins_200ExtraLight_Italic,
@@ -39,53 +67,69 @@ export default function App() {
     Poppins_800ExtraBold, Poppins_800ExtraBold_Italic,
     Poppins_900Black, Poppins_900Black_Italic,
   });
-
+  /** 🔔 Push notifications */
+  useEffect(() => {
+    registerForPushNotificationsAsync().then(token => {
+      if (token) {
+        console.log("✅ Expo Push Token:", token);
+      }
+    });
+    // Foreground receive
+    notificationListener.current =
+      Notifications.addNotificationReceivedListener(notification => {
+        console.log("📩 Foreground notification:", notification);
+      });
+    // Tap notification
+    responseListener.current =
+      Notifications.addNotificationResponseReceivedListener(response => {
+        console.log("👉 Notification tapped:", response);
+        // Navigate to NotificationScreen
+        navigate("Notification");
+      });
+    return () => {
+      notificationListener.current?.remove();
+      responseListener.current?.remove();
+    };
+  }, []);
   /** 🌐 Network listener */
   useEffect(() => {
     const unsubscribe = NetInfo.addEventListener(state => {
       setIsConnected(state.isConnected);
     });
-
-    return () => unsubscribe();
+    return unsubscribe;
   }, []);
-  /** ⚙️ Open device settings */
+
+  /** ⚙️ Open settings */
   const openSettings = () => {
-    if (Platform.OS === "ios") {
-      Linking.openURL("App-Prefs:root=WIFI");
-    } else {
-      Linking.openSettings();
-    }
+    Platform.OS === "ios"
+      ? Linking.openURL("App-Prefs:root=WIFI")
+      : Linking.openSettings();
   };
   if (!fontsLoaded) return null;
-  /** 🚫 Disable font scaling globally */
-  if (Text.defaultProps == null) Text.defaultProps = {};
+  /** 🚫 Disable font scaling */
+  Text.defaultProps = Text.defaultProps || {};
   Text.defaultProps.allowFontScaling = false;
-  if (TextInput.defaultProps == null) TextInput.defaultProps = {};
+  TextInput.defaultProps = TextInput.defaultProps || {};
   TextInput.defaultProps.allowFontScaling = false;
+
   return (
     <Provider store={store}>
       <SafeAreaView style={{ flex: 1 }}>
         {!isConnected ? (
-          /** 🔴 CENTERED OFFLINE VIEW */
           <View style={styles.centerContainer}>
             <View style={styles.box}>
               <Text style={styles.title}>No Internet Connection</Text>
               <Text style={styles.subtitle}>
                 Please check your network settings
               </Text>
-              <TouchableOpacity
-                activeOpacity={0.8}
-                style={styles.button}
-                onPress={openSettings}
-              >
+              <TouchableOpacity style={styles.button} onPress={openSettings}>
                 <Text style={styles.buttonText}>Open Settings</Text>
               </TouchableOpacity>
             </View>
           </View>
         ) : (
-          /** 🟢 NORMAL APP FLOW */
           <ToastProvider>
-            <NavigationContainer>
+            <NavigationContainer ref={navigationRef}>
               <StackNavi />
             </NavigationContainer>
           </ToastProvider>
@@ -94,6 +138,45 @@ export default function App() {
     </Provider>
   );
 }
+
+/* 🔑 REGISTER FOR EXPO PUSH */
+async function registerForPushNotificationsAsync() {
+  if (!Device.isDevice) {
+    Alert.alert("Must use a physical device");
+    return;
+  }
+  const { status: existingStatus } =
+    await Notifications.getPermissionsAsync();
+  let finalStatus = existingStatus;
+
+  if (existingStatus !== "granted") {
+    const { status } = await Notifications.requestPermissionsAsync();
+    finalStatus = status;
+  }
+
+  if (finalStatus !== "granted") {
+    Alert.alert("Permission denied");
+    return;
+  }
+
+  const projectId =
+    Constants.expoConfig?.extra?.eas?.projectId ??
+    Constants.easConfig?.projectId;
+
+  const token = (await Notifications.getExpoPushTokenAsync({
+    projectId,
+  })).data;
+
+  if (Platform.OS === "android") {
+    await Notifications.setNotificationChannelAsync("default", {
+      name: "default",
+      importance: Notifications.AndroidImportance.MAX,
+    });
+  }
+
+  return token;
+}
+
 const styles = StyleSheet.create({
   centerContainer: {
     flex: 1,

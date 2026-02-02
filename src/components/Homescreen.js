@@ -1,3 +1,4 @@
+import Constants from 'expo-constants';
 import React, { useEffect, useState } from "react";
 import {
   RefreshControl, ScrollView,
@@ -15,6 +16,8 @@ import LanguageMenu from "./LanguageMenu";
 import MyTask from "./MyTask";
 import SideMenu from "./Sidemenu";
 import TaskRow from "./TaskRow";
+
+
 export default function Homescreen() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [langMenuMOdal, setOpenLangMenu] = useState(false);
@@ -31,7 +34,12 @@ export default function Homescreen() {
   const [lang, setLang] = useState(null);
   const fetchHomepageData = async () => {
     const lang = await getStoredLanguage();
+
     if (!profileDetails?.id) return;
+    // Alert.alert(JSON.stringify(bId))
+
+    const packageName = Constants.manifest?.android?.package || Constants.manifest?.ios?.bundleIdentifier;
+    console.log(packageName);
     try {
       if (!refreshing) setLoading(true);
       const response = await fetchData(

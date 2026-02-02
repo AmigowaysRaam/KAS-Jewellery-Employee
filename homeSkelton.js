@@ -1,23 +1,14 @@
 import React, { useEffect, useRef } from "react";
 import { Animated, Dimensions, FlatList, StyleSheet, View } from "react-native";
 import { COLORS } from "./app/resources/colors";
-
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
-
-// Helper functions for responsive design
 const wp = (percentage) => (SCREEN_WIDTH * percentage) / 100;
 const hp = (percentage) => (SCREEN_HEIGHT * percentage) / 100;
-
 const PRODUCT_WIDTH = (SCREEN_WIDTH - 30) / 2; // 2 columns with 10px spacing
-
 const HomeLoader = () => {
-
     const Skeleton = ({ width, height, borderRadius, style }) => {
         const shimmerAnim = useRef(new Animated.Value(-1)).current;
-
-        // Randomize duration between 800ms and 1500ms
         const duration = Math.floor(Math.random() * (1500 - 800 + 1)) + 800;
-
         useEffect(() => {
             Animated.loop(
                 Animated.timing(shimmerAnim, {
@@ -27,7 +18,6 @@ const HomeLoader = () => {
                 })
             ).start();
         }, []);
-
         const getShimmerStyle = (loaderWidth) => {
             const translateX = shimmerAnim.interpolate({
                 inputRange: [-1, 1],
@@ -37,7 +27,6 @@ const HomeLoader = () => {
                 transform: [{ translateX }],
             };
         };
-
         return (
             <View
                 style={[
@@ -74,7 +63,6 @@ const HomeLoader = () => {
             <Skeleton width={PRODUCT_WIDTH} height={hp(12)} borderRadius={10} />
         </View>
     );
-
     return (
         <View style={styles.container}>
             <View style={[styles.banner, {
@@ -82,7 +70,6 @@ const HomeLoader = () => {
                 <Skeleton
                     width={SCREEN_WIDTH - 20} height={hp(15)} borderRadius={10} />
             </View>
-
             <FlatList
                 data={products}
                 renderItem={renderProduct}
@@ -96,7 +83,6 @@ const HomeLoader = () => {
         </View>
     );
 };
-
 const styles = StyleSheet.create({
     container: {
         flex: 1,
@@ -110,5 +96,4 @@ const styles = StyleSheet.create({
         marginBottom: hp(1),
     },
 });
-
 export default HomeLoader;
