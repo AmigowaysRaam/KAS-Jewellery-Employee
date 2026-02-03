@@ -1,4 +1,3 @@
-import messaging from '@react-native-firebase/messaging';
 import React, { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -27,26 +26,6 @@ const ProfileScreen = () => {
   const siteDetails = useSelector(
     (state) => state.auth?.siteDetails?.data[0]
   );
-
-  useEffect(() => {
-
-    async function getFcmToken() {
-      try {
-        const fcmToken = await messaging().getToken();
-        if (fcmToken) {
-          console.log('FCM Token:', fcmToken);
-          return fcmToken;
-        } else {
-          console.log('Failed to get FCM token');
-        }
-      } catch (error) {
-        console.log('Error getting FCM token:', error);
-      }
-    }
-    getFcmToken();
-  }, [])
-
-
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   // Animation refs

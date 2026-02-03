@@ -1,8 +1,12 @@
-import Constants from 'expo-constants';
+import messaging from "@react-native-firebase/messaging";
 import React, { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
-  RefreshControl, ScrollView,
-  StyleSheet, Text, View
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 import { useSelector } from "react-redux";
 import { getStoredLanguage } from "../../app/i18ns";
@@ -12,42 +16,54 @@ import { fetchData } from "./api/Api";
 import AssignedTask from "./AssignedTask";
 import Banner from "./Banner";
 import Header from "./Header";
+import InAppNotificationModal from "./InappNotification";
 import LanguageMenu from "./LanguageMenu";
 import MyTask from "./MyTask";
 import SideMenu from "./Sidemenu";
 import TaskRow from "./TaskRow";
-
-
 export default function Homescreen() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [langMenuMOdal, setOpenLangMenu] = useState(false);
   const [homepageData, setHomepageData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const siteDetails = useSelector((state) => state.auth?.siteDetails?.data[0]);
-  const profileDetails = useSelector((state) => state?.auth?.profileDetails?.data);
+  const [lang, setLang] = useState(null);
+  const [notifModalVisible, setNotifModalVisible] = useState(false);
+  const [notifData, setNotifData] = useState(null);
+
+  const { t } = useTranslation();
+  const siteDetails = useSelector(
+    (state) => state.auth?.siteDetails?.data[0]
+  );
+  const profileDetails = useSelector(
+    (state) => state?.auth?.profileDetails?.data
+  );
+  /* 🌐 Load stored language */
   useEffect(() => {
     getStoredLanguage().then((storedLang) => {
       setLang(storedLang || "en");
     });
   }, []);
-  const [lang, setLang] = useState(null);
+
+  /* 📡 API CALL */
   const fetchHomepageData = async () => {
-    const lang = await getStoredLanguage();
-
     if (!profileDetails?.id) return;
-    // Alert.alert(JSON.stringify(bId))
 
-    const packageName = Constants.manifest?.android?.package || Constants.manifest?.ios?.bundleIdentifier;
-    console.log(packageName);
     try {
       if (!refreshing) setLoading(true);
+
       const response = await fetchData(
         "app-employee-homepage",
         "POST",
-        { user_id: profileDetails.id, lang: lang ? lang : "en" },
+        {
+          user_id: profileDetails.id,
+          lang: lang || "en",
+        }
       );
-      if (response?.text === "Success" || response?.text === "Fetched successfully") {
+      if (
+        response?.text === "Success" ||
+        response?.text === "Fetched successfully"
+      ) {
         setHomepageData(response.data);
       } else {
         console.warn("API returned failure:", response);
@@ -59,9 +75,29 @@ export default function Homescreen() {
       setRefreshing(false);
     }
   };
+  /* ✅ INITIAL LOAD (ONCE) */
   useEffect(() => {
     fetchHomepageData();
+  }, [profileDetails?.id, lang]);
+  /* 🔔 RELOAD API WHEN NOTIFICATION ARRIVES */
+  useEffect(() => {
+    // Foreground notification
+    const unsubscribeOnMessage = messaging().onMessage(async (notification) => {
+      console.log("🔔 Foreground notification received");
+      setNotifData({
+        title: notification?.notification?.title,
+        body: notification?.notification?.body,
+        data: notification?.data,
+      });
+      setNotifModalVisible(true);
+      // fetchHomepageData();
+      // console.log(JSON.stringify(notification));
+    });
+    return () => {
+      unsubscribeOnMessage();
+    };
   }, []);
+  /* 🔄 Pull to refresh */
   const onRefresh = () => {
     setRefreshing(true);
     fetchHomepageData();
@@ -80,8 +116,8 @@ export default function Homescreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            colors={[COLORS.primary]} // spinner color
-            tintColor={COLORS.primary} // iOS spinner color
+            colors={[COLORS.primary]}
+            tintColor={COLORS.primary}
             progressBackgroundColor="#f2f2f2"
           />
         }
@@ -97,19 +133,33 @@ export default function Homescreen() {
           </>
         ) : (
           <View style={styles.loaderContainer}>
-            <Text>No Data Available</Text>
+            <Text>{t('no_data')}</Text>
           </View>
         )}
       </ScrollView>
-      <SideMenu visible={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
+      <SideMenu
+        visible={isMenuOpen}
+        onClose={() => setIsMenuOpen(false)}
+      />
       <LanguageMenu
         visible={langMenuMOdal}
         onClose={() => setOpenLangMenu(false)}
         loadData={(newLang) => {
-          setLang(newLang);        // state in HomeScreen
-          fetchHomepageData();     // reload ONLY when changed
+          setLang(newLang);
+          fetchHomepageData();
         }}
       />
+      <InAppNotificationModal
+        visible={notifModalVisible}
+        title={notifData?.title}
+        message={notifData?.body}
+        onClose={() => setNotifModalVisible(false)}
+        onPress={() => {
+          // Optional: navigate based on notification data
+          console.log("Notification clicked:", notifData?.data);
+        }}
+      />
+
     </View>
   );
 }
@@ -117,14 +167,15 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#fff",
-  }, scrollContainer: {
+  },
+  scrollContainer: {
     flex: 1,
     alignSelf: "center",
-  }, loaderContainer: {
-    flex: 1, height: 300, justifyContent: "center",
+  },
+  loaderContainer: {
+    flex: 1,
+    height: 300,
+    justifyContent: "center",
     alignItems: "center",
-  }, loaderText: {
-    marginTop: 10, color: COLORS.primary, fontSize: 16,
-    fontWeight: "500",
   },
 });

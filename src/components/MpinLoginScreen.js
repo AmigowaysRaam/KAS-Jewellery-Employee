@@ -1,5 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { getMessaging } from "@react-native-firebase/messaging";
+import messaging from '@react-native-firebase/messaging';
+
 import { useNavigation } from "@react-navigation/native";
 import React, { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -29,15 +30,30 @@ export default function MpinLoginScreen() {
   useEffect(() => {
     loadUserId();
   }, []);
+  
   useEffect(() => {
-    if (Platform.OS !== 'android') return;
-    const getToken = async () => {
-      const token = await getMessaging().getToken();
-      console.log('FCM Token:', token);
-      setfcmToken(token)
-      // Alert.alert('FCM Token', token);
+    const getFcmToken = async () => {
+      try {
+        // 🔹 iOS needs permission first
+        if (Platform.OS === 'ios') {
+          const authStatus = await requestPermission();
+          const enabled =
+            authStatus === AuthorizationStatus.AUTHORIZED ||
+            authStatus === AuthorizationStatus.PROVISIONAL;
+          if (!enabled) {
+            console.log('iOS notification permission not granted');
+            return;
+          }
+        }
+        // 🔹 Works for Android + iOS
+        const token = await messaging().getToken();
+        console.log('FCM Token:', token);
+        setfcmToken(token);
+      } catch (err) {
+        console.log('FCM error:', err);
+      }
     };
-    getToken();
+    getFcmToken();
   }, []);
   const loadUserId = async () => {
     try {

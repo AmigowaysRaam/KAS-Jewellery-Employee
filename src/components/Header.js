@@ -36,12 +36,10 @@ export default function Header({
       <Pressable style={styles.iconContainer} onPress={openMenu}>
         <Image source={require("../../assets/menu.png")} style={styles.icon} />
       </Pressable>
-
       {/* Logo */}
       <View style={styles.logoContainer}>
         <Image source={{ uri: headerL }} style={styles.logo} />
       </View>
-
       {/* Right Icons */}
       <View style={styles.rightContainer}>
         {/* Language Icon */}
@@ -51,7 +49,6 @@ export default function Header({
             style={styles.icon}
           />
         </Pressable>
-
         {/* Notification Icon */}
         <Pressable style={styles.iconContainer} onPress={() => navigation.navigate(
 
@@ -75,7 +72,6 @@ export default function Header({
     </View>
   );
 }
-
 const styles = StyleSheet.create({
   container: {
     flexDirection: "row",

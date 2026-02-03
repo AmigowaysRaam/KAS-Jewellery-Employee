@@ -8,6 +8,12 @@
     "scheme": "kashrms",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "signingConfig": {
+      "keystorePath": "./kasemployee.jks",
+      "keystorePassword": "kasemployee",
+      "keyAlias": "kasemployee",
+      "keyPassword": "kasemployee"
+    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "kasemployee"
@@ -24,7 +30,6 @@
       "package": "kas.employee",
       "googleServicesFile": "./google-services.json",
       "useNextNotificationsApi": true
-
     },
     "web": {
       "output": "static",
@@ -36,7 +41,7 @@
         "expo-splash-screen",
         {
           "image": "./assets/images/ic_launcher_round.png",
-          "imageWidth": 200,
+          "imageWidth": 500,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff",
           "dark": {

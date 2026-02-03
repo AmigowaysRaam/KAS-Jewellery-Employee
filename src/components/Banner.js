@@ -28,8 +28,8 @@ const Banner = ({ homepageData }) => {
     const interval = setInterval(updateTime, 1000); // 🔥 every second
     return () => clearInterval(interval);
   }, []);
-  
-  
+
+
 
   // Animate on screen focus
   useFocusEffect(
@@ -108,7 +108,7 @@ const Banner = ({ homepageData }) => {
           {/* Name & Status */}
           <Animated.View style={[styles.rowBetween, { opacity: rowOpacity, transform: [{ translateY: rowTranslateY }] }]}>
             <Text numberOfLines={1} style={styles.name}>
-              {employeeDetails?.name  || ''}
+              {employeeDetails?.name || ''}
             </Text>
             <View style={styles.row}>
               <Text style={styles.label}>{t("Emp Status")} :</Text>
@@ -174,7 +174,7 @@ const styles = StyleSheet.create({
     fontSize: wp(4),
     textTransform: "capitalize",
     maxWidth: wp(48),
-    },
+  },
   label: {
     fontFamily: "Poppins_400Regular",
     color: COLORS.white,

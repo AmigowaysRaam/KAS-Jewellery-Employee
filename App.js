@@ -41,7 +41,6 @@ export function navigate(name, params) {
     navigationRef.navigate(name, params);
   }
 }
-
 /* 🔔 SHOW NOTIFICATION EVEN IN FOREGROUND */
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -50,7 +49,6 @@ Notifications.setNotificationHandler({
     shouldSetBadge: false,
   }),
 });
-
 export default function App() {
   const [isConnected, setIsConnected] = useState(true);
   const notificationListener = useRef(null);
@@ -69,11 +67,11 @@ export default function App() {
   });
   /** 🔔 Push notifications */
   useEffect(() => {
-    registerForPushNotificationsAsync().then(token => {
-      if (token) {
-        console.log("✅ Expo Push Token:", token);
-      }
-    });
+    // registerForPushNotificationsAsync().then(token => {
+    //   if (token) {
+    //     console.log("✅ Expo Push Token:", token);
+    //   }
+    // });
     // Foreground receive
     notificationListener.current =
       Notifications.addNotificationReceivedListener(notification => {

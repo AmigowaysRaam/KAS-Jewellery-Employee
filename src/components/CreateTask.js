@@ -503,7 +503,7 @@ export default function CreateTask() {
             {errors.description && (
               <Text style={styles.errorText}>{errors.description}</Text>
             )}
-            <View style={{ marginBottom: wp(2) }}>
+            <View style={{ marginBottom: wp(4) }}>
               <Text style={styles.label}>{t("image")}</Text>
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: wp(2) }}>
                 {images.map((img, idx) => (
@@ -581,15 +581,8 @@ export default function CreateTask() {
                 <Text style={styles.radioLabel}>{`${t('group')}`}</Text>
               </Pressable>
             </View>
-            <CustomDropdown
-              title={`${t('task_priority')}`}
-              data={siteDetails?.prioritiesList || []}
-              placeholder={`${t('choose_priority')}`}
-              onSelect={(item) => setpriority(item)}
-
-            />
-            {/* Select Team */}
-            {assignType === "group" && (
+              {/* Select Team */}
+              {assignType === "group" && (
               <CustomDropdown
                 title={`${t('select_team')} *`}
                 data={dropDownData?.teams}
@@ -601,6 +594,14 @@ export default function CreateTask() {
               <View>
                 <TeamMembersView teamMembers={dropDownData} />
               </View>}
+            <CustomDropdown
+              title={`${t('task_priority')}`}
+              data={siteDetails?.prioritiesList || []}
+              placeholder={`${t('choose_priority')}`}
+              onSelect={(item) => setpriority(item)}
+
+            />
+          
             <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: hp(0) }}>
               <View style={{ width: wp(44) }}>
                 <Text style={styles.label}>{`${t('due_date')}*`}</Text>

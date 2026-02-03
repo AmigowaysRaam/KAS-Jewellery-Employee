@@ -138,7 +138,9 @@ export default function SideMenu({ visible, onClose, onItemPress }) {
         if (key && key == "settings") {
             navigation.navigate('SettingsScreen');
         }
-        
+        if (key && key == "my_account") {
+            navigation.navigate('My Account');
+        }
     }
     const renderMenuItem = ({ item }) => (
         <TouchableOpacity

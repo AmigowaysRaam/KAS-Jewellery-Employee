@@ -175,13 +175,12 @@ export default function LanguageMenu({ visible, onClose, onItemPress, loadData }
                         {loadingMenu ? (
                             <>
                                 <View>
-                                    <ActivityIndicator size={wp(4.9)} />
+                                    <ActivityIndicator size={wp(4.9)} color={COLORS?.primary} />
                                     {
                                         [...Array(2)].map((_, index) => <View key={index}>{renderSkeleton()}</View>)
                                     }
                                 </View>
                             </>
-
                         ) : (
                             <FlatList
                                 data={menuData}
