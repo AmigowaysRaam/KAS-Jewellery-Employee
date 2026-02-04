@@ -122,7 +122,7 @@ const ProfileScreen = () => {
     <ScrollView
       style={styles.container}
     >
-      <CommonHeader title={t("My Account")} showBackButton={false} />
+      <CommonHeader title={t("my_account")} showBackButton={false} />
       <Animated.View style={[styles.card, { opacity: fadeAnim, transform: [{ scale: scaleAnim }] }]}>
         {loading ? (
           <View>
@@ -155,10 +155,9 @@ const ProfileScreen = () => {
                 <Text style={styles.value}>{profileDetails?.employee_id || t("N/A")}</Text>
               </View>
             </View>
-
             {/* Info Section */}
             <View style={styles.infoCard}>
-              <Text style={styles.infoTitle}>{t("Profile Information")}</Text>
+              <Text style={styles.infoTitle}>{t("profile_info")}</Text>
               {infoData.map((item, index) => (
                 <View key={index} style={styles.infoRow}>
                   <Ionicons name={item.icon} size={wp(5)} color={COLORS.primary} style={{ marginRight: wp(2) }} />

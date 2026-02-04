@@ -1,6 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import messaging from '@react-native-firebase/messaging';
-
+import messaging, { AuthorizationStatus } from '@react-native-firebase/messaging';
 import { useNavigation } from "@react-navigation/native";
 import React, { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -24,35 +23,37 @@ export default function MpinLoginScreen() {
   const [userId, setUserId] = useState(null);
   const [loading, setLoading] = useState(false);
   const [fcmToken, setfcmToken] = useState(null);
-
   const mpinRef = useRef([]);
   /* 🔄 LOAD USER ID FROM ASYNC STORAGE */
   useEffect(() => {
     loadUserId();
   }, []);
-  
   useEffect(() => {
     const getFcmToken = async () => {
       try {
-        // 🔹 iOS needs permission first
+        // ✅ iOS permission request 
         if (Platform.OS === 'ios') {
-          const authStatus = await requestPermission();
+          const authStatus = await messaging().requestPermission();
           const enabled =
             authStatus === AuthorizationStatus.AUTHORIZED ||
             authStatus === AuthorizationStatus.PROVISIONAL;
+
           if (!enabled) {
-            console.log('iOS notification permission not granted');
+            console.log('❌ Notification permission not granted');
             return;
           }
         }
-        // 🔹 Works for Android + iOS
+
+        // ✅ Get FCM token (Android + iOS) 
         const token = await messaging().getToken();
-        console.log('FCM Token:', token);
+        console.log('✅ FCM Token:', token);
         setfcmToken(token);
+
       } catch (err) {
-        console.log('FCM error:', err);
+        console.log('❌ FCM error:', err);
       }
     };
+
     getFcmToken();
   }, []);
   const loadUserId = async () => {
@@ -256,6 +257,6 @@ const styles = StyleSheet.create({
     width: wp(90), height: hp(6), marginTop: hp(2),
     alignItems: "center", justifyContent: "center", borderRadius: wp(2),
   }, buttonText: {
-    color: "#fff", fontSize: wp(5), lineHeight: hp(6),
+    color: "#fff", fontSize: wp(4), lineHeight: hp(6), textTransform: "capitalize",
   },
 });

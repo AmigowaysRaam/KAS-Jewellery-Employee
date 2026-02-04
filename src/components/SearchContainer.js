@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Pressable, StyleSheet, Text, TextInput, TouchableWithoutFeedback,
   View
@@ -22,6 +23,7 @@ const SearchContainer = ({
     setShowDropdown(false);
     onStatusSelect && onStatusSelect(status);
   };
+  const { t } = useTranslation()
   const clearStatus = () => {
     setSelectedStatus(null);
     onStatusSelect && onStatusSelect(null);

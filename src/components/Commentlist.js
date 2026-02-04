@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { FlatList, Image, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { COLORS } from "../../app/resources/colors";
 import { hp, wp } from "../../app/resources/dimensions";
@@ -6,6 +7,7 @@ import TaskCard from "./TaskCard";
 export default function CommentList({ comments, loading, ticketDetails, task, flatListRef, openImageViewer,
   loadData
 }) {
+  const { t } = useTranslation();
   const renderComment = ({ item, index }) => (
     <View style={styles.commentRow}>
       {/* <Text style={styles.commentUser}>{JSON.stringify(item?.audio, null, 2)}</Text> */}
@@ -43,7 +45,7 @@ export default function CommentList({ comments, loading, ticketDetails, task, fl
             ))}
           </ScrollView>
         )}
-        {item.audio && <Text style={{ marginTop: hp(1), color: COLORS.primary }}>🎤 Audio attached</Text>}
+        {item.audio && <Text style={{ marginTop: hp(1), color: COLORS.primary }}>{`🎤  ${t('audio_attatched')}`}</Text>}
       </View>
     </View>
   );
@@ -57,7 +59,7 @@ export default function CommentList({ comments, loading, ticketDetails, task, fl
       ) : task ? (
         <TaskCard task={ticketDetails} loadData={loadData} />
       ) : null}
-      <Text style={styles.sectionTitle}>Comments</Text>
+      <Text style={styles.sectionTitle}>{t('comments')}</Text>
     </View>
   );
   return (

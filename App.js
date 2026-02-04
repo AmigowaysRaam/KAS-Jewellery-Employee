@@ -91,6 +91,7 @@ export default function App() {
   }, []);
   /** 🌐 Network listener */
   useEffect(() => {
+
     const unsubscribe = NetInfo.addEventListener(state => {
       setIsConnected(state.isConnected);
     });

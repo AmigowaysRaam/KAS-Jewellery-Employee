@@ -1,6 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
 import Constants from "expo-constants";
+import { t } from "i18next";
 import React, { useEffect, useState } from "react";
 import {
     Animated, Dimensions, FlatList, Image, Modal, RefreshControl,
@@ -25,6 +26,8 @@ export default function SideMenu({ visible, onClose, onItemPress }) {
     const [refreshing, setRefreshing] = useState(false);
     const [logoutModalVisible, setLogoutModalVisible] = useState(false);
     const SidebarMenu = useSelector((state) => state?.auth?.SidebarMenu);
+    const [pendingLogout, setPendingLogout] = useState(false);
+
     const profileDetails = useSelector(
         (state) => state?.auth?.profileDetails?.data
     );
@@ -82,18 +85,24 @@ export default function SideMenu({ visible, onClose, onItemPress }) {
     };
     const handleClose = (label) => {
         if (label === "Logout") {
-            setLogoutModalVisible(true); // show logout modal
-        } else if (label === "ChangeMpin") {
-            navigation.navigate("ChangeMpin"); // navigate instantly
+            setPendingLogout(true);
         }
+    
         Animated.timing(slideAnim, {
             toValue: -SCREEN_WIDTH * 0.8,
             duration: 200,
             useNativeDriver: false,
         }).start(() => {
-            onClose && onClose(); // finally trigger onClose
+            onClose && onClose();
+    
+            // 🔥 Open logout modal AFTER side menu closes
+            if (label === "Logout") {
+                setLogoutModalVisible(true);
+                setPendingLogout(false);
+            }
         });
     };
+    
     const sidebarIcons = {
         my_account: require("../../assets/MyAccount.png"),
         my_task: require("../../assets/MyTaskside.png"),
@@ -101,7 +110,7 @@ export default function SideMenu({ visible, onClose, onItemPress }) {
         notification: require("../../assets/NotificationSideb.png"),
         our_stores: require("../../assets/OurStoresSid.png"),
         settings: require("../../assets/Settings.png"),
-        terms_conditions: require("../../assets/Termsand Conditions.png"),
+        terms_conditions: require("../../assets/TermsandConditions.png"),
         privacy_policy: require("../../assets/PrivacyPolicy.png"),
         ChangeMpin: require("../../assets/ChangeMpin.png"),
     };
@@ -150,8 +159,7 @@ export default function SideMenu({ visible, onClose, onItemPress }) {
             onPress={() => {
                 // onItemPress && onItemPress(item.key);
                 handleNavigation(item?.key);
-
-                handleClose(item.key);
+                // handleClose(item.key);
             }}
         >
             <Image tintColor={"#000"} source={sidebarIcons[item.key]} style={{ width: wp(6), height: wp(6), marginRight: hp(2) }} />
@@ -195,14 +203,13 @@ export default function SideMenu({ visible, onClose, onItemPress }) {
                                 }
                             />
                         )}
-                        {/* Footer */}
                         <View style={styles.footer}>
                             <TouchableOpacity
                                 style={{ flexDirection: "row", alignItems: "center" }}
                                 onPress={() => handleClose("Logout")}
                             >
                                 <Text style={[styles.footerText, { fontSize: wp(4), marginRight: wp(2) }]}>
-                                    LOGOUT
+                                    {t('Logout')}
                                 </Text>
                                 <Icon name={'log-out-outline'} size={wp(5)} color={COLORS?.black} />
                             </TouchableOpacity>
@@ -213,7 +220,6 @@ export default function SideMenu({ visible, onClose, onItemPress }) {
                     </Animated.View>
                 </View>
             </Modal>
-
             {/* Logout Confirmation Modal */}
             <Modal transparent visible={logoutModalVisible} animationType="fade">
                 <View style={styles.logoutModalOverlay}>

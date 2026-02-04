@@ -228,7 +228,7 @@ export default function AssignedTasklistScreen() {
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : "height"}>
       <View style={styles.container}>
-        <CommonHeader title="Assigned Tasks" showBackButton={route?.params ? true : false} onBackPress={() => navigation?.goBack()} />
+        <CommonHeader title={t('assigned_task')} showBackButton={route?.params ? true : false} onBackPress={() => navigation?.goBack()} />
         <SearchContainer
           value={searchText}
           onChangeText={setSearchText}
@@ -332,5 +332,5 @@ const styles = StyleSheet.create({
     shadowColor: "#000", shadowOffset: { width: 0, height: hp(0.5) },
     shadowOpacity: 0.3, shadowRadius: wp(3), elevation: 5,
   },
-  fabText: { color: "#fff", fontSize: wp(3.5), fontWeight: "600", marginLeft: wp(2), fontFamily: 'Poppins_600SemiBold', lineHeight: wp(3.5) },
+  fabText: { color: "#fff", fontSize: wp(3.5), fontWeight: "600", marginLeft: wp(2), fontFamily: 'Poppins_600SemiBold', lineHeight: wp(4) },
 });

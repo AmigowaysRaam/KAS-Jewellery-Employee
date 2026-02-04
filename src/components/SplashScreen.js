@@ -4,10 +4,12 @@ import { useNavigation } from "@react-navigation/native";
 import React, { useEffect, useRef } from "react";
 import { Alert, Animated, Easing, StyleSheet, View } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
+import { loadStoredLanguage } from "../../app/i18ns";
 import { COLORS } from "../../app/resources/colors";
 import { hp, wp } from "../../app/resources/dimensions";
 import { fetchData } from "./api/Api";
 import { setSiteDetails, setTokens } from "./store/store";
+
 export default function SplashScreen() {
   const tokenDetail = useSelector((state) => state?.auth);
   const navigation = useNavigation();
@@ -34,6 +36,7 @@ export default function SplashScreen() {
   }, []);
   const fnGetToken = async () => {
     try {
+      await loadStoredLanguage();
       const data = await fetchData("app-employee-generate-token", "POST");
       if (data?.text === "Success") {
         dispatch(setTokens(data));

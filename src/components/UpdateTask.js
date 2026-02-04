@@ -386,23 +386,20 @@ export default function UpdateTask({ route }) {
                     color={COLORS.primary}
                   />
                 </TouchableOpacity>
-
                 {/* ❌ Delete */}
-                <TouchableOpacity onPress={deleteAudio}>
+                {/* <TouchableOpacity onPress={deleteAudio}>
                   <Icon
                     name="x-circle"
                     type="feather"
                     size={wp(7)}
                     color={COLORS.primary}
                   />
-                </TouchableOpacity>
+                </TouchableOpacity> */}
               </View>
             )}
-
             {errors.description && <Text style={styles.error}>{errors.description}</Text>}
           </View>
         );
-
       case "images":
         return (
           <View style={styles.fieldContainer}>
@@ -411,12 +408,12 @@ export default function UpdateTask({ route }) {
               {images.map((img, idx) => (
                 <View key={idx} style={{ position: "relative", width: wp(26), height: hp(14), marginRight: wp(2), marginBottom: hp(1) }}>
                   <Image source={{ uri: img.uri }} style={{ width: "100%", height: "100%", borderRadius: wp(2) }} resizeMode="cover" />
-                  <Pressable
+                  {/* <Pressable
                     onPress={() => removeImage(idx)}
                     style={{ position: "absolute", top: -wp(2), right: -wp(2), backgroundColor: "red", borderRadius: wp(3), padding: wp(1) }}
                   >
                     <Icon name="trash" type="feather" size={wp(4)} color="#fff" />
-                  </Pressable>
+                  </Pressable> */}
                 </View>
               ))}
               {images.length < 3 && (
@@ -487,7 +484,6 @@ export default function UpdateTask({ route }) {
                   color={COLORS.primary}
                 />
               </TouchableOpacity>
-
               {/* Gallery */}
               <TouchableOpacity
                 onPress={pickFile}

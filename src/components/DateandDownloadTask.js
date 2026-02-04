@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { COLORS } from "../../app/resources/colors";
@@ -15,6 +16,7 @@ const DateandDownloadTask = ({ onDateSelect, onDownload }) => {
     setToDate(to);
     onDateSelect && onDateSelect({ from, to });
   };
+  const { t } = useTranslation()
   const clearRange = () => {
     setFromDate(null);
     setToDate(null);
@@ -22,7 +24,7 @@ const DateandDownloadTask = ({ onDateSelect, onDownload }) => {
   };
   // Format date range for display
   const formatRange = () => {
-    if (!fromDate) return "Select Date Range";
+    if (!fromDate) return t('select_date_range');
     if (!toDate) return `From: ${new Date(fromDate).toLocaleDateString()} - ?`;
     return `${new Date(fromDate).toLocaleDateString()} - ${new Date(toDate).toLocaleDateString()}`;
   };
@@ -50,7 +52,7 @@ const DateandDownloadTask = ({ onDateSelect, onDownload }) => {
         onConfirm={handleDateSelect}
         initialFrom={fromDate}
         initialTo={toDate}
-        title={'Select Range for Filtering Tasks'}
+        title={`${t('select_date_range')}`}
 
       />
     </View>

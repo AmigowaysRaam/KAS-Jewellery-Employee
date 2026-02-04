@@ -1,6 +1,7 @@
 import { useNavigation } from "@react-navigation/native";
 import dayjs from "dayjs";
 import React, { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator, Animated, Easing, FlatList, Image, StyleSheet,
   Text, TouchableOpacity, View,
@@ -22,6 +23,7 @@ export default function Notification() {
   const [refreshing, setRefreshing] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const onEndReachedCalledDuringMomentum = useRef(true);
+  const { t } = useTranslation();
   useEffect(() => {
     fetchNotifications(1, true);
   }, []);
@@ -148,7 +150,7 @@ export default function Notification() {
   return (
     <View style={{ flex: 1, backgroundColor: "#fff" }}>
       <CommonHeader
-        title="Notifications"
+        title={t("notifications")}
         showBackButton
         onBackPress={() => navigation.goBack()}
       />

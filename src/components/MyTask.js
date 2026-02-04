@@ -110,7 +110,7 @@ const MyTask = ({ homepageData }) => {
       backgroundColor: "#FFF0F0", width: wp(100), alignItems: "center", paddingVertical: hp(2), marginTop: hp(1)
     }}>
       <View style={styles.wrapper}>
-        <Text style={styles.greeting}>{t("My Tasks")}</Text>
+        <Text style={styles.greeting}>{t("my_task")}</Text>
         <View
           style={{
             flexDirection: "row",
@@ -119,7 +119,7 @@ const MyTask = ({ homepageData }) => {
           }}
         >
           <Text style={[styles.taskCountText, { color: COLORS.primary }]}>
-            {`${t("Today's Tasks")}: ${todayTasks.count || 0}`}
+            {`${t("todays_task")}: ${todayTasks.count || 0}`}
           </Text>
           <Text style={[styles.taskCountText, { color: COLORS.primary }]}>
             {formattedDate}
@@ -143,7 +143,7 @@ const MyTask = ({ homepageData }) => {
 
         {/* Total Tasks Header */}
         <Text style={[styles.taskCountText, { color: COLORS.primary, marginTop: hp(0) }]}>
-          {`${t("Total Tasks")} : ${totalTasks.count || 0}`}
+          {`${t("total_tasks")} : ${totalTasks.count || 0}`}
         </Text>
         {/* Total Task Cards */}
         <View

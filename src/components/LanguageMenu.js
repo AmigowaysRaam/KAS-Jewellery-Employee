@@ -14,10 +14,8 @@ import { COLORS } from "../../app/resources/colors";
 import { hp, wp } from "../../app/resources/dimensions";
 import { useToast } from "../../constants/ToastContext";
 import { fetchData } from "./api/Api";
-
 const SCREEN_WIDTH = Dimensions.get("window").width;
 const SCREEN_HEIGHT = Dimensions.get("window").height;
-
 export default function LanguageMenu({ visible, onClose, onItemPress, loadData }) {
     const navigation = useNavigation();
     const [slideAnim] = useState(new Animated.Value(-SCREEN_WIDTH * 0.8));
@@ -27,15 +25,14 @@ export default function LanguageMenu({ visible, onClose, onItemPress, loadData }
     const profileDetails = useSelector((state) => state?.auth?.profileDetails?.data);
     const { showToast } = useToast();
     const tokenDetail = useSelector((state) => state?.auth?.token?.data);
-
     /** Slide animation */
     useEffect(() => {
         // Alert.alert('kln', JSON.stringify(tokenDetail))
         // const siteDetailsData = await fetchData("app-employee-site-settings", "POST", {
         //     Authorization: `${tokenDetail?.token}`,
         //   });
+        loadLanguages();
         if (visible) {
-            loadLanguages();
             Animated.timing(slideAnim, {
                 toValue: 0,
                 duration: 150,

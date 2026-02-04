@@ -264,7 +264,6 @@ const CustomDateRangePickerModal = ({
         </Modal>
     );
 };
-
 const styles = StyleSheet.create({
     overlay: {
         flex: 1,
@@ -276,7 +275,7 @@ const styles = StyleSheet.create({
         width: wp(95),
         backgroundColor: "#fff",
         borderRadius: wp(4),
-        padding: wp(4),
+        padding: wp(6),
     },
     title: {
         fontSize: wp(4),
@@ -292,7 +291,7 @@ const styles = StyleSheet.create({
         justifyContent: "space-between",
         borderWidth: wp(0.5),
         borderColor: COLORS.primary,
-        padding: wp(3),
+        padding: wp(4),
         borderRadius: wp(2),
     },
     selectedDateText: {

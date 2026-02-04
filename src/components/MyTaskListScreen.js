@@ -240,11 +240,11 @@ export default function MyTaskListScreen({ route }) {
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : "height"}>
       <View style={styles.container}>
-        <CommonHeader title="My Tasks" showBackButton={route?.params ? true : false} onBackPress={() => navigation?.goBack()} />
+        <CommonHeader title={t('my_task')} showBackButton={route?.params ? true : false} onBackPress={() => navigation?.goBack()} />
         <SearchContainer
           value={searchText}
           onChangeText={setSearchText}
-          placeholder="Search tasks..."
+          placeholder={`${t("search_task")}...`}
           selectedStatuss={selectedStatus}
           onStatusSelect={handleStatusSelect}
           modalVisible={modalVisible}

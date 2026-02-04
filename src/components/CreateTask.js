@@ -132,20 +132,57 @@ export default function CreateTask() {
       setloading(false);
     }
   };
-  // -------- AUDIO RECORDING --------
-  const startRecording = async (forField) => {
-    try {
-      setRecordingFor(forField);
-      setIsRecording(true);
-      const { recording } = await Audio.Recording.createAsync(
-        Audio.RECORDING_OPTIONS_PRESET_HIGH_QUALITY
-      );
-      setRecording(recording);
-    } catch (err) {
-      console.log("Recording error:", err);
-      setIsRecording(false);
-    }
+  const ensureAudioPermission = async () => { 
+    try { 
+      const { status } = await Audio.getPermissionsAsync(); 
+   
+      if (status !== "granted") { 
+        const { status: newStatus } = await Audio.requestPermissionsAsync(); 
+   
+        if (newStatus !== "granted") { 
+          showToast("Microphone permission is required", "error"); 
+          return false; 
+        } 
+      } 
+      return true; 
+    } catch (err) { 
+      console.log("Permission error:", err); 
+      return false; 
+    } 
+  }; 
+   
+  // -------- AUDIO RECORDING -------- 
+  const startRecording = async (forField) => { 
+    try { 
+      const hasPermission = await ensureAudioPermission(); 
+      if (!hasPermission) return; 
+   
+      setRecordingFor(forField); 
+      setIsRecording(true); 
+   
+      // await Audio.setAudioModeAsync({ 
+      //   allowsRecordingIOS: true, 
+      //   playsInSilentModeIOS: true, 
+      //   staysActiveInBackground: false, 
+      //   interruptionModeIOS: Audio.INTERRUPTION_MODE_IOS_DO_NOT_MIX, 
+      // }); 
+      await Audio.setAudioModeAsync({ 
+        allowsRecordingIOS: true, 
+        playsInSilentModeIOS: true, 
+      }); 
+      const { recording } = await Audio.Recording.createAsync( 
+        Audio.RecordingOptionsPresets.HIGH_QUALITY 
+      ); 
+   
+      setRecording(recording); 
+    } catch (err) { 
+      console.log("Recording error:", err); 
+      setIsRecording(false); 
+    } 
   };
+
+
+createTask
   const stopRecording = async () => {
     try {
       setIsRecording(false);

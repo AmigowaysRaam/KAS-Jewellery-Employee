@@ -12,25 +12,28 @@ import {
 } from "react-native";
 import { COLORS } from "../../app/resources/colors";
 import { hp, wp } from "../../app/resources/dimensions";
-
-
-
-const TAB_ICONS = {
-  "My Tasks": require("../../assets/myTaskFill.png"),
-  "Assign Task": require("../../assets/assignTaskFill.png"),
-};
+const TAB_ITEMS = [
+  {
+    key: "my_task",
+    icon: require("../../assets/myTaskFill.png"),
+    route: "MyTaskListScreen",
+  },
+  {
+    key: "assigned_task",
+    icon: require("../../assets/assignTaskFill.png"),
+    route: "AssignTaskListScreen",
+  },
+];
 
 const TaskRow = () => {
   const { t } = useTranslation();
-  const navigation = useNavigation()
+  const navigation = useNavigation();
 
-  // Animation refs for each card
-  const leftAnim = useRef(new Animated.Value(-wp(50))).current; // Start offscreen left
-  const rightAnim = useRef(new Animated.Value(wp(50))).current; // Start offscreen right
+  const leftAnim = useRef(new Animated.Value(-wp(50))).current;
+  const rightAnim = useRef(new Animated.Value(wp(50))).current;
   const opacityLeft = useRef(new Animated.Value(0)).current;
   const opacityRight = useRef(new Animated.Value(0)).current;
 
-  // Animate on screen focus
   useFocusEffect(
     useCallback(() => {
       leftAnim.setValue(-wp(50));
@@ -60,24 +63,24 @@ const TaskRow = () => {
           useNativeDriver: true,
         }),
       ]).start();
-    }, [leftAnim, rightAnim, opacityLeft, opacityRight])
+    }, [])
   );
+
   return (
     <View style={{ flexDirection: "row", justifyContent: "space-between", width: wp(94), alignSelf: "center" }}>
-      {Object.keys(TAB_ICONS).map((task, index) => {
+      {TAB_ITEMS.map((item, index) => {
         const isLeft = index === 0;
         const translateX = isLeft ? leftAnim : rightAnim;
         const opacity = isLeft ? opacityLeft : opacityRight;
+
         return (
-          <Pressable onPress={() => navigation.navigate(task == 'My Tasks' ? "MyTaskListScreen" : 'AssignTaskListScreen', { status: null })
-          }>
-            <Animated.View
-              key={index}
-              style={{
-                transform: [{ translateX }],
-                opacity,
-              }}
-            >
+          <Pressable
+            key={item.key}
+            onPress={() =>
+              navigation.navigate(item.route, { status: null })
+            }
+          >
+            <Animated.View style={{ transform: [{ translateX }], opacity }}>
               <View style={styles.wrapper}>
                 <ImageBackground
                   resizeMode="cover"
@@ -87,18 +90,21 @@ const TaskRow = () => {
                 >
                   <Image
                     tintColor={COLORS.white}
-                    source={TAB_ICONS[task]}
+                    source={item.icon}
                     style={styles.icon}
                     resizeMode="contain"
                   />
-                  <Text style={styles.greeting}>{t(task)}</Text>
+                  {/* ✅ Translation key used here */}
+                  <Text style={styles.greeting}>
+                    {t(item.key)}
+                  </Text>
                 </ImageBackground>
               </View>
             </Animated.View>
           </Pressable>
         );
       })}
-    </View >
+    </View>
   );
 };
 export default TaskRow;
@@ -110,7 +116,7 @@ const styles = StyleSheet.create({
   card: {
     width: wp(46),
     height: hp(7.5),
-    paddingHorizontal: hp(3),
+    paddingHorizontal: hp(2),
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "flex-start",
@@ -119,14 +125,14 @@ const styles = StyleSheet.create({
     borderRadius: wp(2),
   },
   icon: {
-    width: wp(7),
-    height: wp(7),
+    width: wp(5),
+    height: wp(5),
     marginRight: hp(1),
   },
   greeting: {
     fontFamily: "Poppins_600SemiBold",
     color: COLORS.white,
-    fontSize: wp(4),
+    fontSize: wp(3.5),
     lineHeight: hp(3.5),
   },
 });
