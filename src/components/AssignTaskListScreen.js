@@ -49,6 +49,7 @@ export default function AssignedTasklistScreen() {
   const fetchTasks = async (pageNo = 1, isRefresh = false, initialStatus) => {
     if (!hasMore && !isRefresh) return;
     const lang = await getStoredLanguage();
+    
 
     setLoading(pageNo === 1);
     try {
@@ -136,13 +137,18 @@ export default function AssignedTasklistScreen() {
   const getStatusColor = (status) => {
     switch (status) {
       case "Open":
-        return "#3498db";
+        return "#3498db";        // Blue
       case "Inprogress":
-        return "#f39c12";
+        return "#f39c12";        // Orange
+      case "Waiting for QC":
+        return "#9b59b6";        // Purple
+      case "Completed":
+        return "#2ecc71";        // Green
       default:
-        return COLORS.primary;
+        return COLORS.primary;   // Fallback
     }
   };
+  
   const getPriorityColor = (level) => {
     switch (level) {
       case "Critical":
@@ -238,8 +244,6 @@ export default function AssignedTasklistScreen() {
           modalVisible={modalVisible}
           selectedStatuss={selectedStatus}
         />
-
-
         {loading && page === 1 ? (
           // Initial load skeleton
           <FlatList
@@ -254,6 +258,7 @@ export default function AssignedTasklistScreen() {
             ListHeaderComponent={<>
               <DateandDownloadTask
                 onDateSelect={setSelectedDateRange}
+                onDownload={() => showToast('Task list download is in progress...', 'info')}
               // onDownload={() => console.log("Download clicked")}
               /></>}
             contentContainerStyle={{ paddingBottom: hp(8) }}

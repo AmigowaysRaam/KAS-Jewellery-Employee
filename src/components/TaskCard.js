@@ -28,16 +28,18 @@ export default function TaskCard({ task, loadData }) {
     /** STATUS COLOR */
     const getStatusColor = (status) => {
         switch (status) {
-            case "Open":
-                return "#3498db";
-            case "Inprogress":
-                return "#f39c12";
-            case "Completed":
-                return "#2ecc71";
-            default:
-                return COLORS.primary;
+          case "Open":
+            return "#3498db";        // Blue
+          case "Inprogress":
+            return "#f39c12";        // Orange
+          case "Waiting for QC":
+            return "#9b59b6";        // Purple
+          case "Completed":
+            return "#2ecc71";        // Green
+          default:
+            return COLORS.primary;   // Fallback
         }
-    };
+      };
     /** PRIORITY STYLE */
     const getPriorityStyle = (priority) => {
         switch (priority) {

@@ -53,7 +53,6 @@ const DateandDownloadTask = ({ onDateSelect, onDownload }) => {
         initialFrom={fromDate}
         initialTo={toDate}
         title={`${t('select_date_range')}`}
-
       />
     </View>
   );

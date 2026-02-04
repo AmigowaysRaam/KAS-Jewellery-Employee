@@ -132,57 +132,56 @@ export default function CreateTask() {
       setloading(false);
     }
   };
-  const ensureAudioPermission = async () => { 
-    try { 
-      const { status } = await Audio.getPermissionsAsync(); 
-   
-      if (status !== "granted") { 
-        const { status: newStatus } = await Audio.requestPermissionsAsync(); 
-   
-        if (newStatus !== "granted") { 
-          showToast("Microphone permission is required", "error"); 
-          return false; 
-        } 
-      } 
-      return true; 
-    } catch (err) { 
-      console.log("Permission error:", err); 
-      return false; 
-    } 
-  }; 
-   
+  const ensureAudioPermission = async () => {
+    try {
+      const { status } = await Audio.getPermissionsAsync();
+
+      if (status !== "granted") {
+        const { status: newStatus } = await Audio.requestPermissionsAsync();
+
+        if (newStatus !== "granted") {
+          showToast("Microphone permission is required", "error");
+          return false;
+        }
+      }
+      return true;
+    } catch (err) {
+      console.log("Permission error:", err);
+      return false;
+    }
+  };
+
+  const titleRef = useRef(null);
+  const descRef = useRef(null);
+
   // -------- AUDIO RECORDING -------- 
-  const startRecording = async (forField) => { 
-    try { 
-      const hasPermission = await ensureAudioPermission(); 
-      if (!hasPermission) return; 
-   
-      setRecordingFor(forField); 
-      setIsRecording(true); 
-   
+  const startRecording = async (forField) => {
+    try {
+      const hasPermission = await ensureAudioPermission();
+      if (!hasPermission) return;
+      setRecordingFor(forField);
+      setIsRecording(true);
       // await Audio.setAudioModeAsync({ 
       //   allowsRecordingIOS: true, 
       //   playsInSilentModeIOS: true, 
       //   staysActiveInBackground: false, 
       //   interruptionModeIOS: Audio.INTERRUPTION_MODE_IOS_DO_NOT_MIX, 
       // }); 
-      await Audio.setAudioModeAsync({ 
-        allowsRecordingIOS: true, 
-        playsInSilentModeIOS: true, 
-      }); 
-      const { recording } = await Audio.Recording.createAsync( 
-        Audio.RecordingOptionsPresets.HIGH_QUALITY 
-      ); 
-   
-      setRecording(recording); 
-    } catch (err) { 
-      console.log("Recording error:", err); 
-      setIsRecording(false); 
-    } 
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: true,
+        playsInSilentModeIOS: true,
+      });
+      const { recording } = await Audio.Recording.createAsync(
+        Audio.RecordingOptionsPresets.HIGH_QUALITY
+      );
+
+      setRecording(recording);
+    } catch (err) {
+      console.log("Recording error:", err);
+      setIsRecording(false);
+    }
   };
 
-
-createTask
   const stopRecording = async () => {
     try {
       setIsRecording(false);
@@ -287,11 +286,26 @@ createTask
       newErrors.selectedTeam = t('pls_Selct_team');
     if (!dueDate) newErrors.dueDate = t('pls_Selct_due_date');
     if (!dueTime) newErrors.dueTime = t('pls_Selct_due_time');
+    // Focus first invalid field
+    if (newErrors.title) {
+      titleRef.current?.focus();
+      scrollRef.current?.scrollTo({ y: 0, animated: true });
+    } else if (newErrors.description) {
+      descRef.current?.focus();
+      scrollRef.current?.scrollTo({ y: 1, animated: true });
+    }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
   const [viewerVisible, setViewerVisible] = useState(false);
   const [viewerUri, setViewerUri] = useState(null);
+  const [lang, setLang] = useState(null);
+
+  useEffect(() => {
+    getStoredLanguage().then((storedLang) => {
+      setLang(storedLang || "en");
+    });
+  }, []);
   const handleSubmit = async () => {
     if (!validate()) return;
 
@@ -381,9 +395,7 @@ createTask
   };
 
   const scrollToBottom = () => {
-    setTimeout(() => {
-      // scrollRef.current?.scrollToEnd({ animated: true });
-    }, 50);
+
   };
   return (
     <View style={{ flex: 1, backgroundColor: "#fff", opacity: loading ? 0.2 : 1 }} pointerEvents={loading ? "none" : "auto"}>
@@ -411,13 +423,14 @@ createTask
           >
             {/* -------- TITLE -------- */}
             <View style={styles.inputContainer}>
+
               <TextInput
+                ref={titleRef}
                 maxLength={35}
                 style={styles.input}
                 placeholder={t('enter_task_title')}
                 value={title}
                 onChangeText={setTitle}
-                onFocus={scrollToBottom}
                 placeholderTextColor={COLORS.black}
               />
               {/* {titleAudio ? (
@@ -479,6 +492,7 @@ createTask
             {/* -------- DESCRIPTION -------- */}
             <View style={styles.inputContainer}>
               <TextInput
+                ref={descRef}
                 style={[styles.input, { height: hp(15), textAlignVertical: "top", paddingRight: wp(12) }]} // Add right padding for mic
                 placeholder={t('enter_task_desc')}
                 value={description}
@@ -570,8 +584,10 @@ createTask
             <Modal transparent visible={isRecording} animationType="fade">
               <View style={styles.recordingOverlay}>
                 <View style={styles.recordingPopup}>
-                  <Text style={styles.recordingText}>
-                    Recording {recordingFor === "title" ? t('title') : t('descption')}...
+                  <Text style={[styles.recordingText,{
+                    fontSize:wp(lang == 'ta' ? 2.5 : 3.5)
+                  }]}>
+                    {`${t('recording')}`} {recordingFor === "title" ? t('title') : t('descption')}...
                   </Text>
                   <Text style={styles.recordingTime}>{recordTime}s</Text>
                   <TouchableOpacity style={styles.stopButton} onPress={stopRecording}>
@@ -618,8 +634,8 @@ createTask
                 <Text style={styles.radioLabel}>{`${t('group')}`}</Text>
               </Pressable>
             </View>
-              {/* Select Team */}
-              {assignType === "group" && (
+            {/* Select Team */}
+            {assignType === "group" && (
               <CustomDropdown
                 title={`${t('select_team')} *`}
                 data={dropDownData?.teams}
@@ -638,13 +654,15 @@ createTask
               onSelect={(item) => setpriority(item)}
 
             />
-          
+
             <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: hp(0) }}>
               <View style={{ width: wp(44) }}>
                 <Text style={styles.label}>{`${t('due_date')}*`}</Text>
                 <Pressable onPress={() => setShowDatePicker(true)} style={styles.dateButton}>
-                  <Text style={styles.dateText}>
-                    {dueDate ? dayjs(dueDate).format("DD/MM/YYYY") : "Select Date"}
+                  <Text numberOfLines={1} style={[styles.dateText,{
+                    fontSize:wp(lang == 'ta' ? 2.5 : 3.5)
+                  }]}>
+                    {dueDate ? dayjs(dueDate).format("DD/MM/YYYY") : t('select_date')}
                   </Text>
                 </Pressable>
                 {errors.dueDate && <Text style={[styles.errorText, {
@@ -654,7 +672,9 @@ createTask
               <View style={{ width: wp(44) }}>
                 <Text style={styles.label}>{`${t('due_time')} *`}</Text>
                 <Pressable onPress={() => setShowTimePicker(true)} style={styles.dateButton}>
-                  <Text style={styles.dateText}>
+                  <Text style={[styles.dateText,{
+
+                  }]}>
                     {dueTime ? dayjs(dueTime).format("hh:mm A") : "Select Time"}
                   </Text>
                 </Pressable>
@@ -664,6 +684,7 @@ createTask
               </View>
             </View>
             <CustomSingleDatePickerModal
+              title={t('select_date')}
               visible={showDatePicker}
               initialDate={dueDate}
               onClose={() => setShowDatePicker(false)}

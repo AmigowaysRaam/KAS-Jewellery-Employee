@@ -18,7 +18,7 @@ export default function ChangeMpin() {
   const { showToast } = useToast();
   const profileDetails = useSelector(
     (state) => state?.auth?.profileDetails?.data
-);
+  );
   /** ---------- States ---------- */
   const [currentMpin, setCurrentMpin] = useState(["", "", "", ""]);
   const [newMpin, setNewMpin] = useState(["", "", "", ""]);
@@ -107,7 +107,7 @@ export default function ChangeMpin() {
         }
       );
       if (response?.text === "Success") {
-        showToast("MPIN updated successfully", "success");
+        showToast(response?.message, "success");
         navigation.goBack();
       } else {
         setError(response?.message || "Failed to update MPIN");
@@ -132,7 +132,7 @@ export default function ChangeMpin() {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       keyboardVerticalOffset={Platform.OS === "ios" ? wp(18) : 0}
     >
-      <CommonHeader title="Change MPIN"
+      <CommonHeader title={`${t("change_mpin")}`}
         onBackPress={() => navigation.goBack()}
       />
       <ScrollView
@@ -143,32 +143,30 @@ export default function ChangeMpin() {
       >
         <View style={styles.container}>
           <Text style={styles.subtitle}>
-            {t("Secure your account by updating your MPIN")}
+            {t("change_mpin_subtitle")}
           </Text>
-
           {renderOtpBoxes(
-            t("Enter Current MPIN"),
+            t("enter_current_mpin"),
             currentMpin,
             setCurrentMpin,
             currentRef
           )}
 
           {renderOtpBoxes(
-            t("Enter New MPIN"),
+            t("enter_new_mpin"),
             newMpin,
             setNewMpin,
             newRef
           )}
 
           {renderOtpBoxes(
-            t("Confirm New MPIN"),
+            t("confirm_new_mpin"),
             confirmMpin,
             setConfirmMpin,
             confirmRef
           )}
 
           {error ? <Text style={styles.errorText}>{error}</Text> : null}
-
           <TouchableOpacity
             disabled={isDisabled}
             onPress={handleSubmit}
@@ -184,7 +182,7 @@ export default function ChangeMpin() {
             {loading ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <Text style={styles.buttonText}>{t("Update MPIN")}</Text>
+              <Text style={styles.buttonText}>{t("update_mpin")}</Text>
             )}
           </TouchableOpacity>
         </View>

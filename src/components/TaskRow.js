@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { COLORS } from "../../app/resources/colors";
 import { hp, wp } from "../../app/resources/dimensions";
+
 const TAB_ITEMS = [
   {
     key: "my_task",
@@ -67,7 +68,7 @@ const TaskRow = () => {
   );
 
   return (
-    <View style={{ flexDirection: "row", justifyContent: "space-between", width: wp(94), alignSelf: "center" }}>
+    <View style={styles.container}>
       {TAB_ITEMS.map((item, index) => {
         const isLeft = index === 0;
         const translateX = isLeft ? leftAnim : rightAnim;
@@ -76,9 +77,7 @@ const TaskRow = () => {
         return (
           <Pressable
             key={item.key}
-            onPress={() =>
-              navigation.navigate(item.route, { status: null })
-            }
+            onPress={() => navigation.navigate(item.route, { status: null })}
           >
             <Animated.View style={{ transform: [{ translateX }], opacity }}>
               <View style={styles.wrapper}>
@@ -94,8 +93,13 @@ const TaskRow = () => {
                     style={styles.icon}
                     resizeMode="contain"
                   />
-                  {/* ✅ Translation key used here */}
-                  <Text style={styles.greeting}>
+
+                  {/* 🔥 Tamil-safe text */}
+                  <Text
+                    style={styles.greeting}
+                    numberOfLines={2}
+                    ellipsizeMode="tail"
+                  >
                     {t(item.key)}
                   </Text>
                 </ImageBackground>
@@ -107,32 +111,41 @@ const TaskRow = () => {
     </View>
   );
 };
+
 export default TaskRow;
+
 const styles = StyleSheet.create({
+  container: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: wp(94),
+    alignSelf: "center",
+  },
   wrapper: {
     marginVertical: wp(4),
     alignItems: "center",
   },
   card: {
     width: wp(46),
-    height: hp(7.5),
+    height: hp(8),                 // Increased height for Tamil
     paddingHorizontal: hp(2),
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "flex-start",
   },
   cardImage: {
     borderRadius: wp(2),
   },
   icon: {
-    width: wp(5),
-    height: wp(5),
+    width: wp(7),
+    height: wp(7),
     marginRight: hp(1),
   },
   greeting: {
     fontFamily: "Poppins_600SemiBold",
     color: COLORS.white,
-    fontSize: wp(3.5),
-    lineHeight: hp(3.5),
+    fontSize: wp(3.3),
+    lineHeight: hp(2.6),
+    flexShrink: 1,                // ⭐ KEY FIX
+    maxWidth: wp(30),             // ⭐ KEY FIX
   },
 });

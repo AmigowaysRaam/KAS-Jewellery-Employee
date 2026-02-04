@@ -2,10 +2,7 @@ import messaging from "@react-native-firebase/messaging";
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  Text,
+  RefreshControl, ScrollView, StyleSheet, Text,
   View,
 } from "react-native";
 import { useSelector } from "react-redux";

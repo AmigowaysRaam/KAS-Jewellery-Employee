@@ -87,14 +87,14 @@ export default function SideMenu({ visible, onClose, onItemPress }) {
         if (label === "Logout") {
             setPendingLogout(true);
         }
-    
+
         Animated.timing(slideAnim, {
             toValue: -SCREEN_WIDTH * 0.8,
             duration: 200,
             useNativeDriver: false,
         }).start(() => {
             onClose && onClose();
-    
+
             // 🔥 Open logout modal AFTER side menu closes
             if (label === "Logout") {
                 setLogoutModalVisible(true);
@@ -102,7 +102,7 @@ export default function SideMenu({ visible, onClose, onItemPress }) {
             }
         });
     };
-    
+
     const sidebarIcons = {
         my_account: require("../../assets/MyAccount.png"),
         my_task: require("../../assets/MyTaskside.png"),
@@ -150,6 +150,9 @@ export default function SideMenu({ visible, onClose, onItemPress }) {
         if (key && key == "my_account") {
             navigation.navigate('My Account');
         }
+        if (key && key == "ChangeMpin") {
+            navigation.navigate('ChangeMpin');
+        }
     }
     const renderMenuItem = ({ item }) => (
         <TouchableOpacity
@@ -157,9 +160,8 @@ export default function SideMenu({ visible, onClose, onItemPress }) {
             style={styles.menuItem}
             activeOpacity={0.7}
             onPress={() => {
-                // onItemPress && onItemPress(item.key);
                 handleNavigation(item?.key);
-                // handleClose(item.key);
+                handleClose(item.key);
             }}
         >
             <Image tintColor={"#000"} source={sidebarIcons[item.key]} style={{ width: wp(6), height: wp(6), marginRight: hp(2) }} />
@@ -209,7 +211,7 @@ export default function SideMenu({ visible, onClose, onItemPress }) {
                                 onPress={() => handleClose("Logout")}
                             >
                                 <Text style={[styles.footerText, { fontSize: wp(4), marginRight: wp(2) }]}>
-                                    {t('Logout')}
+                                    {t('logout')}
                                 </Text>
                                 <Icon name={'log-out-outline'} size={wp(5)} color={COLORS?.black} />
                             </TouchableOpacity>
@@ -224,14 +226,14 @@ export default function SideMenu({ visible, onClose, onItemPress }) {
             <Modal transparent visible={logoutModalVisible} animationType="fade">
                 <View style={styles.logoutModalOverlay}>
                     <View style={styles.logoutModalContainer}>
-                        <Text style={styles.logoutTitle}>Confirm Logout?</Text>
-                        <Text style={styles.logoutMessage}>Are you sure you want to logout?</Text>
+                        <Text style={styles.logoutTitle}>{`${t('logout')} ? `}</Text>
+                        <Text style={styles.logoutMessage}>{t('logout_confirmation')}</Text>
                         <View style={styles.logoutButtons}>
                             <TouchableOpacity
                                 style={[styles.logoutBtn, { backgroundColor: COLORS.gray }]}
                                 onPress={cancelLogout}
                             >
-                                <Text style={styles.logoutBtnText}>Cancel</Text>
+                                <Text style={styles.logoutBtnText}>{t('cancel')}</Text>
                             </TouchableOpacity>
                             <TouchableOpacity
                                 style={[styles.logoutBtn, { backgroundColor: COLORS.primary }]}
@@ -239,7 +241,7 @@ export default function SideMenu({ visible, onClose, onItemPress }) {
                             >
                                 <Text style={[styles.logoutBtnText, {
                                     color: COLORS.white
-                                }]}>Logout</Text>
+                                }]}>{t('logout')}</Text>
                             </TouchableOpacity>
                         </View>
                     </View>

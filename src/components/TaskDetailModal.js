@@ -3,16 +3,8 @@ import { Audio } from "expo-av";
 import React, { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
-  Animated,
-  Dimensions,
-  Image,
-  Modal,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View
+  Animated, Dimensions, Image, Modal, Pressable, ScrollView,
+  StyleSheet, Text, TouchableOpacity, View
 } from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { COLORS } from "../../app/resources/colors";
@@ -274,133 +266,51 @@ const styles = StyleSheet.create({
   overlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.4)" },
 
   modalContainer: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    bottom: 0,
-    maxHeight: SCREEN_HEIGHT * 0.85,
-    backgroundColor: "#fff",
-    borderTopLeftRadius: wp(8),
-    borderTopRightRadius: wp(8),
-    padding: wp(5),
-    paddingTop: hp(6),
-    shadowColor: "#000",
-    shadowOpacity: 0.25,
-    shadowRadius: 10,
-    elevation: 15,
-  },
-  closeButton: {
-    position: "absolute",
-    top: -wp(5),
-    right: wp(5),
-    width: wp(11),
-    height: wp(11),
-    borderRadius: wp(5.5),
-    backgroundColor: COLORS.primary,
-    justifyContent: "center",
-    alignItems: "center",
-    zIndex: 10,
-    borderWidth: wp(0.8), borderColor: "#FFF"
-  },
-
-  modalTitle: {
-    fontSize: wp(5),
-    fontFamily: "Poppins_700Bold",
-    color: "#222",
-    marginBottom: hp(1.5),
-  },
-  descriptionContainer: {
-    marginBottom: hp(2),
-    maxHeight: SCREEN_HEIGHT * 0.25,
-    borderRadius: wp(3),
-    backgroundColor: "#f5f5f5",
-    padding: wp(3),
-  },
-  descriptionScroll: {
-    paddingRight: wp(2),
-  },
+    position: "absolute", left: 0, right: 0, bottom: 0,
+    maxHeight: SCREEN_HEIGHT * 0.85, backgroundColor: "#fff", borderTopLeftRadius: wp(8), borderTopRightRadius: wp(8), padding: wp(5), paddingTop: hp(6), shadowColor: "#000", shadowOpacity: 0.25, shadowRadius: 10, elevation: 15,
+  }, closeButton: {
+    position: "absolute", top: -wp(5), right: wp(5), width: wp(11),
+    height: wp(11), borderRadius: wp(5.5), backgroundColor: COLORS.primary, justifyContent: "center",
+    alignItems: "center", zIndex: 10, borderWidth: wp(0.8), borderColor: "#FFF"
+  }, modalTitle: {
+    fontSize: wp(5), fontFamily: "Poppins_700Bold",
+    color: "#222", marginBottom: hp(1.5),
+  }, descriptionContainer: {
+    marginBottom: hp(2), maxHeight: SCREEN_HEIGHT * 0.25,
+    borderRadius: wp(3), backgroundColor: "#f5f5f5", padding: wp(3),
+  }, descriptionScroll: { paddingRight: wp(2), },
   modalDescriptionText: {
-    fontSize: wp(4),
-    fontFamily: "Poppins_400Regular",
-    color: "#444",
-    lineHeight: hp(3),
-    marginBottom: hp(1),
-  },
-  statusEditRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: hp(2),
-  },
-
-  statusBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: wp(4),
-    paddingVertical: hp(0.7),
-    borderRadius: wp(3),
-  },
-
-  statusText: {
-    color: "#fff",
-    fontSize: wp(4),
-    fontFamily: "Poppins_500Medium",
-  },
-
-  editButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: COLORS.primary,
-    paddingHorizontal: wp(4),
-    paddingVertical: hp(0.8),
-    borderRadius: wp(3),
-  },
-  editText: {
-    color: "#fff",
-    fontSize: wp(4),
-    fontFamily: "Poppins_500Medium",
+    fontSize: wp(4), fontFamily: "Poppins_400Regular",
+    color: "#444", lineHeight: hp(3), marginBottom: hp(1),
+  }, statusEditRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: hp(2), }, statusBadge: { flexDirection: "row", alignItems: "center", paddingHorizontal: wp(4), paddingVertical: hp(0.7), borderRadius: wp(3), }, statusText: {
+    color: "#fff", fontSize: wp(4), fontFamily: "Poppins_500Medium",
+  }, editButton: {
+    flexDirection: "row", alignItems: "center",
+    backgroundColor: COLORS.primary, paddingHorizontal: wp(4), paddingVertical: hp(0.8), borderRadius: wp(3),
+  }, editText: {
+    color: "#fff", fontSize: wp(4), fontFamily: "Poppins_500Medium",
     marginLeft: wp(1),
   },
-
   datesRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: hp(2) },
-  dateItem: { flex: 1 },
-  dateRow: { flexDirection: "row", alignItems: "center" },
+  dateItem: { flex: 1 }, dateRow: { flexDirection: "row", alignItems: "center" },
   label: { fontSize: wp(3.2), fontFamily: "Poppins_400Regular", color: COLORS?.primary },
   dateText: { fontSize: wp(3.8), fontFamily: "Poppins_500Medium", marginTop: hp(0.3), color: "#333" },
-
   audioContainer: {
-    marginTop: hp(2),
-    alignItems: "center",
-    padding: wp(4),
-    borderRadius: wp(5),
-    backgroundColor: "#eef6ff",
-  },
-  audioName: { fontSize: wp(4), fontFamily: "Poppins_500Medium", marginBottom: hp(1), flexDirection: "row" },
+    marginTop: hp(2), alignItems: "center", padding: wp(4),
+    borderRadius: wp(5), backgroundColor: "#eef6ff",
+  }, audioName: { fontSize: wp(4), fontFamily: "Poppins_500Medium", marginBottom: hp(1), flexDirection: "row" },
   audioControls: { flexDirection: "row", alignItems: "center", marginBottom: hp(1) },
-
   controlButton: {
-    width: wp(14),
-    height: wp(14),
-    borderRadius: wp(7),
-    backgroundColor: "#d6e4ff",
-    justifyContent: "center",
-    alignItems: "center",
+    width: wp(14), height: wp(14), borderRadius: wp(7),
+    backgroundColor: "#d6e4ff", justifyContent: "center", alignItems: "center",
     marginHorizontal: wp(2),
-  },
-  playButton: {
+  }, playButton: {
     backgroundColor: COLORS.primary,
-  },
-  progressBarBackground: {
-    flexDirection: "row",
-    width: wp(80),
-    height: hp(1.5),
-    borderRadius: hp(0.8),
-    backgroundColor: "#ddd",
-    overflow: "hidden",
+  }, progressBarBackground: {
+    flexDirection: "row", width: wp(80), height: hp(1.5),
+    borderRadius: hp(0.8), backgroundColor: "#ddd", overflow: "hidden",
     marginBottom: hp(0.5),
-  },
-  progressBarFill: { backgroundColor: COLORS.primary },
-  progressBarRemaining: { backgroundColor: "#ddd" },
-  timeRow: { flexDirection: "row", justifyContent: "space-between", width: wp(80) },
+  }, progressBarFill: { backgroundColor: COLORS.primary },
+  progressBarRemaining: { backgroundColor: "#ddd" }, timeRow: { flexDirection: "row", justifyContent: "space-between", width: wp(80) },
   timeText: { fontSize: wp(3), color: "#333", fontFamily: "Poppins_400Regular" },
 });

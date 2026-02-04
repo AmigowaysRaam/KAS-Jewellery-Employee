@@ -116,6 +116,7 @@ export default function MyTaskListScreen({ route }) {
 
   /** Handle pull-to-refresh */
   const onRefresh = () => {
+    console.log("Refreshing",siteDetails?.ticketstatusList);
     setRefreshing(true);
     setHasMore(true);
     fetchTasks(1, true, selectedStatus);
@@ -145,13 +146,20 @@ export default function MyTaskListScreen({ route }) {
   const getStatusColor = (status) => {
     switch (status) {
       case "Open":
-        return "#3498db";
+        return "#3498db";        // Blue
       case "Inprogress":
-        return "#f39c12";
+        return "#f39c12";        // Orange
+      case "Waiting for QC":
+        return "#9b59b6";        // Purple
+      case "Completed":
+        return "#2ecc71";        // Green
       default:
-        return COLORS.primary;
+        return COLORS.primary;   // Fallback
     }
   };
+  
+
+
 
   const getPriorityColor = (level) => {
     switch (level) {
@@ -261,7 +269,7 @@ export default function MyTaskListScreen({ route }) {
             ListHeaderComponent={<>
               <DateandDownloadTask
                 onDateSelect={setSelectedDateRange}
-                onDownload={() => console.log("Download clicked")}
+                onDownload={() => showToast('Task list download is in progress...', 'info')} 
               />
             </>}
             data={tasks}
