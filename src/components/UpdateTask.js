@@ -16,9 +16,10 @@ import { getStoredLanguage } from "../../app/i18ns";
 import { COLORS } from "../../app/resources/colors";
 import { hp, wp } from "../../app/resources/dimensions";
 import { useToast } from "../../constants/ToastContext";
+import { fetchData } from "./api/Api";
 import CommonHeader from "./CommonHeader";
 import CustomDropdown from "./CustomDropDown";
-import { fetchData } from "./api/Api";
+import ImageViewerModal from "./ImageViewver";
 
 export default function UpdateTask({ route }) {
   const navigation = useNavigation();
@@ -173,6 +174,13 @@ export default function UpdateTask({ route }) {
       />
     );
   };
+  const [viewerVisible, setViewerVisible] = useState(false);
+  const [viewerUri, setViewerUri] = useState(null);
+  const openImageViewer = (uri) => {
+    setViewerUri(uri);
+    setViewerVisible(true);
+  };
+
   // Keyboard listeners
   useEffect(() => {
     const showSub = Keyboard.addListener("keyboardDidShow", () => setIsKeyboardOpen(true));
@@ -402,31 +410,32 @@ export default function UpdateTask({ route }) {
         );
       case "images":
         return (
-          <View style={styles.fieldContainer}>
-            <Text style={styles.label}>{t("images")}</Text>
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: wp(2) }}>
-              {images.map((img, idx) => (
-                <View key={idx} style={{ position: "relative", width: wp(26), height: hp(14), marginRight: wp(2), marginBottom: hp(1) }}>
-                  <Image source={{ uri: img.uri }} style={{ width: "100%", height: "100%", borderRadius: wp(2) }} resizeMode="cover" />
-                  {/* <Pressable
-                    onPress={() => removeImage(idx)}
-                    style={{ position: "absolute", top: -wp(2), right: -wp(2), backgroundColor: "red", borderRadius: wp(3), padding: wp(1) }}
+          images?.length > 0 && (
+            <View style={styles.fieldContainer}>
+              <Text style={styles.label}>{t("images")}</Text>
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: wp(2) }}>
+                {images.map((img, idx) => (
+                  <Pressable
+                    key={idx}
+                    onPress={() => openImageViewer(img?.uri)}
+                    style={{
+                      position: "relative",
+                      width: wp(26),
+                      height: hp(14),
+                      marginRight: wp(2),
+                      marginBottom: hp(1),
+                    }}
                   >
-                    <Icon name="trash" type="feather" size={wp(4)} color="#fff" />
-                  </Pressable> */}
-                </View>
-              ))}
-              {images.length < 3 && (
-                <Pressable
-                  onPress={() => setModalVisible(true)}
-                  style={{ borderWidth: wp(0.2), height: hp(15), width: wp(30), alignItems: "center", justifyContent: "center", borderRadius: wp(2) }}
-                >
-                  <Icon name="plus" type="feather" size={wp(5.5)} color={COLORS.primary} />
-                </Pressable>
-              )}
+                    <Image
+                      source={{ uri: img.uri }}
+                      style={{ width: "100%", height: "100%", borderRadius: wp(2) }}
+                      resizeMode="cover"
+                    />
+                  </Pressable>
+                ))}
+              </View>
             </View>
-          </View>
-        );
+          ))
       case "button":
         return (
           <TouchableOpacity style={styles.updateButton} onPress={handleUpdateTask} disabled={loading}>
@@ -526,6 +535,11 @@ export default function UpdateTask({ route }) {
           </View>
         </View>
       </Modal>
+      <ImageViewerModal
+        visible={viewerVisible}
+        uri={viewerUri}
+        onClose={() => setViewerVisible(false)}
+      />
     </KeyboardAvoidingView>
   );
 }

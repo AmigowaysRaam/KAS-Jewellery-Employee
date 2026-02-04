@@ -35,7 +35,7 @@ const DateandDownloadTask = ({ onDateSelect, onDownload }) => {
       <View style={styles.card}>
         <Pressable style={styles.dateButton} onPress={() => setShowPicker(true)}>
           <Icon name="calendar-today" size={wp(5)} color="#fff" />
-          <Text style={styles.buttonText}>{formatRange()}</Text>
+          <Text numberOfLines={1} style={[styles.buttonText]}>{formatRange()}</Text>
           {(fromDate || toDate) && (
             <Pressable onPress={clearRange} style={styles.clearIcon}>
               <Icon name="close" size={wp(6)} color="#fff" />
