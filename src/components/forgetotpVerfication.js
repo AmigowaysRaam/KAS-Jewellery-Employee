@@ -144,9 +144,7 @@ export default function ForgetOtpVerification({ route }) {
             <Text style={styles.subtitle}>
               {`${t("enter_the_otp_sent_to")} +91 ${data?.phone_number} ${t("to_reset_your_mpin")}`}
             </Text>
-            {/* <Text style={styles.subtitle}>{sentOtp}</Text> */}
           </View>
-
           <View style={styles.otpContainer}>
             {otpE.map((value, index) => (
               <RNTextInput
@@ -183,7 +181,6 @@ export default function ForgetOtpVerification({ route }) {
               </Text>
             )}
           </View>
-
           <TouchableOpacity
             disabled={isButtonDisabled}
             onPress={handleVerifyOtp}
@@ -240,13 +237,14 @@ const styles = StyleSheet.create({
   timerContainer: { marginBottom: hp(2) },
   timerText: { fontSize: wp(3.5) },
   resendBtn: {
-    width: wp(40),
+    // width: wp(60),
     height: hp(5),
     borderRadius: wp(6),
     borderWidth: wp(0.4),
     borderColor: COLORS.primary,
     alignItems: "center",
     justifyContent: "center",
+    paddingHorizontal: wp(2)
   },
   resendText: {
     fontFamily: "Poppins_600SemiBold",

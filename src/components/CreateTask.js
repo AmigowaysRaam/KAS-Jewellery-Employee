@@ -275,7 +275,6 @@ export default function CreateTask() {
     const seconds = totalSeconds % 60;
     return `${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;
   };
-
   // -------- VALIDATION & SUBMIT --------
   const validate = () => {
     const newErrors = {};
@@ -370,26 +369,62 @@ export default function CreateTask() {
   };
   const pickCamera = async () => {
     setmediaModal(false);
-    const result = await ImagePicker.launchCameraAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.7 });
+  
+    const hasPermission = await requestCameraPermission();
+    if (!hasPermission) return;
+  
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 0.7,
+    });
+  
     if (!result.canceled && result.assets?.[0]?.uri) {
       const img = result.assets[0];
       setImages(prev => [...prev, { ...img, source: "Camera" }]);
     }
   };
+  
 
+  const requestCameraPermission = async () => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== "granted") {
+      showToast(t("camera_permission_required"), "error");
+      return false;
+    }
+    return true;
+  };
+  
+  const requestGalleryPermission = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") {
+      showToast(t("gallery_permission_required"), "error");
+      return false;
+    }
+    return true;
+  };
   const pickFile = async () => {
     setmediaModal(false);
+    const hasPermission = await requestGalleryPermission();
+    if (!hasPermission) return;
+  
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       quality: 0.7,
       allowsMultipleSelection: true,
-      selectionLimit: 3 - images.length
+      selectionLimit: 3 - images.length,
     });
+  
     if (!result.canceled && result.assets?.length > 0) {
-      const selected = result.assets.map(a => ({ ...a, source: "Gallery" }));
+      const selected = result.assets.map(a => ({
+        ...a,
+        source: "Gallery",
+      }));
       setImages(prev => [...prev, ...selected]);
     }
   };
+  
+
+
   const removeImage = (index) => {
     setImages((prev) => prev.filter((_, i) => i !== index));
   };
@@ -591,7 +626,7 @@ export default function CreateTask() {
                   </Text>
                   <Text style={styles.recordingTime}>{recordTime}s</Text>
                   <TouchableOpacity style={styles.stopButton} onPress={stopRecording}>
-                    <Text style={styles.stopButtonText}>Stop</Text>
+                    <Text style={styles.stopButtonText}>{t('stop')}</Text>
                   </TouchableOpacity>
                 </View>
               </View>

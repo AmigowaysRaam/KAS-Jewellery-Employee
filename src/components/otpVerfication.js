@@ -150,8 +150,7 @@ export default function OtpVerfication({ route }) {
             <Text style={styles.subtitle}>
               {`${t("please_enter_otp")} +91 ${data[0]?.phone_number}`}
             </Text>
-            {/* {<Text style={styles.subtitle}>{sentOtp}</Text>} */}
-            {/* <Text>{JSON.stringify(data[0])}</Text> */}
+            {/* {/* <Text>{JSON.stringify(data[0])}</Text> */}
           </View>
 
           <View style={styles.otpContainer}>
@@ -252,7 +251,7 @@ const styles = StyleSheet.create({
   timerContainer: { marginBottom: hp(2) },
   timerText: { fontSize: wp(3.5) },
   resendBtn: {
-    width: wp(40),
+    width: wp(45),
     height: hp(5),
     borderRadius: wp(6),
     borderWidth: wp(0.4),
