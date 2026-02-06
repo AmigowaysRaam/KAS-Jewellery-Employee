@@ -1,6 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
+import { BASE_URL } from "../src/components/api/Api";
 
 // Initial i18n setup
 i18n.use(initReactI18next).init({
@@ -13,7 +14,7 @@ i18n.use(initReactI18next).init({
 // Load translations from API and save language code locally
 export const loadTranslationsFromAPI = async (lang = "en") => {
   try {
-    const response = await fetch("https://kasjewellery.in/app-employee-language-content", {
+    const response = await fetch(`${BASE_URL}app-employee-language-content`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ user_id: "13", lang_code:lang }),

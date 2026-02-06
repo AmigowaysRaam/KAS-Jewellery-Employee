@@ -140,13 +140,12 @@ const ProfileCard = ({ onClose, loadingMenu, onEditProfile }) => {
                   {profileDetails?.admin_name || t("")}
                 </Text>
                 <Text style={styles.value}>{t("Manager")}</Text>
-                <Text style={styles.value}>{profileDetails?.employee_id}</Text>
+                <Text style={styles.value}>{profileDetails?.employee_id || '-'}</Text>
               </View>
             </View>
-
             {/* Close Button */}
             <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-              <Icon name={"close-circle"} size={wp(6)} color={COLORS?.primary} />
+              <Icon name={"close-circle"} size={wp(8)} color={COLORS?.primary} />
             </TouchableOpacity>
           </View>
         )}

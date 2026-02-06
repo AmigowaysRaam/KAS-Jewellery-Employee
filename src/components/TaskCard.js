@@ -9,6 +9,7 @@ import { useSelector } from "react-redux";
 import { COLORS } from "../../app/resources/colors";
 import { hp, wp } from "../../app/resources/dimensions";
 import { useToast } from "../../constants/ToastContext";
+import { BASE_URL } from "./api/Api";
 import StatusSelectModal from "./statusSelectModal";
 import TaskDetailModal from "./TaskDetailModal";
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
@@ -82,7 +83,7 @@ export default function TaskCard({ task, loadData }) {
             formData.append("id", task.id);
             formData.append("status", sta);
             formData.append("user_id", profileDetails?.id);
-            const response = await fetch("https://kasjewellery.in/app-employee-update-task", {
+            const response = await fetch(`${BASE_URL}app-employee-update-task`, {
                 method: "POST",
                 headers: { Accept: "application/json" },
                 body: formData,

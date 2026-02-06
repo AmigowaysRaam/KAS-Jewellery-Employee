@@ -189,7 +189,7 @@ export default function Notification() {
                 textAlign: "center", marginTop: hp(10),
                 fontFamily: 'Poppins_600SemiBold'
               }}>
-                No notifications found
+                {t("no_notifications")}
               </Text>
             )
           }
@@ -198,7 +198,6 @@ export default function Notification() {
     </View>
   );
 }
-
 /* ---------- STYLES ---------- */
 const styles = StyleSheet.create({
   notificationContainer: {

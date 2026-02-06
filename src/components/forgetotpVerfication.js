@@ -23,20 +23,19 @@ export default function ForgetOtpVerification({ route }) {
   const navigation = useNavigation();
   const { t } = useTranslation();
   const { otp: initialOtp, data } = route.params;
-
   const [otpE, setOtp] = useState(["", "", "", ""]);
   const [sentOtp, setSentOtp] = useState(String(initialOtp));
   const [error, setError] = useState("");
   const [timer, setTimer] = useState(60);
   const [canResend, setCanResend] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
-
   const inputsRef = useRef([]);
   const scrollRef = useRef(null);
   const { showToast } = useToast();
 
   /** Scroll to bottom when keyboard opens */
   useEffect(() => {
+    // Alert.alert('',JSON.stringify(sentOtp?.otp))
     const keyboardDidShowListener = Keyboard.addListener("keyboardDidShow", () => {
       setTimeout(() => {
         scrollRef.current?.scrollToEnd({ animated: true });
@@ -56,16 +55,7 @@ export default function ForgetOtpVerification({ route }) {
     return () => clearInterval(interval);
   }, [timer]);
 
-  /** Handle OTP input change */
-  const handleChange = (text, index) => {
-    if (/[^0-9]/.test(text)) return;
-    const newOtp = [...otpE];
-    newOtp[index] = text;
-    setOtp(newOtp);
-    if (text && index < 3) {
-      inputsRef.current[index + 1]?.focus();
-    }
-  };
+
 
   /** Handle backspace to go to previous input */
   const handleKeyPress = ({ nativeEvent }, index) => {
@@ -74,9 +64,32 @@ export default function ForgetOtpVerification({ route }) {
     }
   };
 
+  /** Handle OTP input change */
+  const handleChange = (text, index) => {
+    // Alert.alert('',JSON.stringify(sentOtp?.otp))
+    if (/[^0-9]/.test(text)) return;
+    const newOtp = [...otpE];
+    newOtp[index] = text;
+    setOtp(newOtp);
+
+    // Focus next input if not the last one
+    if (text && index < 3) {
+      inputsRef.current[index + 1]?.focus();
+    }
+    // ✅ Auto-submit if all 4 digits are filled
+    if (newOtp.every((d) => d !== "")) {
+      const enteredOtp = newOtp.join("");
+      setTimeout(() => {
+        handleVerifyOtp(enteredOtp); // send OTP as parameter
+      }, 50); // slight delay ensures last digit renders
+    }
+  };
   /** Verify OTP */
-  const handleVerifyOtp = async () => {
-    const enteredOtp = otpE.join("");
+  const handleVerifyOtp = async (enteredOtpParam) => {
+    // Alert.alert("Sent OTP",JSON.stringify(sentOtp), ); // Debug: show sent OTP
+    //  console.log(sentOtp, enteredOtpParam, otpE.join(""), "OTP Values"); // Debug: log OTP values
+    // Use the OTP from param if passed, otherwise fallback to state
+    const enteredOtp = enteredOtpParam || otpE.join("");
     if (!sentOtp) {
       setError("otp_expired");
       showToast(t("otp_expired"), "error");
@@ -104,13 +117,14 @@ export default function ForgetOtpVerification({ route }) {
     setCanResend(false);
     inputsRef.current[0]?.focus();
     setResendLoading(true);
-
     try {
       const response = await fetchData("app-employee-forgot-mpin", "POST", {
         user_id: data?.id,
       });
+      // Alert.alert('',JSON.stringify(response))
+      // console.log(response, "Resend OTP Response");
       if (response?.text === "Success") {
-        setSentOtp(String(response.data));
+        setSentOtp(response.data?.otp);
         showToast(response.message, "success");
       } else {
         showToast(t("something_went_wrong"), "error");
@@ -148,6 +162,7 @@ export default function ForgetOtpVerification({ route }) {
           <View style={styles.otpContainer}>
             {otpE.map((value, index) => (
               <RNTextInput
+                selectTextOnFocus
                 key={index}
                 ref={(ref) => (inputsRef.current[index] = ref)}
                 value={value}
@@ -159,15 +174,16 @@ export default function ForgetOtpVerification({ route }) {
               />
             ))}
           </View>
-
           {error ? <Text style={styles.errorText}>{t(error)}</Text> : null}
-
           <View style={styles.timerContainer}>
             {canResend ? (
               <TouchableOpacity
                 disabled={resendLoading}
                 onPress={handleResendOtp}
-                style={[styles.resendBtn, { opacity: resendLoading ? 0.6 : 1 }]}
+                style={[styles.resendBtn, {
+                  opacity: resendLoading ? 0.6 : 1,
+                  paddingHorizontal: wp(6)
+                }]}
               >
                 {resendLoading ? (
                   <ActivityIndicator color={COLORS.primary} />
@@ -181,7 +197,7 @@ export default function ForgetOtpVerification({ route }) {
               </Text>
             )}
           </View>
-          <TouchableOpacity
+          {/* <TouchableOpacity
             disabled={isButtonDisabled}
             onPress={handleVerifyOtp}
             style={[
@@ -192,13 +208,12 @@ export default function ForgetOtpVerification({ route }) {
             <Text style={[styles.buttonText, { fontFamily: "Poppins_600SemiBold" }]}>
               {t("verify_otp")}
             </Text>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
   );
 }
-
 /** STYLES */
 const styles = StyleSheet.create({
   scrollContainer: { flexGrow: 1, backgroundColor: "#fff" },

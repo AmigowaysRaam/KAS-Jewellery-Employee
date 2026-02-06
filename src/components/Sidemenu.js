@@ -44,7 +44,7 @@ export default function SideMenu({ visible, onClose, onItemPress }) {
             // Slide in quickly (instant or very fast)
             Animated.timing(slideAnim, {
                 toValue: 0,
-                duration: 100, // faster open (100ms)
+                duration: 300, // faster open (100ms)
                 useNativeDriver: false,
             }).start();
         } else {
@@ -87,7 +87,6 @@ export default function SideMenu({ visible, onClose, onItemPress }) {
         if (label === "Logout") {
             setPendingLogout(true);
         }
-
         Animated.timing(slideAnim, {
             toValue: -SCREEN_WIDTH * 0.8,
             duration: 200,
@@ -165,7 +164,9 @@ export default function SideMenu({ visible, onClose, onItemPress }) {
             }}
         >
             <Image tintColor={"#000"} source={sidebarIcons[item.key]} style={{ width: wp(6), height: wp(6), marginRight: hp(2) }} />
-            <Text style={styles.menuText}>{item?.key}</Text>
+            <Text style={styles.menuText}>
+                {item?.key?.replace(/_/g, ' ')}
+            </Text>
         </TouchableOpacity>
     );
     const renderSkeleton = () => (
@@ -190,7 +191,7 @@ export default function SideMenu({ visible, onClose, onItemPress }) {
                         <ProfileCard onClose={handleClose} loadingMenu={loadingMenu} />
                         {loadingMenu ? (
                             <View>
-                                {[...Array(8)].map((_, index) => (
+                                {[...Array(10)].map((_, index) => (
                                     <View key={index}>{renderSkeleton()}</View>
                                 ))}
                             </View>

@@ -1,5 +1,4 @@
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
-import dayjs from "dayjs";
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -25,15 +24,12 @@ export default function MyTaskListScreen({ route }) {
   const siteDetails = useSelector((state) => state.auth?.siteDetails?.data[0]);
   const profileDetails = useSelector((state) => state?.auth?.profileDetails?.data);
   const { showToast } = useToast();
-
-  const initialDateRange = { from: null, to: null };
-
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [selectedStatus, setSelectedStatus] = useState(route?.params?.status || null);
-  const [selectedDateRange, setSelectedDateRange] = useState(initialDateRange);
+  const [selectedDateRange, setSelectedDateRange] = useState({ from: null, to: null });
   const [selectedTask, setSelectedTask] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [page, setPage] = useState(1);
@@ -56,6 +52,8 @@ export default function MyTaskListScreen({ route }) {
         per_page: 10,
         current_page: pageNo,
         lang: lang,
+        from: selectedDateRange.from,
+        to: selectedDateRange.to,
         ...(statusValue && { status: statusValue }),
       });
       if (response?.text === "Success") {
@@ -72,26 +70,6 @@ export default function MyTaskListScreen({ route }) {
             (task) => task?.status?.toLowerCase() === status.toLowerCase()
           );
         }
-        // Apply date filter
-        if (selectedDateRange.from || selectedDateRange.to) {
-          data = data.filter((task) => {
-            const assigned = dayjs(task.assigned_date, "DD-MM-YYYY hh:mm a");
-            if (selectedDateRange.from && selectedDateRange.to) {
-              return (
-                assigned.isAfter(dayjs(selectedDateRange.from).startOf("day")) &&
-                assigned.isBefore(dayjs(selectedDateRange.to).endOf("day"))
-              );
-            }
-            if (selectedDateRange.from) {
-              return assigned.isAfter(dayjs(selectedDateRange.from).startOf("day"));
-            }
-            if (selectedDateRange.to) {
-              return assigned.isBefore(dayjs(selectedDateRange.to).endOf("day"));
-            }
-            return true;
-          });
-        }
-
         setHasMore(data.length === 10);
         setTasks((prev) => (pageNo === 1 ? data : [...prev, ...data]));
         setPage(pageNo);
@@ -111,12 +89,12 @@ export default function MyTaskListScreen({ route }) {
   useFocusEffect(
     React.useCallback(() => {
       fetchTasks(1, true, selectedStatus);
-    }, [profileDetails?.id, selectedStatus, searchText, selectedDateRange])
+    }, [profileDetails?.id, selectedStatus, searchText])
   );
 
   /** Handle pull-to-refresh */
   const onRefresh = () => {
-    console.log("Refreshing",siteDetails?.ticketstatusList);
+    console.log("Refreshing", siteDetails?.ticketstatusList);
     setRefreshing(true);
     setHasMore(true);
     fetchTasks(1, true, selectedStatus);
@@ -141,7 +119,6 @@ export default function MyTaskListScreen({ route }) {
       fetchTasks(1, true, status);
     }
   };
-
   /** Status color */
   const getStatusColor = (status) => {
     switch (status) {
@@ -157,10 +134,6 @@ export default function MyTaskListScreen({ route }) {
         return COLORS.primary;   // Fallback
     }
   };
-  
-
-
-
   const getPriorityColor = (level) => {
     switch (level) {
       case "Critical":
@@ -208,7 +181,7 @@ export default function MyTaskListScreen({ route }) {
     return (
       <Pressable
         onPress={() => openTaskModal(item)}
-        style={[styles.card, { borderLeftColor: getPriorityColor(item.priority)?.color, borderLeftWidth: wp(1) }]}
+        style={[styles.card, { borderLeftColor: getStatusColor(item.status), borderLeftWidth: wp(1) }]}
       >
         <View style={styles.cardHeader}>
           <Text numberOfLines={1} style={styles.taskTitle}>{item.title || t("Untitled Task")}</Text>
@@ -268,20 +241,37 @@ export default function MyTaskListScreen({ route }) {
           <FlatList
             ListHeaderComponent={<>
               <DateandDownloadTask
-                onDateSelect={setSelectedDateRange}
-                onDownload={() => showToast('Task list download is in progress...', 'info')} 
+                fromDate={selectedDateRange.from}
+                toDate={selectedDateRange.to}
+                onDateSelect={(range) => {
+                  setSelectedDateRange(range);
+                  setHasMore(true);
+                  fetchTasks(1, true, selectedStatus);
+                }}
+                onDownload={() => showToast('Task list download is in progress...', 'info')}
               />
             </>}
             data={tasks}
-            keyExtractor={(item) => item.s_no.toString()}
+            keyExtractor={(item) => item?.id}
             renderItem={renderTask}
-            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                colors={[COLORS?.primary]}          // Android spinner color(s)
+                tintColor={COLORS?.primary}         // iOS spinner color
+                progressBackgroundColor={COLORS?.ashGrey}// Android background (optional)
+              />
+
+            }
             onEndReached={loadMore}
             onEndReachedThreshold={0.5}
             ListEmptyComponent={
               !loading && (
                 <View style={{ alignItems: "center", marginTop: hp(5) }}>
-                  <Text style={{ color: COLORS.gray, fontFamily: "Poppins_600SemiBold" }}>No tasks found</Text>
+                  <Text style={{ color: COLORS.gray, fontFamily: "Poppins_600SemiBold" }}>
+                    {t('no_tasks_found')}
+                  </Text>
                 </View>
               )
             }
@@ -297,7 +287,6 @@ export default function MyTaskListScreen({ route }) {
     </KeyboardAvoidingView>
   );
 }
-
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#f8f9fb" },
   card: {

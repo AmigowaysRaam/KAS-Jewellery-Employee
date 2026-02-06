@@ -69,6 +69,7 @@ export default function ChangeMpin() {
       <View style={styles.otpContainer}>
         {value.map((item, index) => (
           <RNTextInput
+            selectTextOnFocus
             key={index}
             ref={(el) => (refArr.current[index] = el)}
             value={item}

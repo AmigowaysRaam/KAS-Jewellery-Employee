@@ -4,9 +4,11 @@ import { useNavigation } from "@react-navigation/native";
 import React, { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
-  ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, TextInput as RNTextInput,
-  ScrollView, StyleSheet, Text, TouchableOpacity, View
+  KeyboardAvoidingView, Platform, Pressable, TextInput as RNTextInput,
+  ScrollView, StyleSheet, Text,
+  View
 } from "react-native";
+import { ActivityIndicator } from "react-native-paper";
 import { useDispatch } from "react-redux";
 import { COLORS } from "../../app/resources/colors";
 import { hp, wp } from "../../app/resources/dimensions";
@@ -75,14 +77,40 @@ export default function MpinLoginScreen() {
     }
   };
   const handleChange = (text, index) => {
-    if (/[^0-9]/.test(text)) return;
+    const digits = text.replace(/[^0-9]/g, '');
+  
     const updated = [...mpin];
-    updated[index] = text;
+  
+    // If user clears the input
+    if (digits.length === 0) {
+      updated[index] = "";
+      setMpin(updated);
+      return;
+    }
+  
+    let nextIndex = index;
+  
+    for (let i = 0; i < digits.length && nextIndex < updated.length; i++) {
+      updated[nextIndex] = digits[i];
+      nextIndex++;
+    }
+  
     setMpin(updated);
-    if (text && index < 3) {
-      mpinRef.current[index + 1]?.focus();
+  
+    if (nextIndex < updated.length) {
+      mpinRef.current[nextIndex]?.focus();
+    } else {
+      mpinRef.current[updated.length - 1]?.blur();
+    }
+  
+    if (updated.every(d => d !== "")) {
+      setTimeout(() => {
+        handleLogin(updated.join(""));
+      }, 50);
     }
   };
+  
+
   const fnGetOtpForget = async () => {
     setLoading(true);
     try {
@@ -111,7 +139,6 @@ export default function MpinLoginScreen() {
       setLoading(false);
     }
   }
-
   const handleKeyPress = (e, index) => {
     if (e.nativeEvent.key === "Backspace") {
       const updated = [...mpin];
@@ -125,33 +152,38 @@ export default function MpinLoginScreen() {
     }
   };
   const dispatch = useDispatch();
-  const handleLogin = async () => {
-    const mpinValue = mpin.join("");
-    if (mpinValue.length < 4) {
+
+  const handleLogin = async (mpinValue = null) => {
+    // If called without argument, fallback to state
+    const mpinString = mpinValue || mpin.join("");
+
+    if (mpinString.length < 4) {
       setError("mpin_invalid");
       showToast(t("mpin_invalid"), "error");
       return;
     }
+
     if (!userId) {
       showToast("User not found", "error");
       return;
     }
+
     setLoading(true);
     setError("");
+
     try {
       const response = await fetchData(
         "app-employee-login-mpin",
         "POST",
         {
           user_id: userId,
-          mpin: mpinValue,
-          fcm_token: fcmToken
+          mpin: mpinString,  // ✅ Use the passed 4-digit value
+          fcm_token: fcmToken,
         }
       );
+
       if (response?.text === "Success") {
-        await AsyncStorage.multiSet([
-          ["USER_DATA", JSON.stringify(response)],
-        ]);
+        await AsyncStorage.multiSet([["USER_DATA", JSON.stringify(response)]]);
         dispatch(setProfileDetails(response));
         showToast(response?.message, "success");
         navigation.replace("home");
@@ -168,6 +200,7 @@ export default function MpinLoginScreen() {
       setMpin(["", "", "", ""]);
     }
   };
+
   const isButtonDisabled = mpin.join("").length !== 4 || loading;
   return (
     <KeyboardAvoidingView
@@ -191,6 +224,7 @@ export default function MpinLoginScreen() {
           <View style={styles.otpContainer}>
             {mpin.map((item, index) => (
               <RNTextInput
+              selectTextOnFocus
                 key={index}
                 ref={(el) => (mpinRef.current[index] = el)}
                 value={item}
@@ -203,7 +237,10 @@ export default function MpinLoginScreen() {
             ))}
           </View>
           {error ? <Text style={styles.errorText}>{t(error)}</Text> : null}
-
+          {loading ? (
+            <ActivityIndicator color={COLORS?.primary
+            } />
+          ) : null}
           <Pressable onPress={() => fnGetOtpForget()}>
             <Text style={[styles.title, {
               fontSize: wp(4), alignSelf: 'flex-end', marginHorizontal: wp(5),
@@ -211,7 +248,7 @@ export default function MpinLoginScreen() {
             }]}>{t("forget_mpin")}</Text>
           </Pressable>
 
-          <TouchableOpacity
+          {/* <TouchableOpacity
             disabled={isButtonDisabled}
             onPress={handleLogin}
             style={[
@@ -230,7 +267,7 @@ export default function MpinLoginScreen() {
                 fontFamily: "Poppins_600SemiBold",
               }]}>{t("login")}</Text>
             )}
-          </TouchableOpacity>
+          </TouchableOpacity> */}
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -249,8 +286,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between", width: wp(80), marginBottom: hp(2),
   }, otpInput: {
-    width: wp(14), height: hp(6), borderWidth: 1, borderColor: COLORS.primary, textAlign: "center",
-    fontSize: wp(5), borderRadius: wp(2), color: COLORS.primary, backgroundColor: "#f8f8f8",
+    width: wp(16), height: hp(7), borderWidth: 1, borderColor: COLORS.primary, textAlign: "center",
+    fontSize: wp(6), borderRadius: wp(2), color: COLORS.primary, backgroundColor: "#f8f8f8",
   }, errorText: {
     color: "#e74c3c", marginTop: hp(1.5), textAlign: "center",
   }, button: {

@@ -24,7 +24,7 @@ const CustomSingleDatePickerModal = ({
     onClose,
     onConfirm,
     initialDate,
-    title
+    title,disablePastDates
 }) => {
     const today = dayjs();
 
@@ -157,7 +157,7 @@ const CustomSingleDatePickerModal = ({
                         showsHorizontalScrollIndicator={false}
                         getItemLayout={(_, index) => ({
                             length: wp(20),
-                            offset: hp(7.2) * index,
+                            offset: hp(7) * index,
                             index,
                         })}
                         onScrollToIndexFailed={(info) => {
@@ -209,12 +209,15 @@ const CustomSingleDatePickerModal = ({
                             }
 
                             const isSelected =
-                            selectedDate &&
-                            day.isSame(selectedDate, "day");
-                        const isToday = day.isSame(dayjs(), "day");
+                                selectedDate &&
+                                day.isSame(selectedDate, "day");
+                            const isToday = day.isSame(dayjs(), "day");
+                            // disablePastDates
+                            const isPast =  day.isBefore(today, "day"); // restrict past dates
                             return (
                                 <Pressable
                                     key={day.format("YYYY-MM-DD")}
+                                    disabled={disablePastDates && isPast}
                                     onPress={() => selectDate(day)}
                                     style={[
                                         styles.dayItem,
@@ -223,11 +226,12 @@ const CustomSingleDatePickerModal = ({
                                     ]}
                                 >
                                     <Text
-                                     style={[
-                                        styles.dayText,
-                                        isToday && !isSelected && styles.todayDayText,
-                                        isSelected && styles.activeDayText,
-                                    ]}
+                                        style={[
+                                            styles.dayText,
+                                            isToday && !isSelected && styles.todayDayText,
+                                            isSelected && styles.activeDayText,
+                                            disablePastDates && isPast && { color: "#ccc" },
+                                        ]}
                                     >
                                         {day.date()}
                                     </Text>
@@ -274,6 +278,7 @@ const styles = StyleSheet.create({
         backgroundColor: "#fff",
         borderRadius: wp(4),
         padding: wp(4),
+        paddingVertical: hp(4)
     },
     title: {
         fontSize: wp(4),
@@ -300,11 +305,12 @@ const styles = StyleSheet.create({
         color: COLORS.primary,
         fontFamily: "Poppins_500Medium",
     },
-
     monthItem: {
         marginHorizontal: wp(2),
         padding: wp(2),
         borderRadius: wp(3),
+        marginVertical: hp(1),
+
     },
     activeMonthItem: { backgroundColor: COLORS.primary },
     monthText: { color: "#333" },
@@ -314,6 +320,7 @@ const styles = StyleSheet.create({
         marginHorizontal: wp(2),
         padding: wp(2),
         borderRadius: wp(3),
+        marginVertical: hp(2),
     },
     activeYearItem: { backgroundColor: COLORS.primary },
     yearText: { color: "#333" },
@@ -322,7 +329,7 @@ const styles = StyleSheet.create({
     grid: {
         flexDirection: "row",
         flexWrap: "wrap",
-        marginTop: hp(1),
+        marginVertical: hp(1),
     },
     weekDay: {
         width: wp(12),
@@ -336,6 +343,7 @@ const styles = StyleSheet.create({
         alignItems: "center",
         marginVertical: hp(0.5),
         borderRadius: wp(6),
+        
     },
     activeDayItem: { backgroundColor: COLORS.primary },
     dayText: { fontSize: wp(4), color: "#333" },
@@ -364,12 +372,12 @@ const styles = StyleSheet.create({
         borderWidth: 2,
         borderColor: COLORS.primary,
     },
-    
+
     todayDayText: {
         color: COLORS.primary,
         fontFamily: "Poppins_600SemiBold",
     },
-    
+
 });
 
 export default CustomSingleDatePickerModal;

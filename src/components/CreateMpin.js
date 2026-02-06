@@ -113,6 +113,7 @@ export default function CreateMpin({ route }) {
     <View style={styles.otpContainer}>
       {value.map((item, index) => (
         <RNTextInput
+          selectTextOnFocus
           key={index}
           ref={(el) => (ref.current[index] = el)}
           value={item}

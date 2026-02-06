@@ -21,25 +21,28 @@ export default function CustomDropdown({
     onClose,
     multiSelect = false,
     selectedItem = null,
-    selected
+    selected,
 }) {
     const [selectedItems, setSelectedItems] = useState([]);
     const [modalVisible, setModalVisible] = useState(false);
     useEffect(() => {
         if (selected) {
+            // Alert.alert("Selected prop is not null", JSON.stringify(selected));
             if (multiSelect && Array.isArray(selected)) {
-                // For multi-select: map selected labels to objects
                 const selectedObjs = data.filter(d => selected.includes(d.label));
                 setSelectedItems(selectedObjs);
             } else {
-                // Single select
-                const selectedObj = data.find(d => d.value === selected ||  d.label === selected);
+                const selectedObj = data.find(d => d.value === selected || d.label === selected);
                 if (selectedObj) setSelectedItems([selectedObj]);
+                else setSelectedItems([]); // important: clear if no match
             }
+        } else {
+            setSelectedItems([]); // clear selection if selected is null
         }
     }, [selected, data]);
 
     const { t } = useTranslation()
+
     const handleSelect = (item) => {
         if (multiSelect) {
             let updated = [...selectedItems];
@@ -111,6 +114,7 @@ export default function CustomDropdown({
                                         fontWeight: "700",
                                     }]}>
                                         {item.label}
+                                        {/* {item.label} */}
                                     </Text>
                                     {multiSelect && isSelected(item) && (
                                         <Icon name="check" size={wp(5)} color={COLORS.primary} />
@@ -144,7 +148,7 @@ const styles = StyleSheet.create({
     input: {
         flexDirection: "row",
         justifyContent: "space-between", alignItems: "center",
-        borderWidth: 1, borderColor: "#000", borderRadius: wp(1),
+        borderWidth: 1, borderColor: "#CCC", borderRadius: wp(1),
         padding: wp(3),
         backgroundColor: "#fff",
     }, modalOverlay: {

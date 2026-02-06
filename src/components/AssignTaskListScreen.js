@@ -6,6 +6,7 @@ import {
   FlatList, KeyboardAvoidingView, Platform, Pressable, RefreshControl,
   StyleSheet, Text, View
 } from "react-native";
+import { ActivityIndicator } from "react-native-paper";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { useSelector } from "react-redux";
 import { getStoredLanguage } from "../../app/i18ns.js";
@@ -49,8 +50,6 @@ export default function AssignedTasklistScreen() {
   const fetchTasks = async (pageNo = 1, isRefresh = false, initialStatus) => {
     if (!hasMore && !isRefresh) return;
     const lang = await getStoredLanguage();
-    
-
     setLoading(pageNo === 1);
     try {
       // Map initialStatus label to value
@@ -67,9 +66,12 @@ export default function AssignedTasklistScreen() {
           per_page: 10,
           current_page: pageNo,
           lang: lang,
+          from: selectedDateRange.from,
+          to: selectedDateRange.to,
           ...(statusValue && { status: statusValue }), // Only send if value exists
         }
       );
+      // Alert.alert('',JSON.stringify(response,null,2))
       if (response?.text === "Success") {
         let data = response?.data?.tasks || [];
         setallowCreateTask(response?.data?.allowCreateTask)
@@ -119,7 +121,7 @@ export default function AssignedTasklistScreen() {
   useFocusEffect(
     React.useCallback(() => {
       fetchTasks(1, true, selectedStatus);
-    }, [profileDetails?.id, searchText, selectedStatus, selectedDateRange, hasMore, initialStatus,])
+    }, [profileDetails?.id, searchText, selectedStatus, hasMore, initialStatus,])
   );
   /** Pull to refresh */
   const onRefresh = () => {
@@ -148,7 +150,6 @@ export default function AssignedTasklistScreen() {
         return COLORS.primary;   // Fallback
     }
   };
-  
   const getPriorityColor = (level) => {
     switch (level) {
       case "Critical":
@@ -185,10 +186,10 @@ export default function AssignedTasklistScreen() {
     return (
       <Pressable
         onPress={() => openTaskModal(item)}
-        style={[styles.card, { borderLeftColor: getPriorityColor(item.priority)?.color, borderLeftWidth: wp(1) }]}
+        style={[styles.card, { borderLeftColor: getStatusColor(item.status), borderLeftWidth: wp(1) }]}
       >
         <View style={styles.cardHeader}>
-          <Text numberOfLines={1} style={styles.taskTitle}>{item.title || t("Untitled Task")}</Text>
+          <Text numberOfLines={1} style={styles.taskTitle}>{item?.title || t("Untitled Task")}</Text>
           <View style={styles.rightHeader}>
             <View style={[styles.voiceIcon, { opacity: hasVoice ? 1 : 0.3 }]}>
               <Icon name="play-arrow" size={wp(5)} color={COLORS.primary} />
@@ -257,15 +258,29 @@ export default function AssignedTasklistScreen() {
           <FlatList
             ListHeaderComponent={<>
               <DateandDownloadTask
-                onDateSelect={setSelectedDateRange}
+                fromDate={selectedDateRange.from}
+                toDate={selectedDateRange.to}
+                onDateSelect={(range) => {
+                  setSelectedDateRange(range);
+                  setHasMore(true);
+                  fetchTasks(1, true, selectedStatus);
+                }}
                 onDownload={() => showToast('Task list download is in progress...', 'info')}
-              // onDownload={() => console.log("Download clicked")}
-              /></>}
+              />
+            </>}
             contentContainerStyle={{ paddingBottom: hp(8) }}
             data={tasks}
-            keyExtractor={(item) => item?.s_no?.toString() || Math.random().toString()}
+            keyExtractor={(item) => item?.id}
             renderItem={renderTask}
-            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                colors={[COLORS?.primary]}          // Android spinner color(s)
+                tintColor={COLORS?.primary}         // iOS spinner color
+                progressBackgroundColor={COLORS?.ashGrey}// Android background (optional)
+              />
+            }
             onEndReached={loadMore}
             onEndReachedThreshold={0.5}
             ListFooterComponent={() =>
@@ -279,7 +294,7 @@ export default function AssignedTasklistScreen() {
               !loading && tasks.length === 0 && (
                 <View style={{ alignItems: "center", marginTop: hp(5) }}>
                   <Text style={{ color: COLORS.gray, fontFamily: "Poppins_600SemiBold" }}>
-                    no tasks found
+                    {t('no_tasks_found')}
                   </Text>
                 </View>
               )
@@ -337,5 +352,5 @@ const styles = StyleSheet.create({
     shadowColor: "#000", shadowOffset: { width: 0, height: hp(0.5) },
     shadowOpacity: 0.3, shadowRadius: wp(3), elevation: 5,
   },
-  fabText: { color: "#fff", fontSize: wp(3.5), fontWeight: "600", marginLeft: wp(2), fontFamily: 'Poppins_600SemiBold', lineHeight: wp(4) },
+  fabText: { color: "#fff", fontSize: wp(3.5), fontWeight: "600", marginLeft: wp(2), fontFamily: 'Poppins_600SemiBold', lineHeight: wp(4.9) },
 });

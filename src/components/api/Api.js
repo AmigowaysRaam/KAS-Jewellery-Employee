@@ -1,5 +1,7 @@
+export const BASE_URL = 'https://kasjewellery.com/';
+const Live_URL = 'https://kasjewellery.in/';
 export const fetchData = async (endpoint, method = 'POST', body = null, headers = {}) => {
-  const BASE_URL = 'https://kasjewellery.in/';
+  // const BASE_URL = 'https://kasjewellery.in/';
   const url = `${BASE_URL}${endpoint}`;
   const defaultHeaders = {
     'Content-Type': 'application/json',
@@ -11,12 +13,10 @@ export const fetchData = async (endpoint, method = 'POST', body = null, headers 
       headers: defaultHeaders,
       body: body ? JSON.stringify(body) : null,
     });
-    // Check for HTTP errors
     if (!response.ok) {
       const text = await response.text(); // read HTML or error message
       throw new Error(`HTTP ${response.status}: ${text}`);
     }
-    // Parse JSON safely
     const jsonData = await response.json();
     return jsonData;
   } catch (error) {

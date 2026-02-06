@@ -1,5 +1,6 @@
 import dayjs from "dayjs";
 import React, { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
     FlatList,
     Modal,
@@ -25,13 +26,12 @@ const CustomDateRangePickerModal = ({
     onConfirm,
     initialFrom,
     initialTo,
-    title
+    title,
 }) => {
     const today = dayjs();
-
     const [fromDate, setFromDate] = useState(initialFrom ? dayjs(initialFrom) : null);
     const [toDate, setToDate] = useState(initialTo ? dayjs(initialTo) : null);
-
+    const { t } = useTranslation()
     const [currentMonth, setCurrentMonth] = useState(today.month());
     const [currentYear, setCurrentYear] = useState(today.year());
     const [daysInMonth, setDaysInMonth] = useState([]);
@@ -49,11 +49,9 @@ const CustomDateRangePickerModal = ({
         const totalDays = firstDayOfMonth.daysInMonth();
 
         const days = [];
-
         for (let i = 0; i < startWeekDay; i++) {
             days.push(null);
         }
-
         for (let i = 1; i <= totalDays; i++) {
             days.push(
                 dayjs()
@@ -245,7 +243,7 @@ const CustomDateRangePickerModal = ({
                     {/* Actions */}
                     <View style={styles.actions}>
                         <Pressable onPress={onClose}>
-                            <Text style={styles.cancel}>Cancel</Text>
+                            <Text style={styles.cancel}>{t('cancel')}</Text>
                         </Pressable>
 
                         <Pressable onPress={confirm} disabled={!fromDate || !toDate}>
@@ -255,7 +253,7 @@ const CustomDateRangePickerModal = ({
                                     (!fromDate || !toDate) && { opacity: 0.5 },
                                 ]}
                             >
-                                Confirm
+                                {t('confirm')}
                             </Text>
                         </Pressable>
                     </View>
@@ -275,7 +273,8 @@ const styles = StyleSheet.create({
         width: wp(95),
         backgroundColor: "#fff",
         borderRadius: wp(4),
-        padding: wp(6),
+        padding: wp(4),
+        paddingVertical: hp(4),
     },
     title: {
         fontSize: wp(4),
@@ -298,13 +297,18 @@ const styles = StyleSheet.create({
         color: COLORS.primary,
         fontFamily: "Poppins_500Medium",
     },
-
-    monthItem: { marginHorizontal: wp(2), padding: wp(2), borderRadius: wp(3) },
+    monthItem: {
+        marginHorizontal: wp(2), padding: wp(2), borderRadius: wp(2),
+        marginVertical: hp(0.5)
+    },
     activeMonthItem: { backgroundColor: COLORS.primary },
     monthText: { color: "#333" },
     activeMonthText: { color: "#fff" },
 
-    yearItem: { marginHorizontal: wp(2), padding: wp(2), borderRadius: wp(3) },
+    yearItem: {
+        marginHorizontal: wp(2), padding: wp(2), borderRadius: wp(2),
+        marginVertical: hp(0.5)
+    },
     activeYearItem: { backgroundColor: COLORS.primary },
     yearText: { color: "#333" },
     activeYearText: { color: "#fff" },

@@ -71,6 +71,10 @@ export default function CommentList({ comments, loading, ticketDetails, task, fl
       ListHeaderComponent={renderHeader}
       keyboardShouldPersistTaps="handled"
       contentContainerStyle={{ paddingHorizontal: wp(3), paddingBottom: hp(5) }}
+      refreshing={loading}
+      onRefresh={() => {
+        loadData(); // 👈 refresh comments
+      }}
     />
   );
 }

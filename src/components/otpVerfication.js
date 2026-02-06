@@ -54,22 +54,30 @@ export default function OtpVerfication({ route }) {
     }, 1000);
     return () => clearInterval(interval);
   }, [timer]);
+
   const handleChange = (text, index) => {
     if (/[^0-9]/.test(text)) return;
     const newOtp = [...otpE];
     newOtp[index] = text;
     setOtp(newOtp);
+    // Focus next input
     if (text && index < 3) {
       inputsRef.current[index + 1]?.focus();
     }
-  };
-  const handleKeyPress = ({ nativeEvent }, index) => {
-    if (nativeEvent.key === "Backspace" && otpE[index] === "" && index > 0) {
-      inputsRef.current[index - 1]?.focus();
+
+    // ✅ If all 4 digits are filled, auto-submit
+    if (newOtp.every((d) => d !== "")) {
+      const enteredOtp = newOtp.join("");
+      setTimeout(() => {
+        handleVerifyOtp(enteredOtp); // send OTP through parameter
+      }, 50); // ensures last digit renders
     }
   };
-  const handleVerifyOtp = async () => {
-    const enteredOtp = otpE.join("");
+
+
+  const handleVerifyOtp = async (enteredOtpParam) => {
+    const enteredOtp = enteredOtpParam || otpE.join(""); // fallback to state if needed
+
     if (!sentOtp) { // ✅ check if OTP is expired
       setError("otp_expired");
       showToast(t("otp_expired"), "error");
@@ -99,6 +107,17 @@ export default function OtpVerfication({ route }) {
     } else {
       navigation.replace("MpinLoginScreen");
       await AsyncStorage.setItem("USER_DATA", JSON.stringify({ data }));
+    }
+  };
+
+
+
+
+
+
+  const handleKeyPress = ({ nativeEvent }, index) => {
+    if (nativeEvent.key === "Backspace" && otpE[index] === "" && index > 0) {
+      inputsRef.current[index - 1]?.focus();
     }
   };
 
@@ -157,6 +176,7 @@ export default function OtpVerfication({ route }) {
             {otpE.map((value, index) => (
               <RNTextInput
                 key={index}
+                selectTextOnFocus
                 ref={(ref) => (inputsRef.current[index] = ref)}
                 value={value}
                 onChangeText={(text) => handleChange(text, index)}
@@ -190,8 +210,7 @@ export default function OtpVerfication({ route }) {
               </Text>
             )}
           </View>
-
-          <TouchableOpacity
+          {/* <TouchableOpacity
             disabled={isButtonDisabled}
             onPress={handleVerifyOtp}
             style={[
@@ -207,13 +226,12 @@ export default function OtpVerfication({ route }) {
               fontFamily: "Poppins_600SemiBold",
 
             }]}>{t("verify_otp")}</Text>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
   );
 }
-
 /* STYLES */
 const styles = StyleSheet.create({
   scrollContainer: { flexGrow: 1, backgroundColor: "#fff" },
@@ -226,31 +244,20 @@ const styles = StyleSheet.create({
     marginBottom: hp(1),
   },
   subtitle: {
-    fontFamily: "Poppins_400Regular",
-    fontSize: wp(3.5),
+    fontFamily: "Poppins_400Regular", fontSize: wp(3.5),
     textAlign: "center",
-  },
-  otpContainer: {
+  }, otpContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    width: wp(80),
-    marginVertical: hp(2),
-  },
-  otpInput: {
+    width: wp(80), marginVertical: hp(2),
+  }, otpInput: {
     width: wp(14),
-    height: hp(6),
-    borderWidth: 1,
-    borderColor: COLORS.primary,
+    height: hp(6), borderWidth: 1, borderColor: COLORS.primary,
     borderRadius: wp(1),
-    textAlign: "center",
-    fontSize: wp(5),
-    backgroundColor: "#F9F9F9",
+    textAlign: "center", fontSize: wp(5), backgroundColor: "#F9F9F9",
     color: COLORS.primary,
-  },
-  errorText: { color: "red", marginBottom: hp(1) },
-  timerContainer: { marginBottom: hp(2) },
-  timerText: { fontSize: wp(3.5) },
-  resendBtn: {
+  }, errorText: { color: "red", marginBottom: hp(1) }, timerContainer: { marginBottom: hp(2) },
+  timerText: { fontSize: wp(3.5) }, resendBtn: {
     width: wp(45),
     height: hp(5),
     borderRadius: wp(6),

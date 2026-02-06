@@ -1,10 +1,10 @@
 {
   "expo": {
-    "name": "KAS Jewellery Employee",
+    "name": "KAS Employee",
     "slug": "KasHrms",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
-    "icon": "./assets/images/ic_launcher_round.png",
+    "icon": "./assets/images/KASEmpLogo.png",
     "scheme": "kashrms",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -26,9 +26,9 @@
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/images/ic_launcher_round.png",
-        "backgroundImage": "./assets/images/ic_launcher_round.png",
-        "monochromeImage": "./assets/images/ic_launcher_round.png"
+        "foregroundImage": "./assets/images/KASEmpLogo.png",
+        "backgroundImage": "./assets/images/KASEmpLogo.png",
+        "monochromeImage": "./assets/images/KASEmpLogo.png"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
@@ -44,15 +44,15 @@
     },
     "web": {
       "output": "static",
-      "favicon": "./assets/images/ic_launcher_round.png"
+      "favicon": "./assets/images/KASEmpLogo.png"
     },
     "plugins": [
       "expo-router",
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/ic_launcher_round.png",
-          "imageWidth": 500,
+          "image": "./assets/images/KASEmpLogo.png",
+          "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff",
           "dark": {

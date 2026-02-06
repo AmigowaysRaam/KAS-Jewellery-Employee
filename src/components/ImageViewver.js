@@ -1,14 +1,16 @@
 import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useRef } from "react";
 import {
-    Animated,
-    Image,
-    Modal,
-    PanResponder,
-    StyleSheet,
-    TouchableOpacity,
-    View,
+  Animated,
+  Image,
+  Modal,
+  PanResponder,
+  SafeAreaView,
+  StyleSheet,
+  TouchableOpacity,
+  View,
 } from "react-native";
+import { COLORS } from "../../app/resources/colors";
 import { hp, wp } from "../../app/resources/dimensions";
 
 export default function ImageViewerModal({ visible, uri, onClose }) {
@@ -107,59 +109,75 @@ export default function ImageViewerModal({ visible, uri, onClose }) {
 
   return (
     <Modal visible={visible} transparent animationType="none">
-      <View style={styles.overlay}>
-        {/* Background tap */}
-        <TouchableOpacity
-          style={StyleSheet.absoluteFill}
-          activeOpacity={1}
-          onPress={onClose}
-        />
-        <Animated.View
-          style={[
-            styles.container,
-            {
-              transform: [
-                { translateX },
-                { translateY },
-                { scale },
-              ],
-            },
-          ]}
-          {...panResponder.panHandlers}
-        >
-          {/* Close Button */}
-          <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
-            <Ionicons name="close" size={30} color="#fff" />
-          </TouchableOpacity>
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.overlay}>
+          {/* Background tap */}
+          <TouchableOpacity
+            style={StyleSheet.absoluteFill}
+            activeOpacity={1}
+            onPress={onClose}
+          />
 
-          <Image source={{ uri }} style={styles.image} resizeMode="contain" />
-        </Animated.View>
-      </View>
+          <Animated.View
+            style={[
+              styles.container,
+              {
+                transform: [{ translateX }, { translateY }, { scale }],
+              },
+            ]}
+            {...panResponder.panHandlers}
+          >
+            {/* Close Button */}
+            <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
+              <Ionicons name="close" size={30} color={COLORS?.primary} />
+            </TouchableOpacity>
+
+            <Image
+              source={{ uri }}
+              style={styles.image}
+              resizeMode="contain"
+            />
+          </Animated.View>
+        </View>
+      </SafeAreaView>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
-  overlay: {
+  safeArea: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,1)",
   },
-  container: {
+  overlay: {
     flex: 1,
+    backgroundColor: "rgba(0,0,0,1)",
     justifyContent: "center",
     alignItems: "center",
   },
+  container: {
+    width: wp(95),
+    height: hp(85),
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: wp(0.5), // border thickness
+    borderColor: '#ccc', // border color
+    borderRadius: wp(4), // rounded corners
+    overflow: "hidden",
+  },
   image: {
     width: "100%",
-    height: "85%",
+    height: "100%",
   },
   closeBtn: {
     position: "absolute",
-    top: hp(5),
-    right: wp(4),
+    top: hp(2),
+    right: wp(3),
     zIndex: 10,
-    backgroundColor: "rgba(0,0,0,0.6)",
-    borderRadius: wp(6),
+    backgroundColor: "#F9F9F9",
+    borderRadius: wp(8),
     padding: wp(2),
+    borderWidth: wp(0.6), // border thickness
+    borderColor: COLORS?.primary
   },
 });

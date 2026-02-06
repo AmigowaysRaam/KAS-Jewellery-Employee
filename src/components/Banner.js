@@ -111,7 +111,7 @@ const Banner = ({ homepageData }) => {
               {employeeDetails?.name || ''}
             </Text>
             <View style={styles.row}>
-              <Text style={styles.label}>{t("Emp Status")} :</Text>
+              <Text style={styles.label}>{t("emp_status")} :</Text>
               <Text style={styles.value}>{employeeDetails?.employee_status}</Text>
             </View>
           </Animated.View>
@@ -119,23 +119,22 @@ const Banner = ({ homepageData }) => {
           {/* Emp ID & Date */}
           <Animated.View style={[styles.rowBetween, { opacity: rowOpacity, transform: [{ translateY: rowTranslateY }] }]}>
             <View style={styles.row}>
-              <Text style={styles.label}>{t("Emp ID")} :</Text>
+              <Text style={styles.label}>{t("emp_id")} :</Text>
               <Text style={styles.value}>{employeeDetails?.employee_id}</Text>
             </View>
             <View style={styles.row}>
-              <Text style={styles.label}>{t("Emp Date")} :</Text>
+              <Text style={styles.label}>{t("joining_date")} :</Text>
               <Text style={styles.value}>{employeeDetails?.date}</Text>
             </View>
           </Animated.View>
-
           {/* Designation & Time */}
           <Animated.View style={[styles.rowBetween, { marginTop: wp(1), opacity: rowOpacity, transform: [{ translateY: rowTranslateY }] }]}>
             <View style={styles.row}>
-              <Text style={styles.label}>{t("Designation")} :</Text>
+              <Text style={styles.label}>{t("designation")} :</Text>
               <Text style={styles.value}>{employeeDetails?.designation || '-'}</Text>
             </View>
             <View style={styles.row}>
-              <Text style={styles.label}>{t("Time")} :</Text>
+              <Text style={styles.label}>{t("time")} :</Text>
               <Text style={styles.value}>{currentTime}</Text>
             </View>
           </Animated.View>
@@ -149,51 +148,30 @@ export default Banner;
 
 const styles = StyleSheet.create({
   wrapper: {
-    marginTop: wp(3),
+    marginTop: wp(1),
     alignItems: "center",
-  },
-  card: {
+  }, card: {
     width: wp(95),
-    height: hp(18),
-    padding: wp(3.4),
-    justifyContent: "space-between",
-  },
-  cardImage: {
+    height: hp(18), padding: wp(3.4), justifyContent: "space-between",
+  }, cardImage: {
     borderRadius: wp(2),
   },
   greeting: {
-    fontFamily: "Poppins_700Bold",
-    color: COLORS.white,
-    fontSize: wp(4.6),
-    lineHeight: hp(3),
-    marginBottom: wp(0.5),
-  },
-  name: {
+    fontFamily: "Poppins_700Bold", color: COLORS.white,
+    fontSize: wp(4.6), lineHeight: hp(3), marginBottom: wp(0.5),
+  }, name: {
     fontFamily: "Poppins_600SemiBold",
-    color: COLORS.white,
-    fontSize: wp(4),
-    textTransform: "capitalize",
+    color: COLORS.white, fontSize: wp(4), textTransform: "capitalize",
     maxWidth: wp(48),
-  },
-  label: {
-    fontFamily: "Poppins_400Regular",
-    color: COLORS.white,
-    fontSize: wp(3),
-    marginRight: wp(1),
-  },
-  value: {
-    fontFamily: "Poppins_500Medium",
-    color: COLORS.white,
-    fontSize: wp(3),
-    textTransform: "capitalize",
-  },
-  row: {
+  }, label: {
+    fontFamily: "Poppins_400Regular", color: COLORS.white,
+    fontSize: wp(3), marginRight: wp(1),
+  }, value: {
+    fontFamily: "Poppins_500Medium", color: COLORS.white, fontSize: wp(3), textTransform: "capitalize",
+  }, row: {
+    flexDirection: "row", alignItems: "center",
+  }, rowBetween: {
     flexDirection: "row",
-    alignItems: "center",
-  },
-  rowBetween: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    justifyContent: "space-between", alignItems: "center",
   },
 });

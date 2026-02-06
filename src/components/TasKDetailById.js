@@ -4,10 +4,7 @@ import * as ImagePicker from "expo-image-picker";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
-  ActivityIndicator,
-  Image,
-  Keyboard, KeyboardAvoidingView,
-  Platform, StyleSheet, Text, TextInput,
+  ActivityIndicator, Image, Keyboard, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput,
   TouchableOpacity, View
 } from "react-native";
 import { useSelector } from "react-redux";
@@ -15,12 +12,11 @@ import { getStoredLanguage } from "../../app/i18ns";
 import { COLORS } from "../../app/resources/colors";
 import { hp, wp } from "../../app/resources/dimensions";
 import { useToast } from "../../constants/ToastContext";
-import { fetchData } from "./api/Api";
+import { BASE_URL, fetchData } from "./api/Api";
 import AttachmentModal from "./AttacthcModal";
 import CommentList from "./Commentlist";
 import CommonHeader from "./CommonHeader";
 import ImageViewerModal from "./ImageViewver";
-
 export default function TaskMessages({ route }) {
   const navigation = useNavigation();
   const { showToast } = useToast();
@@ -72,7 +68,6 @@ export default function TaskMessages({ route }) {
       setLoading(false);
     }
   };
-
   useFocusEffect(
     useCallback(() => {
       const loadComments = async () => {
@@ -106,7 +101,6 @@ export default function TaskMessages({ route }) {
       setImages(prev => [...prev, { ...img, source: "Camera" }]);
     }
   };
-
   const pickFile = async () => {
     setModalVisible(false);
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -120,7 +114,6 @@ export default function TaskMessages({ route }) {
       setImages(prev => [...prev, ...selected]);
     }
   };
-
   const handleAudioRecorded = (audio) => setAudioAttachment(audio);
   const removeImage = (index) => setImages(prev => prev.filter((_, i) => i !== index));
   const removeAudioAttachment = () => setAudioAttachment(null);
@@ -152,7 +145,7 @@ export default function TaskMessages({ route }) {
           type: "audio/m4a",
         });
       }
-      const response = await fetch("https://kasjewellery.in/app-employee-add-task-comment", {
+      const response = await fetch(`${BASE_URL}app-employee-add-task-comment`, {
         method: "POST",
         body: formData,
         headers: { Accept: "application/json" },
@@ -249,7 +242,7 @@ export default function TaskMessages({ route }) {
         onCamera={pickCamera}
         onFile={pickFile}
         onAudioRecorded={handleAudioRecorded}
-        hideMic={true}
+        hideMic={false}
       />
       <ImageViewerModal
         visible={viewerVisible}
@@ -259,7 +252,6 @@ export default function TaskMessages({ route }) {
     </KeyboardAvoidingView>
   );
 }
-
 const styles = StyleSheet.create({
   sectionTitle: { fontSize: wp(4), fontFamily: "Poppins_600SemiBold", margin: hp(1), color: COLORS.primary, lineHeight: hp(4) },
   inputContainer: { paddingHorizontal: wp(3), paddingVertical: hp(1), borderTopWidth: 1, borderTopColor: "#ddd", backgroundColor: "#fff" },

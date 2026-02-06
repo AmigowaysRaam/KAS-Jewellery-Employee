@@ -1,9 +1,9 @@
 import messaging from "@react-native-firebase/messaging";
-import React, { useEffect, useState } from "react";
+import { useFocusEffect } from "@react-navigation/native";
+import React, { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
-  RefreshControl, ScrollView, StyleSheet, Text,
-  View,
+  RefreshControl, ScrollView, StyleSheet, Text, View,
 } from "react-native";
 import { useSelector } from "react-redux";
 import { getStoredLanguage } from "../../app/i18ns";
@@ -27,7 +27,6 @@ export default function Homescreen() {
   const [lang, setLang] = useState(null);
   const [notifModalVisible, setNotifModalVisible] = useState(false);
   const [notifData, setNotifData] = useState(null);
-
   const { t } = useTranslation();
   const siteDetails = useSelector(
     (state) => state.auth?.siteDetails?.data[0]
@@ -35,14 +34,11 @@ export default function Homescreen() {
   const profileDetails = useSelector(
     (state) => state?.auth?.profileDetails?.data
   );
-  /* 🌐 Load stored language */
   useEffect(() => {
     getStoredLanguage().then((storedLang) => {
       setLang(storedLang || "en");
     });
   }, []);
-
-  /* 📡 API CALL */
   const fetchHomepageData = async () => {
     if (!profileDetails?.id) return;
 
@@ -76,6 +72,15 @@ export default function Homescreen() {
   useEffect(() => {
     fetchHomepageData();
   }, [profileDetails?.id, lang]);
+
+
+useFocusEffect(
+  useCallback(() => {
+    fetchHomepageData();
+  }, [profileDetails?.id, lang])
+);
+
+
   /* 🔔 RELOAD API WHEN NOTIFICATION ARRIVES */
   useEffect(() => {
     // Foreground notification
@@ -99,6 +104,8 @@ export default function Homescreen() {
     setRefreshing(true);
     fetchHomepageData();
   };
+
+
   return (
     <View style={styles.container}>
       <Header
@@ -156,7 +163,6 @@ export default function Homescreen() {
           console.log("Notification clicked:", notifData?.data);
         }}
       />
-
     </View>
   );
 }

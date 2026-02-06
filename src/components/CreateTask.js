@@ -19,12 +19,13 @@ import { getStoredLanguage } from "../../app/i18ns";
 import { COLORS } from "../../app/resources/colors";
 import { hp, wp } from "../../app/resources/dimensions";
 import { useToast } from "../../constants/ToastContext";
-import { fetchData } from "./api/Api";
+import { BASE_URL, fetchData } from "./api/Api";
 import AttachmentModal from "./AttacthcModal";
 import CommonHeader from "./CommonHeader";
 import CustomDropdown from "./CustomDropDown";
 import ImageViewerModal from "./ImageViewver";
 import CustomSingleDatePickerModal from "./SingleDateSelect";
+import SpeechToTextModal from "./SpeechToTextMOdal";
 import TeamMembersView from "./TeamMemView";
 
 export default function CreateTask() {
@@ -71,13 +72,25 @@ export default function CreateTask() {
   const [errors, setErrors] = useState({});
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [loading, setloading] = useState(false);
+  const [speechTextModal, setspeechTextModal] = useState(false);
+  const [speechFlag, setSpeechFlag] = useState('');
+
+
+  const [currentLanguage, setcurrentLanguage] = useState(null);
+
   useEffect(() => {
     Audio.requestPermissionsAsync();
   }, []);
 
   useEffect(() => {
     fetchDropDownData();
-  }, [selectedTeam]);
+    // Alert.alert(JSON.stringify(assignedBy))
+  }, [selectedTeam, assignType, assignedBy]);
+
+  // useEffect(() => {
+  //   setSelectedTeam(null)
+  // }, [assignType]);
+
   useEffect(() => {
     setErrors({});
   }, [title, description]);
@@ -112,6 +125,7 @@ export default function CreateTask() {
     setloading(true);
     try {
       const lang = await getStoredLanguage();
+      setcurrentLanguage(lang)
       const response = await fetchData(
         "app-employee-team-members",
         "POST",
@@ -119,6 +133,8 @@ export default function CreateTask() {
           user_id: profileDetails.id,
           lang: lang ?? "en",
           team_id: selectedTeam ? selectedTeam?.value : null,
+          assignType: assignType,
+          assignedBy: assignedBy ? assignedBy?.value : null,
         }
       );
       // Alert.alert(JSON.stringify(response))
@@ -207,6 +223,7 @@ export default function CreateTask() {
       console.log("Stop recording error:", err);
     }
   };
+  
   const playAudio = async (audio, type) => {
     if (!audio) return;
     try {
@@ -277,11 +294,15 @@ export default function CreateTask() {
   };
   // -------- VALIDATION & SUBMIT --------
   const validate = () => {
+    // Alert.alert()
     const newErrors = {};
     if (!title.trim()) newErrors.title = t('title_Required');
     if (!description.trim()) newErrors.description = t('desc_Required');
-    if (!assignedBy) newErrors.assignedBy = t('pls_Selct_user');
-    if (assignType === "group" && !selectedTeam)
+    if (!priority?.value.trim()) newErrors.priority = t('priority_required');
+    if (!assignedBy && dropDownData?.canAssign) newErrors.assignedBy = t('pls_Selct_user');
+    if (
+      // assignType === "group" && 
+      !selectedTeam)
       newErrors.selectedTeam = t('pls_Selct_team');
     if (!dueDate) newErrors.dueDate = t('pls_Selct_due_date');
     if (!dueTime) newErrors.dueTime = t('pls_Selct_due_time');
@@ -300,11 +321,7 @@ export default function CreateTask() {
   const [viewerUri, setViewerUri] = useState(null);
   const [lang, setLang] = useState(null);
 
-  useEffect(() => {
-    getStoredLanguage().then((storedLang) => {
-      setLang(storedLang || "en");
-    });
-  }, []);
+
   const handleSubmit = async () => {
     if (!validate()) return;
 
@@ -340,7 +357,7 @@ export default function CreateTask() {
           name: `${descAudio.name}.mp3` || "DummyAudio.mp3",
         });
       }
-      const response = await fetch("https://kasjewellery.in/app-employee-create-task", {
+      const response = await fetch(`${BASE_URL}app-employee-create-task`, {
         method: "POST",
         body: formData,
         headers: { Accept: "application/json" },
@@ -369,22 +386,20 @@ export default function CreateTask() {
   };
   const pickCamera = async () => {
     setmediaModal(false);
-  
+
     const hasPermission = await requestCameraPermission();
     if (!hasPermission) return;
-  
+
     const result = await ImagePicker.launchCameraAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       quality: 0.7,
     });
-  
+
     if (!result.canceled && result.assets?.[0]?.uri) {
       const img = result.assets[0];
       setImages(prev => [...prev, { ...img, source: "Camera" }]);
     }
   };
-  
-
   const requestCameraPermission = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== "granted") {
@@ -393,7 +408,7 @@ export default function CreateTask() {
     }
     return true;
   };
-  
+
   const requestGalleryPermission = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== "granted") {
@@ -406,14 +421,14 @@ export default function CreateTask() {
     setmediaModal(false);
     const hasPermission = await requestGalleryPermission();
     if (!hasPermission) return;
-  
+
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       quality: 0.7,
       allowsMultipleSelection: true,
       selectionLimit: 3 - images.length,
     });
-  
+
     if (!result.canceled && result.assets?.length > 0) {
       const selected = result.assets.map(a => ({
         ...a,
@@ -422,7 +437,7 @@ export default function CreateTask() {
       setImages(prev => [...prev, ...selected]);
     }
   };
-  
+
 
 
   const removeImage = (index) => {
@@ -458,7 +473,33 @@ export default function CreateTask() {
           >
             {/* -------- TITLE -------- */}
             <View style={styles.inputContainer}>
-
+              <View style={{ flexDirection: "row", justifyContent: "space-between", width: "100%", alignItems: "center", marginBottom: wp(0.5) }}>
+                <Text style={styles.label}>{`${t("title")} *`}</Text>
+                {/* <Pressable
+                  onPress={() => {
+                    setspeechTextModal(true),
+                      setSpeechFlag('title')
+                  }}
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    minWidth: wp(20),
+                    justifyContent: "flex-end", borderWidth: wp(0.5), borderColor: COLORS?.primary, paddingHorizontal: wp(2), paddingVertical: hp(0.4), borderRadius: wp(6), gap: wp(2)
+                  }}
+                >
+                  <Text numberOfLines={1} style={{
+                    fontFamily: "Poppins_600SemiBold", color: COLORS?.primary,
+                    fontSize: wp(3.2)
+                  }} ellipsizeMode="tail">
+                    {t("add_title")}
+                  </Text>
+                  <Icon
+                    name={"mic"}
+                    size={wp(7)}
+                    color={COLORS.primary}
+                  />
+                </Pressable> */}
+              </View>
               <TextInput
                 ref={titleRef}
                 maxLength={35}
@@ -466,7 +507,20 @@ export default function CreateTask() {
                 placeholder={t('enter_task_title')}
                 value={title}
                 onChangeText={setTitle}
-                placeholderTextColor={COLORS.black}
+                placeholderTextColor={'#777'}
+              />
+              <Icon
+                name="mic"
+                type="feather"
+                size={wp(5)}
+                color={COLORS.gray}
+                containerStyle={[styles.inputIcon, {
+                  top: hp(5.5)
+                }]}
+                onPress={() => {
+                  setspeechTextModal(true),
+                    setSpeechFlag('title')
+                }}
               />
               {/* {titleAudio ? (
                 <View style={styles.audioPreview}>
@@ -516,8 +570,13 @@ export default function CreateTask() {
                   type="feather"
                   size={wp(5)}
                   color={COLORS.gray}
-                  containerStyle={styles.inputIcon}
-                  onPress={() => startRecording("title")}
+                  containerStyle={[styles.inputIcon, {
+                    top: hp(5.5)
+                  }]}
+                  onPress={() => {
+                    setspeechTextModal(true),
+                    setSpeechFlag('title')
+                  }}
                 />
               )} */}
             </View>
@@ -526,6 +585,9 @@ export default function CreateTask() {
             )}
             {/* -------- DESCRIPTION -------- */}
             <View style={styles.inputContainer}>
+              <View style={{ flexDirection: "row", justifyContent: "space-between", width: "100%", alignItems: "center", marginBottom: wp(0.5) }}>
+                <Text style={styles.label}>{`${t("description")} *`}</Text>
+              </View>
               <TextInput
                 ref={descRef}
                 style={[styles.input, { height: hp(15), textAlignVertical: "top", paddingRight: wp(12) }]} // Add right padding for mic
@@ -534,70 +596,109 @@ export default function CreateTask() {
                 onChangeText={setDescription}
                 multiline
                 onFocus={scrollToBottom}
-                placeholderTextColor={COLORS.black}
+                placeholderTextColor={'#777'}
               />
-              {descAudio ? (
-                <View style={styles.audioPreview}>
-                  <Text
-                    style={{
-                      fontFamily: "Poppins_400Regular",
-                      fontSize: wp(3),
-                      marginRight: wp(1),
-                      lineHeight: wp(4)
-
-                    }}
-                  >
-                    {descAudio.name} (
-                    {descAudio.duration
-                      ? formatTime(descAudio.duration * 1000)
-                      : recordTime > 0
-                        ? formatTime(recordTime * 1000)
-                        : "0:00"}
-                    )
-                  </Text>
-                  <TouchableOpacity
-                    onPress={() =>
-                      isPlayingDesc
-                        ? stopAudio("desc")
-                        : playAudio(descAudio, "desc")
-                    }
-                  >
-                    <Icon
-                      name={isPlayingDesc ? "pause" : "play-arrow"}
-                      size={wp(7)}
-                      color={COLORS.primary}
-                    />
-                  </TouchableOpacity>
-                  <TouchableOpacity onPress={() => deleteAudio("desc")}>
-                    <Icon
-                      name="x-circle"
-                      type="feather"
-                      size={wp(5.3)}
-                      color={COLORS.primary}
-                    />
-                  </TouchableOpacity>
-                </View>
-              ) : (
-                <TouchableOpacity
-                  style={styles.micIconContainer} // Absolute inside TextInput
-                  onPress={() => startRecording("desc")}
-                >
-                  <Icon name="mic" type="feather" size={wp(5)} color={COLORS.gray} />
-                </TouchableOpacity>
+              {errors.description && (
+                <Text style={[styles.errorText, {
+                  marginTop: wp(2)
+                }]}>{errors.description}</Text>
               )}
+              {
+                !descAudio &&
+                <Pressable
+                  onPress={() => startRecording("desc")}
+                  // onPress={() => {
+                  //   setspeechTextModal(true),
+                  //     setSpeechFlag('description')
+                  // }}
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    borderWidth: wp(0.3), borderColor: COLORS?.gray, paddingHorizontal: wp(2), paddingVertical: hp(0.4), borderRadius: wp(2), gap: wp(2), height: hp(6), marginVertical: hp(2)
+                  }}
+                >
+                  <Icon
+                    name={"mic"}
+                    size={wp(7)}
+                    color={COLORS.gray}
+                  />
+                  <Text numberOfLines={1} style={{ fontFamily: "Poppins_400Regular", color: COLORS?.gray, fontSize: wp(4) }} ellipsizeMode="tail">
+                    {t("add_description_audio")}
+                  </Text>
+                </Pressable>
+              }
+              {
+                descAudio ? (
+                  <View style={{
+                    flexDirection: "row",
+                    alignItems: "center", justifyContent: "space-between",
+                    borderWidth: wp(0.3), borderColor: COLORS?.gray, paddingHorizontal: wp(2), paddingVertical: hp(0.4), borderRadius: wp(2), gap: wp(2), height: hp(6), marginVertical: hp(2)
+                  }}>
+                    <Text
+                      style={{
+                        fontFamily: "Poppins_400Regular",
+                        fontSize: wp(3.5),
+                        marginRight: wp(1),
+                        lineHeight: wp(6)
+
+                      }}
+                    >
+                      {descAudio.name} (
+                      {descAudio.duration
+                        ? formatTime(descAudio.duration * 1000)
+                        : recordTime > 0
+                          ? formatTime(recordTime * 1000)
+                          : "0:00"}
+                      ){isPlayingDesc ? t('playing') : ''}
+                    </Text>
+
+                    <View style={{ flexDirection: "row", alignItems: "center" }}>
+                      <TouchableOpacity
+                        onPress={() =>
+                          isPlayingDesc
+                            ? stopAudio("desc")
+                            : playAudio(descAudio, "desc")
+                        }
+                      >
+                        <Icon
+                          name={isPlayingDesc ? "pause" : "play-arrow"}
+                          size={wp(10)}
+                          color={COLORS.primary}
+                        />
+                      </TouchableOpacity>
+                      <TouchableOpacity onPress={() => deleteAudio("desc")}>
+                        <Icon
+                          name="x-circle"
+                          type="feather"
+                          size={wp(8)}
+                          color={COLORS.primary}
+                        />
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                ) : (
+                  null
+                )}
+              <TouchableOpacity
+                style={styles.micIconContainer} // Absolute inside TextInput
+                // onPress={() => startRecording("desc")}
+                onPress={() => {
+                  setspeechTextModal(true),
+                    setSpeechFlag('description')
+                }}
+              >
+                <Icon name="mic" type="feather" size={wp(5)} color={COLORS.gray} />
+              </TouchableOpacity>
             </View>
-            {errors.description && (
-              <Text style={styles.errorText}>{errors.description}</Text>
-            )}
+
             <View style={{ marginBottom: wp(4) }}>
-              <Text style={styles.label}>{t("image")}</Text>
+              <Text style={styles.label}>{t("images")}</Text>
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: wp(2) }}>
                 {images.map((img, idx) => (
                   <View key={idx} style={{ position: "relative", width: wp(26), height: hp(15), marginRight: wp(2), marginBottom: hp(1) }}>
                     <Pressable onPress={() => openImageViewer(img.uri)} >
                       <Image source={{ uri: img.uri }} style={{ width: "100%", height: wp(26), borderRadius: wp(2) }} resizeMode="contain" />
                     </Pressable>
-
                     <Pressable
                       onPress={() => removeImage(idx)}
                       style={{ position: "absolute", top: -wp(2), right: -wp(2), backgroundColor: "red", borderRadius: wp(3), padding: wp(1) }}
@@ -609,7 +710,7 @@ export default function CreateTask() {
                 {images.length < 3 && (
                   <Pressable
                     onPress={() => setmediaModal(true)}
-                    style={{ borderWidth: wp(0.2), height: hp(10), width: wp(30), alignItems: "center", justifyContent: "center", borderRadius: wp(2) }}
+                    style={{ borderWidth: wp(0.4), height: wp(28), width: wp(25), alignItems: "center", justifyContent: "center", borderRadius: wp(2), borderColor: COLORS?.primary, backgroundColor: "#f9f9f9" }}
                   >
                     <Icon name="plus" type="feather" size={wp(5.5)} color={COLORS.primary} />
                   </Pressable>
@@ -619,8 +720,8 @@ export default function CreateTask() {
             <Modal transparent visible={isRecording} animationType="fade">
               <View style={styles.recordingOverlay}>
                 <View style={styles.recordingPopup}>
-                  <Text style={[styles.recordingText,{
-                    fontSize:wp(lang == 'ta' ? 2.5 : 3.5)
+                  <Text style={[styles.recordingText, {
+                    fontSize: wp(lang == 'ta' ? 2.5 : 3.5)
                   }]}>
                     {`${t('recording')}`} {recordingFor === "title" ? t('title') : t('descption')}...
                   </Text>
@@ -631,15 +732,18 @@ export default function CreateTask() {
                 </View>
               </View>
             </Modal>
-            <CustomDropdown
-              title={`${t('assignBy')} *`}
-              data={dropDownData?.users}
-              placeholder={`${t('select_user')}`}
-              onSelect={(item) => setAssignedBy(item)}
-              selectedItem={selectedTeam}
-            />
+            {
+              dropDownData?.canAssign &&
+              <CustomDropdown
+                title={`${t('assignBy')} *`}
+                data={dropDownData?.users}
+                placeholder={`${t('select_user')}`}
+                onSelect={(item) => setAssignedBy(item)}
+                selected={assignedBy?.label}
+              />
+            }
+            {/* <Text style={styles.label}>{JSON.stringify(assignedBy?.value)}</Text> */}
             {errors.assignedBy && <Text style={styles.errorText}>{errors.assignedBy}</Text>}
-            {/* -------- ASSIGN TO -------- */}
             <Text style={styles.label}>{`${t('assignto')} *`}</Text>
             <View style={styles.radioContainer}>
               <Pressable
@@ -669,33 +773,41 @@ export default function CreateTask() {
                 <Text style={styles.radioLabel}>{`${t('group')}`}</Text>
               </Pressable>
             </View>
-            {/* Select Team */}
-            {assignType === "group" && (
-              <CustomDropdown
-                title={`${t('select_team')} *`}
-                data={dropDownData?.teams}
-                placeholder={`${t('select_team')}`}
-                onSelect={(item) => setSelectedTeam(item)}
-              />
-            )}
+            {
+              assignType && (
+                <CustomDropdown
+                  assignType={assignType}
+                  title={`${t(assignType == 'group' ? 'select_team' : "select_user")} *`}
+                  data={assignType == 'group' ? dropDownData?.teams : dropDownData?.individual_users}
+                  placeholder={`${t(assignType == 'group' ? 'select_team' : "select_user")}`}
+                  // onSelect={(item) => setSelectedTeam(item)}
+                  selected={selectedTeam?.value} // pass selected item
+                  onSelect={(item) => setSelectedTeam(item)} // update selected item
+                />
+              )}
+            {
+              errors.selectedTeam && <Text style={styles.errorText}>{`${t(assignType == 'group' ? 'select_team' : "select_user")}`}</Text>
+            }
             {assignType === "group" && selectedTeam?.value &&
               <View>
                 <TeamMembersView teamMembers={dropDownData} />
               </View>}
             <CustomDropdown
-              title={`${t('task_priority')}`}
+              title={`${t('task_priority')} *`}
               data={siteDetails?.prioritiesList || []}
               placeholder={`${t('choose_priority')}`}
               onSelect={(item) => setpriority(item)}
-
+              selected={priority?.value}
             />
-
+            {errors?.priority && (
+              <Text style={styles.errorText}>{errors?.priority}</Text>
+            )}
             <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: hp(0) }}>
               <View style={{ width: wp(44) }}>
                 <Text style={styles.label}>{`${t('due_date')}*`}</Text>
                 <Pressable onPress={() => setShowDatePicker(true)} style={styles.dateButton}>
-                  <Text numberOfLines={1} style={[styles.dateText,{
-                    fontSize:wp(lang == 'ta' ? 2.5 : 3.5)
+                  <Text numberOfLines={1} style={[styles.dateText, {
+                    fontSize: wp(lang == 'ta' && !dueDate ? 2.5 : 3.5)
                   }]}>
                     {dueDate ? dayjs(dueDate).format("DD/MM/YYYY") : t('select_date')}
                   </Text>
@@ -707,7 +819,7 @@ export default function CreateTask() {
               <View style={{ width: wp(44) }}>
                 <Text style={styles.label}>{`${t('due_time')} *`}</Text>
                 <Pressable onPress={() => setShowTimePicker(true)} style={styles.dateButton}>
-                  <Text style={[styles.dateText,{
+                  <Text style={[styles.dateText, {
 
                   }]}>
                     {dueTime ? dayjs(dueTime).format("hh:mm A") : "Select Time"}
@@ -720,6 +832,7 @@ export default function CreateTask() {
             </View>
             <CustomSingleDatePickerModal
               title={t('select_date')}
+              disablePastDates={true}
               visible={showDatePicker}
               initialDate={dueDate}
               onClose={() => setShowDatePicker(false)}
@@ -758,6 +871,17 @@ export default function CreateTask() {
           uri={viewerUri}
           onClose={() => setViewerVisible(false)}
         />
+        <SpeechToTextModal
+          visible={speechTextModal}
+          title={speechFlag == 'title' ? 'add_title' : 'add_description'}
+          onClose={() => setspeechTextModal(false)}
+          currentLanguage={currentLanguage}
+          onResult={(value) =>
+            speechFlag === 'title'
+              ? setTitle((prev) => prev + value)
+              : setDescription((prev) => prev + value)
+          }
+        />
       </KeyboardAvoidingView>
     </View>
   );
@@ -775,7 +899,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   }, recordingPopup: {
     backgroundColor: "#fff", borderRadius: wp(3),
-    alignItems: "center", width: wp(60), height: wp(60), borderRadius: wp(30), alignItems: "center", justifyContent: "center", borderWidth: wp(1), borderColor: COLORS?.primary
+    alignItems: "center", width: wp(80), height: wp(80), borderRadius: wp(40), alignItems: "center", justifyContent: "center", borderWidth: wp(1), borderColor: COLORS?.primary
   }, recordingText: {
     fontSize: wp(3.5), marginBottom: hp(1), fontFamily: "Poppins_400Regular",
   }, recordingTime: {
@@ -790,7 +914,7 @@ const styles = StyleSheet.create({
   radioLabel: { fontSize: wp(3.8), fontFamily: "Poppins_400Regular", lineHeight: hp(4) },
   dateButton: { borderWidth: 1, borderRadius: wp(1), padding: wp(3), },
   micIconContainer: {
-    position: "absolute", right: wp(3), top: hp(1.5),
+    position: "absolute", right: wp(3), top: hp(5.2), margin: wp(1),
     zIndex: 10,
   }, dateText: { fontSize: wp(3.5), fontFamily: "Poppins_400Regular", color: COLORS.black }, submitButton: {
     backgroundColor: COLORS.primary, padding: wp(3),

@@ -1,10 +1,11 @@
 import { useNavigation } from "@react-navigation/native";
 import React, { useEffect, useRef } from "react";
 import {
-  Animated, Image, Pressable, StyleSheet, Text, View,
+  Animated, Image, Pressable, StyleSheet, Text, View
 } from "react-native";
 import { COLORS } from "../../app/resources/colors";
 import { wp } from "../../app/resources/dimensions";
+import VersionUpgradeModal from "./VersionUpgradeModal";
 export default function Header({
   openMenu, headerL,
   openLanguageMenu,
@@ -68,7 +69,9 @@ export default function Header({
             )}
           </Animated.View>
         </Pressable>
+        <VersionUpgradeModal />
       </View>
+
     </View>
   );
 }

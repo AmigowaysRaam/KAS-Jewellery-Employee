@@ -163,16 +163,22 @@ const TaskDetailModal = ({ visible, task, onClose, getStatusColor }) => {
               </ScrollView>
             </View>
           ) : null}
-          <View style={styles.statusEditRow}>
-            <View style={[styles.statusBadge, { backgroundColor: getStatusColor(task.status) }]}>
-              <Icon name="info" size={wp(5)} color="#fff" style={{ marginRight: wp(1) }} />
-              <Text style={styles.statusText}>{task.status}</Text>
+          {/* <Text>{JSON.stringify(task?.allowEdit)}</Text> */}
+          {
+            <View style={styles.statusEditRow}>
+              <View style={[styles.statusBadge, { backgroundColor: getStatusColor(task.status) }]}>
+                <Icon name="info" size={wp(5)} color="#fff" style={{ marginRight: wp(1) }} />
+                <Text style={styles.statusText}>{task.status}</Text>
+              </View>
+              {
+                task?.allowEdit &&
+                <TouchableOpacity style={styles.editButton} onPress={handleEdit}>
+                  <Icon name="edit" size={wp(5)} color={COLORS?.white} />
+                  <Text style={styles.editText}>{t("edit")}</Text>
+                </TouchableOpacity>
+              }
             </View>
-            <TouchableOpacity style={styles.editButton} onPress={handleEdit}>
-              <Icon name="edit" size={wp(5)} color={COLORS?.white} />
-              <Text style={styles.editText}>{t("edit")}</Text>
-            </TouchableOpacity>
-          </View>
+          }
           <View style={{ marginBottom: hp(3) }}>
             {task?.image?.length > 0 && (
               <ScrollView
@@ -219,25 +225,30 @@ const TaskDetailModal = ({ visible, task, onClose, getStatusColor }) => {
             </View>
           </View>
           {/* Audio Player */}
+          {/* <Text>{task?.audio}</Text> */}
           {task?.audio && (
             <View style={styles.audioContainer}>
               <Text style={styles.audioName}>
-                <Icon name="audiotrack" size={wp(4)} color={COLORS.primary} /> {task.audio_name || "Audio File"}
+                <Icon name="audiotrack" size={wp(4)} color={COLORS.primary} /> {task?.audio_name || "Audio File"}
               </Text>
-              <View style={styles.audioControls}>
-                <TouchableOpacity onPress={handleBackward} style={styles.controlButton}>
-                  <Icon name="replay-5" size={wp(7)} color={COLORS.primary} />
-                </TouchableOpacity>
 
+              <View style={styles.audioControls}>
+                {
+                  isPlaying &&
+                  <TouchableOpacity onPress={handleBackward} style={styles.controlButton}>
+                    <Icon name="replay-5" size={wp(7)} color={COLORS.primary} />
+                  </TouchableOpacity>
+                }
                 <TouchableOpacity onPress={handlePlayPause} style={[styles.controlButton, styles.playButton]}>
                   <Icon name={isPlaying ? "pause" : "play-arrow"} size={wp(9)} color="#fff" />
                 </TouchableOpacity>
-
-                <TouchableOpacity onPress={handleForward} style={styles.controlButton}>
-                  <Icon name="forward-5" size={wp(7)} color={COLORS.primary} />
-                </TouchableOpacity>
+                {
+                  isPlaying &&
+                  <TouchableOpacity onPress={handleForward} style={styles.controlButton}>
+                    <Icon name="forward-5" size={wp(7)} color={COLORS.primary} />
+                  </TouchableOpacity>
+                }
               </View>
-
               {/* Progress Bar */}
               <View style={styles.progressBarBackground}>
                 <View style={[styles.progressBarFill, { flex: progress }]} />
@@ -267,14 +278,14 @@ const styles = StyleSheet.create({
 
   modalContainer: {
     position: "absolute", left: 0, right: 0, bottom: 0,
-    maxHeight: SCREEN_HEIGHT * 0.85, backgroundColor: "#fff", borderTopLeftRadius: wp(8), borderTopRightRadius: wp(8), padding: wp(5), paddingTop: hp(6), shadowColor: "#000", shadowOpacity: 0.25, shadowRadius: 10, elevation: 15,
+    maxHeight: SCREEN_HEIGHT * 0.85, backgroundColor: "#fff", borderTopLeftRadius: wp(8), borderTopRightRadius: wp(8), padding: wp(5), paddingTop: hp(6), paddingVertical: hp(6), shadowColor: "#000", shadowOpacity: 0.25, shadowRadius: 10, elevation: 15,
   }, closeButton: {
     position: "absolute", top: -wp(5), right: wp(5), width: wp(11),
     height: wp(11), borderRadius: wp(5.5), backgroundColor: COLORS.primary, justifyContent: "center",
     alignItems: "center", zIndex: 10, borderWidth: wp(0.8), borderColor: "#FFF"
   }, modalTitle: {
     fontSize: wp(5), fontFamily: "Poppins_700Bold",
-    color: "#222", marginBottom: hp(1.5),
+    color: "#222", marginBottom: hp(1.5), textTransform: "capitalize"
   }, descriptionContainer: {
     marginBottom: hp(2), maxHeight: SCREEN_HEIGHT * 0.25,
     borderRadius: wp(3), backgroundColor: "#f5f5f5", padding: wp(3),

@@ -6,20 +6,21 @@ import { COLORS } from "../../app/resources/colors";
 import { hp, wp } from "../../app/resources/dimensions";
 import CustomDateRangePickerModal from "./CustomDatePicker";
 
-const DateandDownloadTask = ({ onDateSelect, onDownload }) => {
+const DateandDownloadTask = ({ onDateSelect, onDownload, fromDate, toDate }) => {
   const [showPicker, setShowPicker] = useState(false);
-  const [fromDate, setFromDate] = useState(null);
-  const [toDate, setToDate] = useState(null);
+  // const [fromDate, setFromDate] = useState(null);
+  // const [toDate, setToDate] = useState(null);
   // Handle date range selection from modal
   const handleDateSelect = ({ from, to }) => {
-    setFromDate(from);
-    setToDate(to);
     onDateSelect && onDateSelect({ from, to });
   };
   const { t } = useTranslation()
+  // useEffect(() => {
+  //   Alert.alert("DateandDownloadTask Component Mounted", JSON.stringify((fromDate, toDate)));
+  // }, [])
   const clearRange = () => {
-    setFromDate(null);
-    setToDate(null);
+    // setFromDate(null);
+    // setToDate(null);
     onDateSelect && onDateSelect({ from: null, to: null });
   };
   // Format date range for display
@@ -47,9 +48,10 @@ const DateandDownloadTask = ({ onDateSelect, onDownload }) => {
         </Pressable>
       </View>
       <CustomDateRangePickerModal
+        disablePastDates={true}
         visible={showPicker}
         onClose={() => setShowPicker(false)}
-        onConfirm={handleDateSelect}
+        onConfirm={(date)=>handleDateSelect(date)}
         initialFrom={fromDate}
         initialTo={toDate}
         title={`${t('select_date_range')}`}
@@ -88,6 +90,7 @@ const styles = StyleSheet.create({
     marginLeft: wp(2),
     flex: 1,
     lineHeight: hp(2.5),
+    fontSize: wp(3),
   },
   clearIcon: {
     position: "absolute",
