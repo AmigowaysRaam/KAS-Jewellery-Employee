@@ -6,9 +6,8 @@ import {
 } from "react-native";
 import { COLORS } from "../../app/resources/colors";
 import { hp, wp } from "../../app/resources/dimensions";
-const Banner = ({ homepageData }) => {
+const Banner = ({ homepageData, opacity }) => {
   const { t } = useTranslation();
-  // Animated values
   const cardAnim = useRef(new Animated.Value(0)).current; // 0 = hidden, 1 = visible
   const rowAnim = useRef(new Animated.Value(0)).current; // For staggered rows
   // console.log("Banner", );
@@ -110,10 +109,10 @@ const Banner = ({ homepageData }) => {
             <Text numberOfLines={1} style={styles.name}>
               {employeeDetails?.name || ''}
             </Text>
-            <View style={styles.row}>
+            {/* <View style={styles.row}>
               <Text style={styles.label}>{t("emp_status")} :</Text>
               <Text style={styles.value}>{employeeDetails?.employee_status}</Text>
-            </View>
+            </View> */}
           </Animated.View>
 
           {/* Emp ID & Date */}

@@ -1,11 +1,19 @@
-import { Ionicons } from "@expo/vector-icons";
+import { FontAwesome, Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import * as ImagePicker from "expo-image-picker";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
-  ActivityIndicator, Image, Keyboard, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput,
-  TouchableOpacity, View
+  ActivityIndicator,
+  Image,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from "react-native";
 import { useSelector } from "react-redux";
 import { getStoredLanguage } from "../../app/i18ns";
@@ -16,114 +24,158 @@ import { BASE_URL, fetchData } from "./api/Api";
 import AttachmentModal from "./AttacthcModal";
 import CommentList from "./Commentlist";
 import CommonHeader from "./CommonHeader";
-import ImageViewerModal from "./ImageViewver";
+import MediaViewerModal from "./MediaView";
+
 export default function TaskMessages({ route }) {
   const navigation = useNavigation();
   const { showToast } = useToast();
   const { task } = route?.params || {};
-  const { t } = useTranslation()
-  const profileDetails = useSelector(state => state?.auth?.profileDetails?.data);
+  const { t } = useTranslation();
+  const profileDetails = useSelector(
+    (state) => state?.auth?.profileDetails?.data
+  );
   const [comments, setComments] = useState([]);
-  const [loading, setLoading] = useState(false); // header/task loader
-  const [sending, setSending] = useState(false); // sending comment
+  const [loading, setLoading] = useState(false);
+  const [sending, setSending] = useState(false);
   const [text, setText] = useState("");
   const [images, setImages] = useState([]);
+  const [vidoe, setVideo] = useState([]);
   const [audioAttachment, setAudioAttachment] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
   const [viewerVisible, setViewerVisible] = useState(false);
-  const [viewerUri, setViewerUri] = useState(null);
-  const [ticketDetails, setticketDetails] = useState(null);
+  const [ticketDetails, setTicketDetails] = useState(null);
+  const [mediaType, setMediaType] = useState(null);
+
   const flatListRef = useRef(null);
+
+  // Keyboard handling
   useEffect(() => {
     const showSub = Keyboard.addListener("keyboardDidShow", () => {
       setIsKeyboardOpen(true);
-      setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 150);
+      setTimeout(
+        () => flatListRef.current?.scrollToEnd({ animated: true }),
+        150
+      );
     });
-    const hideSub = Keyboard.addListener("keyboardDidHide", () => setIsKeyboardOpen(false));
+    const hideSub = Keyboard.addListener("keyboardDidHide", () =>
+      setIsKeyboardOpen(false)
+    );
     return () => {
       showSub.remove();
       hideSub.remove();
     };
   }, []);
-  const openImageViewer = (uri) => {
-    setViewerUri(uri);
+  const [selectedMedia, setSelectedMedia] = useState(null);
+
+  // const openImageViewer = (uri) => {
+  //   setViewerUri(uri);
+  //   setViewerVisible(true);
+  // };
+  const openMediaViewer = (item) => {
+    // Alert.alert('',JSON.stringify(item))
+    setSelectedMedia(item);
     setViewerVisible(true);
   };
+
   const loadCommentsD = async () => {
     const lang = await getStoredLanguage();
     setLoading(true);
     try {
       const response = await fetchData("app-employee-task-detail", "POST", {
         id: task?.id,
-        lang: lang,
-        user_id: profileDetails?.id
+        lang,
+        user_id: profileDetails?.id,
       });
-      setticketDetails(response?.data?.ticket_detail);
+      setTicketDetails(response?.data?.ticket_detail);
       setComments(response?.data?.ticket_comments || []);
-      // Alert.alert('', JSON.stringify(task?.id, null, 2))
     } catch (err) {
       console.log(err);
     } finally {
       setLoading(false);
     }
   };
-  useFocusEffect(
-    useCallback(() => {
-      const loadComments = async () => {
-        const lang = await getStoredLanguage();
-        setLoading(true);
-        try {
-          const response = await fetchData("app-employee-task-detail", "POST", {
-            id: task?.id,
-            lang: lang,
-            user_id: profileDetails?.id
-          });
-          setticketDetails(response?.data?.ticket_detail);
-          setComments(response?.data?.ticket_comments || []);
-        } catch (err) {
-          console.log(err);
-        } finally {
-          setLoading(false);
-        }
-      };
-      if (task?.id) {
-        loadComments();
-      }
-    }, [task])
-  );
-  const pickCamera = async () => {
-
-    setModalVisible(false);
-    const result = await ImagePicker.launchCameraAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.7 });
-    if (!result.canceled && result.assets?.[0]?.uri) {
-      const img = result.assets[0];
-      setImages(prev => [...prev, { ...img, source: "Camera" }]);
+  const removeMedia = (index, isVideo) => {
+    if (isVideo) {
+      setVideo([]);
+    } else {
+      setImages((prev) => prev.filter((_, i) => i !== index));
     }
   };
-  const pickFile = async () => {
+
+
+  // Load comments when screen is focused
+  useFocusEffect(
+    useCallback(() => {
+      if (!task?.id) return;
+      loadCommentsD();
+    }, [task])
+  );
+
+  // Unified media picker
+  const pickMedia = async (source) => {
     setModalVisible(false);
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+    // Request permissions
+    let permissionResult;
+    if (source === "camera") {
+      permissionResult = await ImagePicker.requestCameraPermissionsAsync();
+    } else {
+      permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    }
+
+    if (!permissionResult?.granted) return;
+
+    const options = {
+      mediaTypes:
+        mediaType === "video"
+          ? ImagePicker.MediaTypeOptions.Videos
+          : ImagePicker.MediaTypeOptions.Images,
       quality: 0.7,
-      allowsMultipleSelection: true,
-      selectionLimit: 3 - images.length
-    });
+    };
+
+    if (mediaType === "image" && source === "gallery") {
+      options.allowsMultipleSelection = true;
+      options.selectionLimit = 3 - images.length;
+    }
+
+    let result;
+    if (source === "camera") {
+      result = await ImagePicker.launchCameraAsync(options);
+    } else {
+      result = await ImagePicker.launchImageLibraryAsync(options);
+    }
+
     if (!result.canceled && result.assets?.length > 0) {
-      const selected = result.assets.map(a => ({ ...a, source: "Gallery" }));
-      setImages(prev => [...prev, ...selected]);
+      if (mediaType === "video") {
+        const selectedVideo = {
+          ...result.assets[0],
+          source: source === "camera" ? "Camera" : "Gallery",
+        };
+
+        setVideo([selectedVideo]); // store in video state
+      } else {
+        const selectedImages = result.assets.map((a) => ({
+          ...a,
+          source: source === "camera" ? "Camera" : "Gallery",
+        }));
+
+        setImages((prev) => [...prev, ...selectedImages]);
+      }
     }
   };
   const handleAudioRecorded = (audio) => setAudioAttachment(audio);
-  const removeImage = (index) => setImages(prev => prev.filter((_, i) => i !== index));
+
   const removeAudioAttachment = () => setAudioAttachment(null);
 
-  // --- SEND COMMENT ---
   const handleSend = async () => {
     if (!text.trim() && images.length === 0 && !audioAttachment) {
-      showToast("Please write a comment, select an image, or record audio", "error");
+      showToast(
+        "Please write a comment, select an image, or record audio",
+        "error"
+      );
       return;
     }
+    // Alert.alert('', JSON.stringify(vidoe))
     if (!profileDetails?.id || !task?.id) return;
     setSending(true);
     try {
@@ -131,11 +183,19 @@ export default function TaskMessages({ route }) {
       formData.append("user_id", profileDetails.id.toString());
       formData.append("task_id", task.id.toString());
       formData.append("description", text.trim());
+
       images.forEach((img, index) => {
         formData.append("image[]", {
           uri: img.uri,
           name: `comment_${Date.now()}_${index}.jpg`,
           type: img.mimeType || "image/jpeg",
+        });
+      });
+      vidoe.forEach((img, index) => {
+        formData.append("video", {
+          uri: img.uri,
+          name: `comment_${Date.now()}_${index}.jpg`,
+          type: img.mimeType || "mp4",
         });
       });
       if (audioAttachment) {
@@ -145,21 +205,23 @@ export default function TaskMessages({ route }) {
           type: "audio/m4a",
         });
       }
+
       const response = await fetch(`${BASE_URL}app-employee-add-task-comment`, {
         method: "POST",
         body: formData,
         headers: { Accept: "application/json" },
       });
       const resultJson = await response.json();
+
       if (resultJson?.success || resultJson?.text === "Success") {
         showToast(resultJson?.message || "Comment sent", "success");
-        setComments(prev => [
+        setComments((prev) => [
           ...prev,
           {
             id: Date.now(),
             user_name: profileDetails?.name,
             comment: text.trim(),
-            images: images.map(i => i.uri),
+            images: images.map((i) => i.uri),
             audio: audioAttachment?.uri,
           },
         ]);
@@ -178,92 +240,230 @@ export default function TaskMessages({ route }) {
       setSending(false);
     }
   };
+  const mediaList = [...images, ...vidoe];
 
   return (
     <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: "#fff", paddingBottom: isKeyboardOpen ? hp(5) : 0 }}
+      style={{
+        flex: 1,
+        backgroundColor: "#fff",
+        paddingBottom: isKeyboardOpen ? hp(5) : 0,
+      }}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      <CommonHeader title={t("h_task_details")} onBackPress={() => navigation.goBack()} />
-      {/* COMMENT LIST */}
+      <CommonHeader
+        title={task?.title}
+        onBackPress={() => navigation.goBack()}
+      />
       <CommentList
         comments={comments}
         loading={loading}
         ticketDetails={ticketDetails}
         task={task}
         flatListRef={flatListRef}
-        openImageViewer={openImageViewer}
+        openImageViewer={(viewerUri) => openMediaViewer({ uri: viewerUri, type: "image" })}
         loadData={loadCommentsD}
       />
-      {/* INPUT AREA */}
-      <View style={styles.inputContainer}>
+      <View style={styles.inputWrapper}>
         {audioAttachment && (
           <View style={styles.audioPreviewContainer}>
-            <Text style={{ marginRight: wp(2) }}> {`🎤 ${'audio_attatched'}`}</Text>
+            <Text style={{ marginRight: wp(2) }}>🎤 Audio Attached</Text>
             <TouchableOpacity onPress={removeAudioAttachment}>
               <Ionicons name="close-circle" size={28} color="red" />
             </TouchableOpacity>
           </View>
         )}
-        {images.length > 0 && (
+        {mediaList.length > 0 && (
           <View style={styles.selectedImagesContainer}>
-            {images.map((img, index) => (
-              <View key={index} style={styles.selectedImageWrapper}>
-                <TouchableOpacity onPress={() => openImageViewer(img.uri)}>
-                  <Image source={{ uri: img.uri }} style={styles.selectedImage} />
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.removeImageButton} onPress={() => removeImage(index)}>
-                  <Text style={styles.removeImageText}>×</Text>
-                </TouchableOpacity>
-              </View>
-            ))}
+            {mediaList.map((item, index) => {
+              const isVideo = item.type?.includes("video");
+              return (
+                <View key={index} style={styles.selectedImageWrapper}>
+                  <TouchableOpacity
+                    onPress={() => openMediaViewer(item)}
+                  >
+                    <Image
+                      source={{ uri: item.uri }}
+                      style={styles.selectedImage}
+                    />
+
+                    {/* Show play icon if video */}
+                    {isVideo && (
+                      <View style={styles.playIconContainer}>
+                        <Text style={styles.playIcon}>▶</Text>
+                      </View>
+                    )}
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.removeImageButton}
+                    onPress={() => removeMedia(index, isVideo)}
+                  >
+                    <Text style={styles.removeImageText}>×</Text>
+                  </TouchableOpacity>
+                </View>
+              );
+            })}
           </View>
         )}
-        <View style={styles.inputRow}>
-          <TextInput
-            value={text}
-            onChangeText={setText}
-            placeholder={`${t('write_a_comment')} ...`}
-            style={styles.textInput}
-            placeholderTextColor="#666"
-            multiline
-          />
-          <TouchableOpacity onPress={() => setModalVisible(true)} style={styles.attachButton}>
-            <Text style={styles.attachText}>📎</Text>
+
+        <View style={styles.bottomRow}>
+          <View style={styles.textInputContainer}>
+            <TextInput
+              value={text}
+              onChangeText={setText}
+              placeholder={`${t("write_a_comment")} ...`}
+              style={styles.textInput}
+              placeholderTextColor="#666"
+              multiline
+            />
+            <TouchableOpacity
+              onPress={() => {
+                setMediaType("image");
+                setModalVisible(true);
+              }}
+              style={styles.inlineIcon}
+            >
+              <FontAwesome name="image" size={wp(7)} color="#000" />
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => {
+                setMediaType("video");
+                setModalVisible(true);
+              }}
+              style={styles.inlineIcon}
+            >
+              <Ionicons name="videocam-outline" size={wp(7)} color="#000" />
+            </TouchableOpacity>
+          </View>
+
+          <TouchableOpacity
+            onPress={() => {
+              setMediaType("mic");
+              setModalVisible(true);
+            }}
+            style={styles.attachButton}
+          >
+            <Ionicons name="mic" size={wp(8)} color="#000" />
           </TouchableOpacity>
-          <TouchableOpacity onPress={handleSend} style={[styles.sendButton, { backgroundColor: COLORS.primary }]} disabled={sending}>
-            {sending ? <ActivityIndicator color="#fff" /> : <Ionicons name="send" size={wp(4)} color="#fff" />}
+
+          <TouchableOpacity
+            onPress={handleSend}
+            style={[styles.sendButton]}
+            disabled={sending}
+          >
+            {sending ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Ionicons name="send" size={wp(8)} color={COLORS.primary} style={{ marginRight: wp(2) }} />
+            )}
           </TouchableOpacity>
         </View>
       </View>
+
       <AttachmentModal
         visible={modalVisible}
         onClose={() => setModalVisible(false)}
-        onCamera={pickCamera}
-        onFile={pickFile}
+        onCamera={() => pickMedia("camera")}
+        onFile={() => pickMedia("gallery")}
         onAudioRecorded={handleAudioRecorded}
-        hideMic={false}
+        hideMic={mediaType !== "mic"}
+        mediaType={mediaType}
+        setmediaType={setMediaType}
       />
-      <ImageViewerModal
+      <MediaViewerModal
         visible={viewerVisible}
-        uri={viewerUri}
-        onClose={() => setViewerVisible(false)}
+        uri={selectedMedia?.uri}
+        type={
+          selectedMedia?.type?.includes("video") ? "video" : "image"
+        }
+        onClose={() => {
+          setViewerVisible(false);
+          setSelectedMedia(null);
+        }}
       />
     </KeyboardAvoidingView>
   );
 }
 const styles = StyleSheet.create({
-  sectionTitle: { fontSize: wp(4), fontFamily: "Poppins_600SemiBold", margin: hp(1), color: COLORS.primary, lineHeight: hp(4) },
-  inputContainer: { paddingHorizontal: wp(3), paddingVertical: hp(1), borderTopWidth: 1, borderTopColor: "#ddd", backgroundColor: "#fff" },
-  inputRow: { flexDirection: "row", alignItems: "center", position: "relative" },
-  textInput: { flex: 1, borderWidth: 1, borderColor: "#ccc", borderRadius: wp(2), paddingHorizontal: wp(3), paddingVertical: hp(1), fontFamily: "Poppins_400Regular", fontSize: wp(3.5), maxHeight: hp(12) },
-  attachButton: { marginHorizontal: wp(2) },
-  attachText: { fontSize: wp(6) },
-  sendButton: { paddingHorizontal: wp(4), paddingVertical: hp(1.5), borderRadius: wp(2), justifyContent: "center", alignItems: "center" },
-  selectedImagesContainer: { flexDirection: "row", flexWrap: "wrap", marginVertical: hp(1) },
-  selectedImageWrapper: { marginRight: wp(2), marginBottom: hp(1), position: "relative" },
+  inputWrapper: {
+    padding: wp(1),
+    backgroundColor: "#fff",
+    borderTopWidth: 1,
+    borderTopColor: "#ddd",
+  },
+  playIconContainer: {
+    position: "absolute", top: hp(0.5), left: wp(3),
+    borderRadius: wp(10),
+    padding: wp(1),
+  },
+  playIcon: {
+    color: "#ccc",
+    fontSize: wp(8),
+  },
+
+  bottomRow: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+  },
+  textInputContainer: {
+    // flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#f0f0f0",
+    borderRadius: wp(1),
+    paddingHorizontal: wp(2),
+    marginHorizontal: wp(1),
+    maxHeight: hp(15),
+    width: wp(73),
+  },
+  textInput: {
+    flex: 1,
+    paddingVertical: hp(1.5),
+    fontSize: 14,
+    color: "#000",
+  },
+
+  inlineIcon: {
+    marginLeft: wp(2),
+  },
+  attachButton: {
+    justifyContent: "center",
+    alignItems: "center",
+    position: "relative",
+    bottom: hp(0.5),
+    marginHorizontal: wp(0.5),
+  },
+  sendButton: {
+    paddingHorizontal: wp(3),
+    paddingVertical: hp(0.5),
+    borderRadius: wp(20),
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  selectedImagesContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    marginVertical: hp(1),
+  },
+  selectedImageWrapper: {
+    marginRight: wp(2),
+    marginBottom: hp(1),
+    position: "relative",
+  },
   selectedImage: { width: wp(16), height: wp(16), borderRadius: wp(2) },
-  removeImageButton: { position: "absolute", top: -wp(2), right: -wp(2), backgroundColor: "#fff", borderRadius: wp(3), padding: 0 },
+  removeImageButton: {
+    position: "absolute",
+    top: -wp(2),
+    right: -wp(2),
+    backgroundColor: "#fff",
+    borderRadius: wp(3),
+    padding: 0,
+  },
   removeImageText: { fontSize: wp(6), color: "red" },
-  audioPreviewContainer: { flexDirection: "row", alignItems: "center", marginVertical: hp(1) },
+  audioPreviewContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: hp(1),
+  },
 });

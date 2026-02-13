@@ -1,12 +1,11 @@
 import dayjs from "dayjs";
 import React, { useEffect, useRef, useState } from "react";
 import {
-    FlatList,
     Modal,
     Pressable,
     StyleSheet,
     Text,
-    View,
+    View
 } from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { COLORS } from "../../app/resources/colors";
@@ -24,7 +23,7 @@ const CustomSingleDatePickerModal = ({
     onClose,
     onConfirm,
     initialDate,
-    title,disablePastDates
+    title, disablePastDates
 }) => {
     const today = dayjs();
 
@@ -40,6 +39,26 @@ const CustomSingleDatePickerModal = ({
     const [daysInMonth, setDaysInMonth] = useState([]);
 
     const yearListRef = useRef(null);
+    const goToPreviousMonth = () => {
+        const newDate = dayjs()
+            .year(currentYear)
+            .month(currentMonth)
+            .subtract(1, "month");
+
+        if (disablePastDates && newDate.isBefore(today, "month")) return;
+        setCurrentMonth(newDate.month());
+        setCurrentYear(newDate.year());
+    };
+
+
+    const goToNextMonth = () => {
+        const newDate = dayjs()
+            .year(currentYear)
+            .month(currentMonth)
+            .add(1, "month");
+        setCurrentMonth(newDate.month());
+        setCurrentYear(newDate.year());
+    };
 
     /* 🔥 FIX: correct weekday alignment */
     useEffect(() => {
@@ -123,7 +142,7 @@ const CustomSingleDatePickerModal = ({
                     </View>
 
                     {/* Month Picker */}
-                    <FlatList
+                    {/* <FlatList
                         horizontal
                         data={MONTHS}
                         keyExtractor={(item) => item}
@@ -146,10 +165,10 @@ const CustomSingleDatePickerModal = ({
                                 </Text>
                             </Pressable>
                         )}
-                    />
+                    /> */}
 
                     {/* Year Picker */}
-                    <FlatList
+                    {/* <FlatList
                         horizontal
                         ref={yearListRef}
                         data={YEARS}
@@ -186,7 +205,33 @@ const CustomSingleDatePickerModal = ({
                                 </Text>
                             </Pressable>
                         )}
-                    />
+                    /> */}
+
+                    <View style={styles.monthHeader}>
+                        <Pressable onPress={goToPreviousMonth}>
+                            <Icon
+                                name="chevron-left"
+                                size={wp(7)}
+                                color={COLORS.primary}
+                            />
+                        </Pressable>
+
+                        <Text style={styles.monthHeaderText}>
+                            {dayjs()
+                                .year(currentYear)
+                                .month(currentMonth)
+                                .format("MMMM YYYY")}
+                        </Text>
+
+                        <Pressable onPress={goToNextMonth}>
+                            <Icon
+                                name="chevron-right"
+                                size={wp(7)}
+                                color={COLORS.primary}
+                            />
+                        </Pressable>
+                    </View>
+
 
                     {/* Calendar Grid */}
                     <View style={styles.grid}>
@@ -213,7 +258,7 @@ const CustomSingleDatePickerModal = ({
                                 day.isSame(selectedDate, "day");
                             const isToday = day.isSame(dayjs(), "day");
                             // disablePastDates
-                            const isPast =  day.isBefore(today, "day"); // restrict past dates
+                            const isPast = day.isBefore(today, "day"); // restrict past dates
                             return (
                                 <Pressable
                                     key={day.format("YYYY-MM-DD")}
@@ -267,6 +312,20 @@ const CustomSingleDatePickerModal = ({
 };
 
 const styles = StyleSheet.create({
+    monthHeader: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginVertical: hp(1.5),
+        paddingHorizontal: wp(4),
+    },
+    monthHeaderText: {
+        fontSize: wp(4.5),
+        fontFamily: "Poppins_600SemiBold",
+        color: COLORS.primary,
+    },
+
+    // 
     overlay: {
         flex: 1,
         backgroundColor: "rgba(0,0,0,0.5)",
@@ -292,13 +351,9 @@ const styles = StyleSheet.create({
         marginBottom: hp(1),
     },
     selectedDate: {
-        width: wp(85),
-        flexDirection: "row",
-        borderWidth: wp(0.5),
-        borderColor: COLORS.primary,
-        borderRadius: wp(2),
-        padding: wp(3),
-        justifyContent: "space-between",
+        width: wp(85), flexDirection: "row",
+        borderBottomWidth: wp(0.5), borderColor: COLORS.primary,
+        borderRadius: wp(2), padding: wp(3), justifyContent: "space-between",
         alignItems: "center",
     },
     selectedDateText: {
@@ -343,7 +398,7 @@ const styles = StyleSheet.create({
         alignItems: "center",
         marginVertical: hp(0.5),
         borderRadius: wp(6),
-        
+
     },
     activeDayItem: { backgroundColor: COLORS.primary },
     dayText: { fontSize: wp(4), color: "#333" },

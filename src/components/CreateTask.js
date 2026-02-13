@@ -1,13 +1,12 @@
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { useNavigation } from "@react-navigation/native";
 import dayjs from "dayjs";
-import { Audio } from "expo-av";
+import { Audio, Video } from "expo-av";
 import * as ImagePicker from "expo-image-picker";
 import React, { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
-  Image,
-  Keyboard, KeyboardAvoidingView,
+  Image, Keyboard, KeyboardAvoidingView,
   Modal, Platform, Pressable, ScrollView,
   StyleSheet, Text, TextInput, TouchableOpacity,
   TouchableWithoutFeedback, View
@@ -27,7 +26,7 @@ import ImageViewerModal from "./ImageViewver";
 import CustomSingleDatePickerModal from "./SingleDateSelect";
 import SpeechToTextModal from "./SpeechToTextMOdal";
 import TeamMembersView from "./TeamMemView";
-
+import UserCustomDropdown from "./UserSelect";
 export default function CreateTask() {
   const navigation = useNavigation();
   const scrollRef = useRef(null);
@@ -74,9 +73,10 @@ export default function CreateTask() {
   const [loading, setloading] = useState(false);
   const [speechTextModal, setspeechTextModal] = useState(false);
   const [speechFlag, setSpeechFlag] = useState('');
-
-
   const [currentLanguage, setcurrentLanguage] = useState(null);
+  const [mediaTypes, setmediaTypes] = useState('video');
+  const [images, setImages] = useState([]);
+  const [video, setvideo] = useState(null);
 
   useEffect(() => {
     Audio.requestPermissionsAsync();
@@ -84,12 +84,7 @@ export default function CreateTask() {
 
   useEffect(() => {
     fetchDropDownData();
-    // Alert.alert(JSON.stringify(assignedBy))
-  }, [selectedTeam, assignType, assignedBy]);
-
-  // useEffect(() => {
-  //   setSelectedTeam(null)
-  // }, [assignType]);
+  }, [selectedTeam, assignType, assignedBy, priority]);
 
   useEffect(() => {
     setErrors({});
@@ -103,8 +98,6 @@ export default function CreateTask() {
     }
     return () => clearInterval(interval);
   }, [isRecording]);
-  const [images, setImages] = useState([]);
-
 
   useEffect(() => {
     const showSubscription = Keyboard.addListener("keyboardDidShow", (e) => {
@@ -120,6 +113,7 @@ export default function CreateTask() {
       hideSubscription.remove();
     };
   }, []);
+
   const fetchDropDownData = async () => {
     if (!profileDetails?.id) return;
     setloading(true);
@@ -135,12 +129,12 @@ export default function CreateTask() {
           team_id: selectedTeam ? selectedTeam?.value : null,
           assignType: assignType,
           assignedBy: assignedBy ? assignedBy?.value : null,
+          priority: priority ? priority?.value : null
         }
       );
-      // Alert.alert(JSON.stringify(response))
       if (response?.data) {
-        // Alert.alert("cv", JSON.stringify(response.data))
         setdropDownData(response.data);
+        setDueDate(response.data?.max_date ? dayjs(response.data.max_date).toDate() : null)
       }
     } catch (error) {
       console.error("API Error:", error);
@@ -148,10 +142,10 @@ export default function CreateTask() {
       setloading(false);
     }
   };
+
   const ensureAudioPermission = async () => {
     try {
       const { status } = await Audio.getPermissionsAsync();
-
       if (status !== "granted") {
         const { status: newStatus } = await Audio.requestPermissionsAsync();
 
@@ -198,6 +192,57 @@ export default function CreateTask() {
     }
   };
 
+  const pickMedia = async (source) => {
+    setmediaModal(false);
+    // Request permission based on source
+    let hasPermission = false;
+    if (source === "camera") {
+      hasPermission = await requestCameraPermission();
+    } else if (source === "gallery") {
+      hasPermission = await requestGalleryPermission();
+    }
+
+    if (!hasPermission) return;
+
+    // Picker options based on media type
+    const options = {
+      mediaTypes:
+        mediaTypes === "video"
+          ? ImagePicker.MediaTypeOptions.Videos
+          : ImagePicker.MediaTypeOptions.Images,
+      quality: 0.7,
+    };
+
+    // Allow multiple selection for images from gallery
+    if (mediaTypes === "image" && source === "gallery") {
+      options.allowsMultipleSelection = true;
+      options.selectionLimit = 3 - images.length;
+    }
+
+    // Launch camera or gallery
+    let result;
+    if (source === "camera") {
+      result = await ImagePicker.launchCameraAsync(options);
+    } else if (source === "gallery") {
+      result = await ImagePicker.launchImageLibraryAsync(options);
+    }
+
+    if (!result.canceled && result.assets?.length > 0) {
+      if (mediaTypes === "video") {
+        // Single video: replace previous
+        setvideo([{ ...result.assets[0], source: source === "camera" ? "Camera" : "Gallery" }]);
+      } else {
+        // Images: append selected images
+        const selectedImages = result.assets.map(a => ({
+          ...a,
+          source: source === "camera" ? "Camera" : "Gallery",
+        }));
+        setImages(prev => [...prev, ...selectedImages]);
+      }
+    }
+  };
+
+
   const stopRecording = async () => {
     try {
       setIsRecording(false);
@@ -223,7 +268,6 @@ export default function CreateTask() {
       console.log("Stop recording error:", err);
     }
   };
-  
   const playAudio = async (audio, type) => {
     if (!audio) return;
     try {
@@ -264,7 +308,6 @@ export default function CreateTask() {
       console.log("Playback error:", err);
     }
   };
-
   const stopAudio = async (type) => {
     if (type === "title" && playbackSoundTitle) {
       await playbackSoundTitle.stopAsync();
@@ -274,7 +317,6 @@ export default function CreateTask() {
       setIsPlayingDesc(false);
     }
   };
-
   const deleteAudio = (field) => {
     if (field === "title") {
       setTitleAudio(null);
@@ -323,6 +365,7 @@ export default function CreateTask() {
 
 
   const handleSubmit = async () => {
+
     if (!validate()) return;
 
     const combinedDateTime = dayjs(dueDate)
@@ -350,6 +393,14 @@ export default function CreateTask() {
           type: img.mimeType || "image/jpeg",
         });
       });
+      if (video?.length > 0) {
+        console.log("Appending video to FormData:", video[0]);
+        formData.append("video", {
+          uri: video[0].uri,
+          name: video[0].fileName || `video_${Date.now()}.mp4`,
+          type: video[0].mimeType || "video/mp4",
+        });
+      }
       if (descAudio) {
         formData.append("audio", {
           uri: descAudio.uri,
@@ -384,22 +435,7 @@ export default function CreateTask() {
     setViewerUri(uri);
     setViewerVisible(true);
   };
-  const pickCamera = async () => {
-    setmediaModal(false);
 
-    const hasPermission = await requestCameraPermission();
-    if (!hasPermission) return;
-
-    const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      quality: 0.7,
-    });
-
-    if (!result.canceled && result.assets?.[0]?.uri) {
-      const img = result.assets[0];
-      setImages(prev => [...prev, { ...img, source: "Camera" }]);
-    }
-  };
   const requestCameraPermission = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== "granted") {
@@ -417,46 +453,22 @@ export default function CreateTask() {
     }
     return true;
   };
-  const pickFile = async () => {
-    setmediaModal(false);
-    const hasPermission = await requestGalleryPermission();
-    if (!hasPermission) return;
-
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      quality: 0.7,
-      allowsMultipleSelection: true,
-      selectionLimit: 3 - images.length,
-    });
-
-    if (!result.canceled && result.assets?.length > 0) {
-      const selected = result.assets.map(a => ({
-        ...a,
-        source: "Gallery",
-      }));
-      setImages(prev => [...prev, ...selected]);
-    }
-  };
-
-
-
   const removeImage = (index) => {
     setImages((prev) => prev.filter((_, i) => i !== index));
   };
 
   const scrollToBottom = () => {
-
   };
   return (
-    <View style={{ flex: 1, backgroundColor: "#fff", opacity: loading ? 0.2 : 1 }} pointerEvents={loading ? "none" : "auto"}>
+    <View style={{ flex: 1, backgroundColor: "#fff", }} pointerEvents={loading ? "none" : "auto"}>
       <CommonHeader
         title={t('create_task')}
         showBackButton
         onBackPress={() => navigation.goBack()}
       />
-      {loading && <ActivityIndicator color={COLORS?.primary} style={{
+      {/* {loading && <ActivityIndicator color={COLORS?.primary} style={{
         marginTop: hp(5), opacity: 3
-      }} />}
+      }} />} */}
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -475,34 +487,11 @@ export default function CreateTask() {
             <View style={styles.inputContainer}>
               <View style={{ flexDirection: "row", justifyContent: "space-between", width: "100%", alignItems: "center", marginBottom: wp(0.5) }}>
                 <Text style={styles.label}>{`${t("title")} *`}</Text>
-                {/* <Pressable
-                  onPress={() => {
-                    setspeechTextModal(true),
-                      setSpeechFlag('title')
-                  }}
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    minWidth: wp(20),
-                    justifyContent: "flex-end", borderWidth: wp(0.5), borderColor: COLORS?.primary, paddingHorizontal: wp(2), paddingVertical: hp(0.4), borderRadius: wp(6), gap: wp(2)
-                  }}
-                >
-                  <Text numberOfLines={1} style={{
-                    fontFamily: "Poppins_600SemiBold", color: COLORS?.primary,
-                    fontSize: wp(3.2)
-                  }} ellipsizeMode="tail">
-                    {t("add_title")}
-                  </Text>
-                  <Icon
-                    name={"mic"}
-                    size={wp(7)}
-                    color={COLORS.primary}
-                  />
-                </Pressable> */}
+
               </View>
               <TextInput
                 ref={titleRef}
-                maxLength={35}
+                maxLength={30}
                 style={styles.input}
                 placeholder={t('enter_task_title')}
                 value={title}
@@ -522,63 +511,6 @@ export default function CreateTask() {
                     setSpeechFlag('title')
                 }}
               />
-              {/* {titleAudio ? (
-                <View style={styles.audioPreview}>
-                  <Text
-                    style={{
-                      fontFamily: "Poppins_400Regular",
-                      fontSize: wp(3),
-                      marginRight: wp(1),
-                      lineHeight: wp(4)
-
-                    }}
-                  >
-                    {titleAudio.name} (
-                    {titleAudio.duration
-                      ? formatTime(titleAudio.duration * 1000)
-                      : recordTime > 0
-                        ? formatTime(recordTime * 1000)
-                        : "0:00"}
-                    )
-                  </Text>
-
-                  <TouchableOpacity
-                    onPress={() =>
-                      isPlayingTitle
-                        ? stopAudio("title")
-                        : playAudio(titleAudio, "title")
-                    }
-                  >
-                    <Icon
-                      name={isPlayingTitle ? "pause" : "play-arrow"}
-                      size={wp(7)}
-                      color={COLORS.primary}
-                    />
-                  </TouchableOpacity>
-                  <TouchableOpacity onPress={() => deleteAudio("title")}>
-                    <Icon
-                      name="x-circle"
-                      type="feather"
-                      size={wp(5.3)}
-                      color={COLORS.primary}
-                    />
-                  </TouchableOpacity>
-                </View>
-              ) : (
-                <Icon
-                  name="mic"
-                  type="feather"
-                  size={wp(5)}
-                  color={COLORS.gray}
-                  containerStyle={[styles.inputIcon, {
-                    top: hp(5.5)
-                  }]}
-                  onPress={() => {
-                    setspeechTextModal(true),
-                    setSpeechFlag('title')
-                  }}
-                />
-              )} */}
             </View>
             {errors.title && (
               <Text style={styles.errorText}>{errors.title}</Text>
@@ -614,15 +546,15 @@ export default function CreateTask() {
                   style={{
                     flexDirection: "row",
                     alignItems: "center",
-                    borderWidth: wp(0.3), borderColor: COLORS?.gray, paddingHorizontal: wp(2), paddingVertical: hp(0.4), borderRadius: wp(2), gap: wp(2), height: hp(6), marginVertical: hp(2)
+                    borderWidth: wp(0.3), borderColor: COLORS?.gray, paddingHorizontal: wp(2), paddingVertical: hp(0.4), borderRadius: wp(1), gap: wp(2), height: hp(6), marginVertical: hp(2)
                   }}
                 >
                   <Icon
                     name={"mic"}
                     size={wp(7)}
-                    color={COLORS.gray}
+                    color={"#777"}
                   />
-                  <Text numberOfLines={1} style={{ fontFamily: "Poppins_400Regular", color: COLORS?.gray, fontSize: wp(4) }} ellipsizeMode="tail">
+                  <Text numberOfLines={1} style={{ fontFamily: "Poppins_400Regular", color: "#777", fontSize: wp(4) }} ellipsizeMode="tail">
                     {t("add_description_audio")}
                   </Text>
                 </Pressable>
@@ -663,17 +595,30 @@ export default function CreateTask() {
                         <Icon
                           name={isPlayingDesc ? "pause" : "play-arrow"}
                           size={wp(10)}
-                          color={COLORS.primary}
+                          color={COLORS.green}
                         />
                       </TouchableOpacity>
-                      <TouchableOpacity onPress={() => deleteAudio("desc")}>
+                      <TouchableOpacity
+                        onPress={() => deleteAudio("desc")}
+                      >
                         <Icon
                           name="x-circle"
                           type="feather"
                           size={wp(8)}
-                          color={COLORS.primary}
+                          color={COLORS.red}
                         />
                       </TouchableOpacity>
+                      {/* <TouchableOpacity
+                        onPress={() => saveLocalAudioToDownloads(descAudio?.uri, descAudio?.name || "audio.mp3")}
+                        style={{ marginLeft: wp(2) }}
+                      >
+                        {isDownloading ? (
+                          <ActivityIndicator color={COLORS.primary} />
+                        ) : (
+                          <Icon name="download" size={wp(6)} color={COLORS.primary} />
+                        )}
+                      </TouchableOpacity> */}
+
                     </View>
                   </View>
                 ) : (
@@ -709,11 +654,79 @@ export default function CreateTask() {
                 ))}
                 {images.length < 3 && (
                   <Pressable
-                    onPress={() => setmediaModal(true)}
+                    // onPress={() => setmediaModal(true)}
+                    onPress={() => { setmediaTypes('image'), setmediaModal(true) }}
                     style={{ borderWidth: wp(0.4), height: wp(28), width: wp(25), alignItems: "center", justifyContent: "center", borderRadius: wp(2), borderColor: COLORS?.primary, backgroundColor: "#f9f9f9" }}
                   >
                     <Icon name="plus" type="feather" size={wp(5.5)} color={COLORS.primary} />
                   </Pressable>
+                )}
+              </View>
+            </View>
+
+            <View style={{ marginBottom: wp(4) }}>
+              <Text style={styles.label}>{t("video")}</Text>
+              <View style={{ flexDirection: "column", gap: wp(2) }}>
+
+                {/* Add new video button (only show if no video) */}
+                {!video && (
+                  <Pressable
+                    onPress={() => {
+                      setmediaTypes("video");
+                      setmediaModal(true);
+                    }}
+                    style={{
+                      borderWidth: wp(0.4),
+                      height: wp(35), // taller button for full-width
+                      width: "100%",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      borderRadius: wp(2),
+                      borderColor: COLORS?.primary,
+                      backgroundColor: "#f9f9f9",
+                      borderStyle: "dashed",
+                      marginBottom: wp(2),
+                    }}
+                  >
+                    <Icon name="plus" type="feather" size={wp(7)} color={COLORS.primary} />
+                  </Pressable>
+                )}
+                {/* Video preview (full width) */}
+                {video && (
+                  <View
+                    style={{
+                      width: "100%",
+                      height: wp(35), // same height as button
+                      position: "relative",
+                      marginBottom: wp(2),
+                      borderWidth: wp(0.4), borderColor: COLORS?.gray, borderRadius: wp(2)
+                    }}
+                  >
+                    <Video
+                      source={{ uri: video[0].uri }}
+                      style={{ width: "95%", height: "90%", borderRadius: wp(2), alignSelf: 'center', marginTop: hp(1) }}
+                      resizeMode="cover"
+                      useNativeControls
+                      usePoster={true}
+                      isLooping={true}
+                    />
+                    {/* Remove button */}
+                    <Pressable
+                      onPress={() => setvideo(null)}
+                      style={{
+                        position: "absolute",
+                        top: 0,
+                        right: 0,
+                        backgroundColor: "rgba(0,0,0,0.6)",
+                        borderRadius: 16,
+                        padding: 4,
+                        zIndex: 10,
+                      }}
+                    >
+                      <Icon name="trash" type="feather" size={wp(5)} color="#ff0000" />
+                    </Pressable>
+                    {/* <Text>{JSON.stringify(video)}</Text> */}
+                  </View>
                 )}
               </View>
             </View>
@@ -775,7 +788,8 @@ export default function CreateTask() {
             </View>
             {
               assignType && (
-                <CustomDropdown
+                <UserCustomDropdown
+                  loading={loading}
                   assignType={assignType}
                   title={`${t(assignType == 'group' ? 'select_team' : "select_user")} *`}
                   data={assignType == 'group' ? dropDownData?.teams : dropDownData?.individual_users}
@@ -820,7 +834,6 @@ export default function CreateTask() {
                 <Text style={styles.label}>{`${t('due_time')} *`}</Text>
                 <Pressable onPress={() => setShowTimePicker(true)} style={styles.dateButton}>
                   <Text style={[styles.dateText, {
-
                   }]}>
                     {dueTime ? dayjs(dueTime).format("hh:mm A") : "Select Time"}
                   </Text>
@@ -837,6 +850,7 @@ export default function CreateTask() {
               initialDate={dueDate}
               onClose={() => setShowDatePicker(false)}
               onConfirm={(date) => {
+                // Alert.alert('',JSON.stringify(date))
                 setDueDate(date);
                 setShowDatePicker(false);
               }}
@@ -853,18 +867,19 @@ export default function CreateTask() {
                 }}
               />
             )}
-            <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-              <Text style={styles.submitButtonText}>{`${t('create_task')}`}</Text>
+            <TouchableOpacity disabled={loading} style={styles.submitButton} onPress={handleSubmit}>
+              {loading ?
+                <ActivityIndicator color="#fff" /> : <Text style={styles.submitButtonText}>{`${t('create_task')}`}</Text>
+              }
             </TouchableOpacity>
           </ScrollView>
         </TouchableWithoutFeedback>
         <AttachmentModal
           visible={mediaModal}
           onClose={() => setmediaModal(false)}
-          onCamera={pickCamera}
-          onFile={pickFile}
-          // onAudioRecorded={handleAudioRecorded}
           hideMic={true}
+          onCamera={() => pickMedia("camera")}
+          onFile={() => pickMedia("gallery")}
         />
         <ImageViewerModal
           visible={viewerVisible}

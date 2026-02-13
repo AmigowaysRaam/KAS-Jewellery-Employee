@@ -2,10 +2,10 @@ import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
-  FlatList, KeyboardAvoidingView, Platform, Pressable, RefreshControl, StyleSheet,
+  FlatList, KeyboardAvoidingView, Platform,
+  RefreshControl, StyleSheet,
   Text, View
 } from "react-native";
-import Icon from "react-native-vector-icons/MaterialIcons";
 import { useSelector } from "react-redux";
 import { getStoredLanguage } from "../../app/i18ns.js";
 import { COLORS } from "../../app/resources/colors";
@@ -14,9 +14,9 @@ import { useToast } from "../../constants/ToastContext.js";
 import { fetchData } from "./api/Api";
 import CommonHeader from "./CommonHeader";
 import DateandDownloadTask from "./DateandDownloadTask";
+import MyTaskCard from "./MyTaskCard.js";
 import SearchContainer from "./SearchContainer";
 import TaskDetailModal from "./TaskDetailModal";
-import ViewButton from "./ViewBtn.js";
 
 export default function MyTaskListScreen({ route }) {
   const navigation = useNavigation();
@@ -34,13 +34,11 @@ export default function MyTaskListScreen({ route }) {
   const [modalVisible, setModalVisible] = useState(false);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
-  /** Map status label to API value */
   const getStatusValue = (statusLabel) => {
     return siteDetails?.ticketstatusList?.find(
       (item) => item.label.toLowerCase() === (statusLabel || "").toLowerCase()
     )?.value;
   };
-  /** Fetch tasks from API */
   const fetchTasks = async (pageNo = 1, isRefresh = false, status = selectedStatus) => {
     if (!hasMore && !isRefresh) return;
     const lang = await getStoredLanguage();
@@ -70,8 +68,19 @@ export default function MyTaskListScreen({ route }) {
             (task) => task?.status?.toLowerCase() === status.toLowerCase()
           );
         }
-        setHasMore(data.length === 10);
-        setTasks((prev) => (pageNo === 1 ? data : [...prev, ...data]));
+        // setHasMore(data.length === 10);
+        // setTasks((prev) => (pageNo === 1 ? data : [...prev, ...data]));
+        setHasMore(response?.data?.tasks?.length === 10);
+        // setTasks((prev) => (pageNo === 1 ? data : [...prev, ...data]));
+        setTasks((prev) => {
+          if (pageNo === 1) return data;
+
+          const newData = data.filter(
+            (newItem) => !prev.some((prevItem) => prevItem.id === newItem.id)
+          );
+
+          return [...prev, ...newData];
+        });
         setPage(pageNo);
       } else {
         showToast(response?.message || "Failed to fetch tasks", "error");
@@ -84,7 +93,6 @@ export default function MyTaskListScreen({ route }) {
       setRefreshing(false);
     }
   };
-
   /** Refresh on focus or dependency changes */
   useFocusEffect(
     React.useCallback(() => {
@@ -134,20 +142,6 @@ export default function MyTaskListScreen({ route }) {
         return COLORS.primary;   // Fallback
     }
   };
-  const getPriorityColor = (level) => {
-    switch (level) {
-      case "Critical":
-        return { color: "#C0392B", icon: "x-octagon" }; // very urgent
-      case "High":
-        return { color: "#E74C3C", icon: "alert-circle" };
-      case "Medium":
-        return { color: "#F39C12", icon: "alert-triangle" };
-      case "Low":
-        return { color: "#2ECC71", icon: "check-circle" };
-      default:
-        return { color: "#9E9E9E", icon: "info" };
-    }
-  };
   /** Open task modal */
   const openTaskModal = (task) => {
     setSelectedTask(task);
@@ -175,49 +169,8 @@ export default function MyTaskListScreen({ route }) {
       </View>
     </View>
   );
-  /** Render each task */
-  const renderTask = ({ item }) => {
-    const hasVoice = !!item.voice;
-    return (
-      <Pressable
-        onPress={() => openTaskModal(item)}
-        style={[styles.card, { borderLeftColor: getStatusColor(item.status), borderLeftWidth: wp(1) }]}
-      >
-        <View style={styles.cardHeader}>
-          <Text numberOfLines={1} style={styles.taskTitle}>{item.title || t("Untitled Task")}</Text>
-          {__DEV__ &&
-            <Text style={styles.taskTitle}>{item.id || t("Untitled Task")}</Text>
-          }
-          <View style={styles.rightHeader}>
-            <View style={[styles.voiceIcon, { opacity: hasVoice ? 1 : 0.3 }]}>
-              <Icon name="play-arrow" size={wp(5)} color={COLORS.primary} />
-            </View>
-            <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
-              <Text style={styles.statusText}>{item.status}</Text>
-            </View>
-          </View>
-        </View>
-        <View style={styles.dateRow}>
-          <View style={styles.dateBox}>
-            <Text style={styles.dateLabel}>{t('assigned_date')}</Text>
-            <Text numberOfLines={1} style={styles.dateText}>{item.assigned_date}</Text>
-          </View>
-          <View style={styles.dateBox}>
-            <Text style={styles.dateLabel}>{t('due_date')}</Text>
-            <Text numberOfLines={1} style={styles.dateText}>{item.due_date}</Text>
-          </View>
-        </View>
-        <ViewButton
-          priority={item.priority}
-          onPress={() =>
-            //  openTaskModal(item)
-            navigation?.navigate('TasKDetailById', { task: item })
-          }
-          label={t("View")}
-        />
-      </Pressable>
-    );
-  };
+
+
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : "height"}>
       <View style={styles.container}>
@@ -229,6 +182,7 @@ export default function MyTaskListScreen({ route }) {
           selectedStatuss={selectedStatus}
           onStatusSelect={handleStatusSelect}
           modalVisible={modalVisible}
+          clearSearch={() => setSearchText("")}
         />
         {loading && page === 1 ? (
           <FlatList
@@ -241,6 +195,7 @@ export default function MyTaskListScreen({ route }) {
           <FlatList
             ListHeaderComponent={<>
               <DateandDownloadTask
+                taskFlag={'myTask'}
                 fromDate={selectedDateRange.from}
                 toDate={selectedDateRange.to}
                 onDateSelect={(range) => {
@@ -253,7 +208,15 @@ export default function MyTaskListScreen({ route }) {
             </>}
             data={tasks}
             keyExtractor={(item) => item?.id}
-            renderItem={renderTask}
+            renderItem={({ item }) => (
+              <MyTaskCard
+                item={item}
+                t={t}
+                navigation={navigation}
+                openTaskModal={openTaskModal}
+                getStatusColor={getStatusColor}
+              />
+            )}
             refreshControl={
               <RefreshControl
                 refreshing={refreshing}
@@ -266,6 +229,7 @@ export default function MyTaskListScreen({ route }) {
             }
             onEndReached={loadMore}
             onEndReachedThreshold={0.5}
+
             ListEmptyComponent={
               !loading && (
                 <View style={{ alignItems: "center", marginTop: hp(5) }}>
@@ -293,7 +257,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     marginHorizontal: wp(4),
     marginBottom: hp(2),
-    padding: wp(4),
+    padding: wp(3),
     borderRadius: wp(2),
     shadowColor: "#000",
     shadowOpacity: 0.05,
@@ -315,5 +279,5 @@ const styles = StyleSheet.create({
     borderColor: COLORS?.primary, borderWidth: wp(0.4)
   },
   dateLabel: { fontSize: wp(3), color: "#555", marginBottom: hp(0.3), fontFamily: "Poppins_400Regular" },
-  dateText: { fontSize: wp(3.5), color: "#333", fontFamily: "Poppins_400Regular" },
+  dateText: { fontSize: wp(3.3), color: "#333", fontFamily: "Poppins_400Regular" },
 });

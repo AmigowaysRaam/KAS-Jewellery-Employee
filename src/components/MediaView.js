@@ -1,20 +1,42 @@
 import { Ionicons } from "@expo/vector-icons";
+import { Video } from "expo-av";
 import React, { useEffect, useRef } from "react";
 import {
-  Animated, Image, Modal, PanResponder, SafeAreaView, StyleSheet, TouchableOpacity,
-  View,
+    Animated,
+    Image,
+    Modal,
+    PanResponder,
+    SafeAreaView,
+    StyleSheet,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { COLORS } from "../../app/resources/colors";
 import { hp, wp } from "../../app/resources/dimensions";
-export default function ImageViewerModal({ visible, uri, onClose }) {
+
+export default function MediaViewerModal({
+  visible,
+  uri,
+  type, // "image" or "video"
+  onClose,
+}) {
   const scale = useRef(new Animated.Value(1)).current;
   const translateX = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(0)).current;
+
   const lastScale = useRef(1);
   const lastTranslate = useRef({ x: 0, y: 0 });
   const initialDistance = useRef(0);
+
+  const videoRef = useRef(null);
+
   useEffect(() => {
-    if (!visible) reset();
+    if (!visible) {
+      reset();
+      if (videoRef.current) {
+        videoRef.current.pauseAsync();
+      }
+    }
   }, [visible]);
 
   const reset = () => {
@@ -44,8 +66,8 @@ export default function ImageViewerModal({ visible, uri, onClose }) {
 
   const panResponder = useRef(
     PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: () => true,
+      onStartShouldSetPanResponder: () => type === "image",
+      onMoveShouldSetPanResponder: () => type === "image",
 
       onPanResponderGrant: (e) => {
         if (e.nativeEvent.touches.length === 2) {
@@ -54,10 +76,13 @@ export default function ImageViewerModal({ visible, uri, onClose }) {
       },
 
       onPanResponderMove: (e, g) => {
+        if (type !== "image") return;
+
         // PINCH
         if (e.nativeEvent.touches.length === 2) {
           const distance = getDistance(e.nativeEvent.touches);
-          let newScale = (distance / initialDistance.current) * lastScale.current;
+          let newScale =
+            (distance / initialDistance.current) * lastScale.current;
           newScale = Math.max(1, Math.min(newScale, 4));
           scale.setValue(newScale);
         }
@@ -75,6 +100,8 @@ export default function ImageViewerModal({ visible, uri, onClose }) {
       },
 
       onPanResponderRelease: (e, g) => {
+        if (type !== "image") return;
+
         lastScale.current = scale.__getValue();
         lastTranslate.current = {
           x: translateX.__getValue(),
@@ -113,21 +140,36 @@ export default function ImageViewerModal({ visible, uri, onClose }) {
             style={[
               styles.container,
               {
-                transform: [{ translateX }, { translateY }, { scale }],
+                transform:
+                  type === "image"
+                    ? [{ translateX }, { translateY }, { scale }]
+                    : [{ translateY }],
               },
             ]}
-            {...panResponder.panHandlers}
+            {...(type === "image" ? panResponder.panHandlers : {})}
           >
             {/* Close Button */}
             <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
               <Ionicons name="close" size={30} color={COLORS?.primary} />
             </TouchableOpacity>
 
-            <Image
-              source={{ uri }}
-              style={styles.image}
-              resizeMode="contain"
-            />
+            {type === "image" ? (
+              <Image
+                source={{ uri }}
+                style={styles.media}
+                resizeMode="contain"
+              />
+            ) : (
+              <Video
+                ref={videoRef}
+                source={{ uri }}
+                style={styles.media}
+                resizeMode="contain"
+                useNativeControls
+                shouldPlay
+                isLooping
+              />
+            )}
           </Animated.View>
         </View>
       </SafeAreaView>
@@ -151,12 +193,13 @@ const styles = StyleSheet.create({
     height: hp(85),
     justifyContent: "center",
     alignItems: "center",
-    borderWidth: wp(0.5), // border thickness
-    borderColor: '#ccc', // border color
-    borderRadius: wp(4), // rounded corners
+    borderWidth: wp(0.5),
+    borderColor: "#ccc",
+    borderRadius: wp(4),
     overflow: "hidden",
+    backgroundColor: "#000",
   },
-  image: {
+  media: {
     width: "100%",
     height: "100%",
   },
@@ -168,7 +211,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#F9F9F9",
     borderRadius: wp(8),
     padding: wp(2),
-    borderWidth: wp(0.6), // border thickness
-    borderColor: COLORS?.primary
+    borderWidth: wp(0.6),
+    borderColor: COLORS?.primary,
   },
 });

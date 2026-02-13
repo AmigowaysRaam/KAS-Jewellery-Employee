@@ -21,6 +21,7 @@ import TaskRow from "./TaskRow";
 export default function Homescreen() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [langMenuMOdal, setOpenLangMenu] = useState(false);
+  const [punchLoading, setpunchLoading] = useState(false);
   const [homepageData, setHomepageData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -74,11 +75,11 @@ export default function Homescreen() {
   }, [profileDetails?.id, lang]);
 
 
-useFocusEffect(
-  useCallback(() => {
-    fetchHomepageData();
-  }, [profileDetails?.id, lang])
-);
+  useFocusEffect(
+    useCallback(() => {
+      fetchHomepageData();
+    }, [profileDetails?.id, lang])
+  );
 
 
   /* 🔔 RELOAD API WHEN NOTIFICATION ARRIVES */
@@ -92,8 +93,6 @@ useFocusEffect(
         data: notification?.data,
       });
       setNotifModalVisible(true);
-      // fetchHomepageData();
-      // console.log(JSON.stringify(notification));
     });
     return () => {
       unsubscribeOnMessage();
@@ -107,7 +106,9 @@ useFocusEffect(
 
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, {
+      // opacity: punchLoading ? 0.5 : 1,
+    }]}>
       <Header
         openMenu={() => setIsMenuOpen(!isMenuOpen)}
         headerL={siteDetails?.["header-logo"]}
@@ -131,6 +132,8 @@ useFocusEffect(
         ) : homepageData ? (
           <>
             <Banner homepageData={homepageData} />
+            {/* <PunchInOut homepageData={homepageData} onLoading={setpunchLoading} /> */}
+            {/* <HomeMenuRow homepageData={homepageData} /> */}
             <TaskRow homepageData={homepageData} />
             <MyTask homepageData={homepageData} />
             <AssignedTask homepageData={homepageData} />

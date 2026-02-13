@@ -126,9 +126,8 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: wp(5.5),
-    fontWeight: "600",
     color: COLORS.primary,
     fontFamily: "Poppins_500Medium",
-    lineHeight: wp(8),
+    lineHeight: wp(8), textTransform: 'capitalize'
   },
 });

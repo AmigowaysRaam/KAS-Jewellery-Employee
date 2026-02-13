@@ -9,6 +9,7 @@ import {
     Text,
     View,
 } from "react-native";
+import Icon from "react-native-vector-icons/MaterialIcons";
 import { COLORS } from "../../app/resources/colors";
 import { hp, wp } from "../../app/resources/dimensions";
 
@@ -36,17 +37,19 @@ export default function StatusSelectModal({
             toValue: hp(100),
             duration: 220,
             useNativeDriver: true,
-        }).start(onClose);
+        }).start(() => {
+            onClose?.();
+        });
     };
 
     const renderOption = ({ item }) => (
         <Pressable
             style={({ pressed }) => [
                 styles.option,
-                pressed && { backgroundColor: "#f0f0f0" },
+                pressed && styles.optionPressed,
             ]}
             onPress={() => {
-                onSelect?.(item?.value);
+                onSelect?.(item?.value || item);
                 closeModal();
             }}
         >
@@ -64,22 +67,44 @@ export default function StatusSelectModal({
             onRequestClose={closeModal}
         >
             <Pressable style={styles.overlay} onPress={closeModal} />
-            <Animated.View style={[styles.sheet, { transform: [{ translateY }] }]}>
-                {/* Handle for better UX */}
+
+            <Animated.View
+                style={[styles.sheet, { transform: [{ translateY }] }]}
+            >
+                {/* Handle */}
                 <View style={styles.handleContainer}>
                     <View style={styles.handle} />
                 </View>
 
-                <Text style={styles.title}>{t("select_status")}</Text>
+                {/* Header Row */}
+                <View style={styles.headerRow}>
+                    <Text style={styles.title}>
+                        {t("select_status")}
+                    </Text>
 
+                    <Pressable
+                        style={({ pressed }) => [
+                            styles.closeButton,
+                            pressed && { opacity: 0.7 },
+                        ]}
+                        onPress={closeModal}
+                    >
+                        <Icon name="close" size={wp(6)} color="#fff" />
+                    </Pressable>
+                </View>
+
+                {/* Options */}
                 <View style={styles.optionsContainer}>
                     {statuses.length === 0 ? (
-                        <Text style={styles.empty}>{t("no_status_available")}</Text>
+                        <Text style={styles.empty}>
+                            {t("no_status_available")}
+                        </Text>
                     ) : (
                         <FlatList
                             data={statuses}
                             keyExtractor={(_, index) => index.toString()}
                             renderItem={renderOption}
+                            showsVerticalScrollIndicator={false}
                             bounces={false}
                         />
                     )}
@@ -94,60 +119,79 @@ const styles = StyleSheet.create({
         ...StyleSheet.absoluteFillObject,
         backgroundColor: "rgba(0,0,0,0.35)",
     },
+
     sheet: {
         position: "absolute",
         bottom: 0,
         width: "100%",
         backgroundColor: "#fff",
-        borderTopLeftRadius: wp(6),
-        borderTopRightRadius: wp(6),
+        borderTopLeftRadius: wp(7),
+        borderTopRightRadius: wp(7),
         paddingHorizontal: wp(5),
         paddingBottom: hp(4),
-        paddingTop: hp(2.5),
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: -4 },
-        shadowOpacity: 0.15,
-        shadowRadius: 10,
-        elevation: 10,
+        paddingTop: hp(2),
+        elevation: 20,
     },
+
     handleContainer: {
         alignItems: "center",
         marginBottom: hp(1.5),
     },
+
     handle: {
-        width: wp(12),
+        width: wp(14),
         height: hp(0.7),
-        backgroundColor: "#ccc",
+        backgroundColor: "#ddd",
         borderRadius: wp(3),
     },
+
+    headerRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        marginBottom: hp(2),
+    },
+
     title: {
-        fontSize: wp(4.6),
+        fontSize: wp(4.8),
         fontFamily: "Poppins_600SemiBold",
         color: COLORS.primary,
-        textAlign: "center",
-        marginBottom: hp(2.5),
     },
+
+    closeButton: {
+        width: wp(9),
+        height: wp(9),
+        borderRadius: wp(4.5),
+        backgroundColor: COLORS.primary,
+        justifyContent: "center",
+        alignItems: "center",
+        elevation: 3,
+    },
+
     optionsContainer: {
         maxHeight: hp(50),
     },
     option: {
-        paddingVertical: hp(1),
-        borderBottomWidth: 1,
-        borderColor: "#eee",
-        borderRadius: wp(2),
-        marginVertical: hp(0.5),
-        paddingHorizontal: wp(2.5),
+        paddingVertical: hp(1.4),
+        paddingHorizontal: wp(3),
+        borderRadius: wp(3),
+        marginBottom: hp(1),
+        backgroundColor: "#f7f9fc",
+    },
+    optionPressed: {
+        backgroundColor: "#e6f0ff",
     },
     optionText: {
-        fontSize: wp(4),
-        fontFamily: "Poppins_600SemiBold",
+        fontSize: wp(4.9),
+        fontFamily: "Poppins_500Medium",
         color: "#333",
-        textAlign: "center",
+        // textAlign: "center",
     },
+
     empty: {
         textAlign: "center",
         color: "#999",
-        paddingVertical: hp(2),
+        paddingVertical: hp(3),
         fontFamily: "Poppins_400Regular",
     },
 });

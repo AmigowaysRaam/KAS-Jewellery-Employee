@@ -2,127 +2,90 @@ import { useNavigation } from "@react-navigation/native";
 import React, { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
-  ActivityIndicator,
-  Keyboard,
-  KeyboardAvoidingView,
-  Platform,
-  TextInput as RNTextInput,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
+  ActivityIndicator, Keyboard, KeyboardAvoidingView, Platform,
+  Pressable, ScrollView, StyleSheet, Text, TouchableOpacity,
   View
 } from "react-native";
+import SmoothPinCodeInput from "react-native-smooth-pincode-input";
 import { COLORS } from "../../app/resources/colors";
 import { hp, wp } from "../../app/resources/dimensions";
 import { useToast } from "../../constants/ToastContext";
 import LogoAnimated from "./AniamtedImage";
 import { fetchData } from "./api/Api";
-
 export default function ForgetOtpVerification({ route }) {
   const navigation = useNavigation();
   const { t } = useTranslation();
   const { otp: initialOtp, data } = route.params;
-  const [otpE, setOtp] = useState(["", "", "", ""]);
+
+  const [otp, setOtp] = useState("");
   const [sentOtp, setSentOtp] = useState(String(initialOtp));
   const [error, setError] = useState("");
   const [timer, setTimer] = useState(60);
   const [canResend, setCanResend] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
-  const inputsRef = useRef([]);
+
+  const pinRef = useRef(null);
   const scrollRef = useRef(null);
   const { showToast } = useToast();
 
-  /** Scroll to bottom when keyboard opens */
+  /** Scroll when keyboard opens */
   useEffect(() => {
-    // Alert.alert('',JSON.stringify(sentOtp?.otp))
-    const keyboardDidShowListener = Keyboard.addListener("keyboardDidShow", () => {
+    const sub = Keyboard.addListener("keyboardDidShow", () => {
       setTimeout(() => {
         scrollRef.current?.scrollToEnd({ animated: true });
       }, 100);
     });
-    return () => keyboardDidShowListener.remove();
+    return () => sub.remove();
   }, []);
 
-  /** Countdown timer for OTP resend */
+  /** Countdown timer */
   useEffect(() => {
     if (timer === 0) {
       setCanResend(true);
-      setSentOtp(""); // invalidate old OTP
+      setSentOtp("");
       return;
     }
-    const interval = setInterval(() => setTimer((prev) => prev - 1), 1000);
+    const interval = setInterval(() => {
+      setTimer((prev) => prev - 1);
+    }, 1000);
     return () => clearInterval(interval);
   }, [timer]);
 
-
-
-  /** Handle backspace to go to previous input */
-  const handleKeyPress = ({ nativeEvent }, index) => {
-    if (nativeEvent.key === "Backspace" && otpE[index] === "" && index > 0) {
-      inputsRef.current[index - 1]?.focus();
-    }
-  };
-
-  /** Handle OTP input change */
-  const handleChange = (text, index) => {
-    // Alert.alert('',JSON.stringify(sentOtp?.otp))
-    if (/[^0-9]/.test(text)) return;
-    const newOtp = [...otpE];
-    newOtp[index] = text;
-    setOtp(newOtp);
-
-    // Focus next input if not the last one
-    if (text && index < 3) {
-      inputsRef.current[index + 1]?.focus();
-    }
-    // ✅ Auto-submit if all 4 digits are filled
-    if (newOtp.every((d) => d !== "")) {
-      const enteredOtp = newOtp.join("");
-      setTimeout(() => {
-        handleVerifyOtp(enteredOtp); // send OTP as parameter
-      }, 50); // slight delay ensures last digit renders
-    }
-  };
   /** Verify OTP */
-  const handleVerifyOtp = async (enteredOtpParam) => {
-    // Alert.alert("Sent OTP",JSON.stringify(sentOtp), ); // Debug: show sent OTP
-    //  console.log(sentOtp, enteredOtpParam, otpE.join(""), "OTP Values"); // Debug: log OTP values
-    // Use the OTP from param if passed, otherwise fallback to state
-    const enteredOtp = enteredOtpParam || otpE.join("");
+  const handleVerifyOtp = async (enteredOtp) => {
     if (!sentOtp) {
       setError("otp_expired");
       showToast(t("otp_expired"), "error");
-      setOtp(["", "", "", ""]);
-      inputsRef.current[0]?.focus();
+      setOtp("");
       return;
     }
-    if (enteredOtp.length < 4 || enteredOtp !== sentOtp) {
+
+    if (enteredOtp.length !== 4 || enteredOtp !== sentOtp) {
       setError("otp_invalid");
       showToast(t("otp_invalid"), "error");
-      setOtp(["", "", "", ""]);
-      inputsRef.current[0]?.focus();
+      setOtp("");
       return;
     }
+
     setError("");
     showToast(t("Otp_verified"), "success");
-    navigation.replace("ResetMpin", { data: data });
+    navigation.replace("ResetMpin", { data });
   };
 
   /** Resend OTP */
   const handleResendOtp = async () => {
     if (!canResend || resendLoading) return;
-    setOtp(["", "", "", ""]);
+
+    setOtp("");
     setTimer(60);
     setCanResend(false);
-    inputsRef.current[0]?.focus();
     setResendLoading(true);
+
     try {
       const response = await fetchData("app-employee-forgot-mpin", "POST", {
         user_id: data?.id,
       });
-      // Alert.alert('',JSON.stringify(response))
-      // console.log(response, "Resend OTP Response");
+
       if (response?.text === "Success") {
         setSentOtp(response.data?.otp);
         showToast(response.message, "success");
@@ -130,14 +93,11 @@ export default function ForgetOtpVerification({ route }) {
         showToast(t("something_went_wrong"), "error");
       }
     } catch (err) {
-      console.log("Error resending OTP:", err);
       showToast(t("something_went_wrong"), "error");
     } finally {
       setResendLoading(false);
     }
   };
-
-  const isButtonDisabled = otpE.join("").length !== 4;
 
   return (
     <KeyboardAvoidingView
@@ -149,41 +109,47 @@ export default function ForgetOtpVerification({ route }) {
         ref={scrollRef}
         contentContainerStyle={styles.scrollContainer}
         keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
       >
         <View style={styles.container}>
           <LogoAnimated />
+
           <View style={{ width: wp(80), marginBottom: wp(4) }}>
             <Text style={styles.title}>{t("otp_verification")}</Text>
             <Text style={styles.subtitle}>
               {`${t("enter_the_otp_sent_to")} +91 ${data?.phone_number} ${t("to_reset_your_mpin")}`}
             </Text>
           </View>
-          <View style={styles.otpContainer}>
-            {otpE.map((value, index) => (
-              <RNTextInput
-                selectTextOnFocus
-                key={index}
-                ref={(ref) => (inputsRef.current[index] = ref)}
-                value={value}
-                onChangeText={(text) => handleChange(text, index)}
-                onKeyPress={(e) => handleKeyPress(e, index)}
-                maxLength={1}
+          <Pressable onPress={() => pinRef.current?.focus()}>
+
+            <View style={{ marginVertical: wp(4) }}>
+              <SmoothPinCodeInput
+                ref={pinRef}
+                value={otp}
+                onTextChange={setOtp}
+                codeLength={4}
                 keyboardType="number-pad"
-                style={styles.otpInput}
+                restrictToNumbers
+                autoFocus
+                cellStyle={styles.otpInput}
+                password={true}
+                cellStyleFocused={[
+                  styles.otpInput,
+                  styles.otpInputFocused,
+                ]}
+                onFulfill={handleVerifyOtp}
               />
-            ))}
-          </View>
+            </View>
+          </Pressable>
           {error ? <Text style={styles.errorText}>{t(error)}</Text> : null}
           <View style={styles.timerContainer}>
             {canResend ? (
               <TouchableOpacity
                 disabled={resendLoading}
                 onPress={handleResendOtp}
-                style={[styles.resendBtn, {
-                  opacity: resendLoading ? 0.6 : 1,
-                  paddingHorizontal: wp(6)
-                }]}
+                style={[
+                  styles.resendBtn,
+                  { opacity: resendLoading ? 0.6 : 1 },
+                ]}
               >
                 {resendLoading ? (
                   <ActivityIndicator color={COLORS.primary} />
@@ -197,27 +163,15 @@ export default function ForgetOtpVerification({ route }) {
               </Text>
             )}
           </View>
-          {/* <TouchableOpacity
-            disabled={isButtonDisabled}
-            onPress={handleVerifyOtp}
-            style={[
-              styles.button,
-              { backgroundColor: isButtonDisabled ? COLORS.primary + "90" : COLORS.primary },
-            ]}
-          >
-            <Text style={[styles.buttonText, { fontFamily: "Poppins_600SemiBold" }]}>
-              {t("verify_otp")}
-            </Text>
-          </TouchableOpacity> */}
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
   );
 }
-/** STYLES */
 const styles = StyleSheet.create({
   scrollContainer: { flexGrow: 1, backgroundColor: "#fff" },
   container: { alignItems: "center", marginTop: hp(4), paddingBottom: hp(4) },
+
   title: {
     fontFamily: "Poppins_700Bold",
     fontSize: wp(5),
@@ -230,47 +184,29 @@ const styles = StyleSheet.create({
     fontSize: wp(3.5),
     textAlign: "center",
   },
-  otpContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    width: wp(80),
-    marginVertical: hp(2),
-  },
   otpInput: {
-    width: wp(14),
-    height: hp(6),
-    borderWidth: 1,
-    borderColor: COLORS.primary,
-    borderRadius: wp(1),
-    textAlign: "center",
-    fontSize: wp(5),
-    backgroundColor: "#F9F9F9",
-    color: COLORS.primary,
-    marginBottom: hp(1),
+    width: wp(15), height: hp(6), borderWidth: 1,
+    borderColor: COLORS.primary, borderRadius: wp(1), textAlign: "center",
+    fontSize: wp(5), backgroundColor: "#F9F9F9",
+    color: COLORS.primary, marginHorizontal: wp(2),
+    marginRight: wp(5),
+  }, otpInputFocused: {
+    borderWidth: 2,
+    backgroundColor: "#fff",
   },
   errorText: { color: "red", marginBottom: hp(1) },
   timerContainer: { marginBottom: hp(2) },
   timerText: { fontSize: wp(3.5) },
   resendBtn: {
-    // width: wp(60),
-    height: hp(5),
-    borderRadius: wp(6),
+    height: hp(5), borderRadius: wp(6),
     borderWidth: wp(0.4),
     borderColor: COLORS.primary,
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: wp(2)
+    paddingHorizontal: wp(6),
   },
   resendText: {
     fontFamily: "Poppins_600SemiBold",
     color: COLORS.primary,
   },
-  button: {
-    width: wp(90),
-    height: hp(5.5),
-    borderRadius: wp(1),
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  buttonText: { color: "#fff", lineHeight: hp(5.5) },
 });

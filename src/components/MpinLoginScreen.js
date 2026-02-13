@@ -1,14 +1,11 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import messaging, { AuthorizationStatus } from '@react-native-firebase/messaging';
+import messaging, { AuthorizationStatus } from "@react-native-firebase/messaging";
 import { useNavigation } from "@react-navigation/native";
 import React, { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  KeyboardAvoidingView, Platform, Pressable, TextInput as RNTextInput,
-  ScrollView, StyleSheet, Text,
-  View
-} from "react-native";
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { ActivityIndicator } from "react-native-paper";
+import SmoothPinCodeInput from "react-native-smooth-pincode-input";
 import { useDispatch } from "react-redux";
 import { COLORS } from "../../app/resources/colors";
 import { hp, wp } from "../../app/resources/dimensions";
@@ -16,180 +13,84 @@ import { useToast } from "../../constants/ToastContext";
 import LogoAnimated from "./AniamtedImage";
 import { fetchData } from "./api/Api";
 import { setProfileDetails } from "./store/store";
+
 export default function MpinLoginScreen() {
   const navigation = useNavigation();
   const { t } = useTranslation();
   const { showToast } = useToast();
-  const [mpin, setMpin] = useState(["", "", "", ""]);
+  const dispatch = useDispatch();
+  const [mpin, setMpin] = useState(""); // single string
   const [error, setError] = useState("");
   const [userId, setUserId] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [fcmToken, setfcmToken] = useState(null);
-  const mpinRef = useRef([]);
-  /* 🔄 LOAD USER ID FROM ASYNC STORAGE */
+  const [fcmToken, setFcmToken] = useState(null);
+  const pinRef = useRef(null);
+  // Load userId
   useEffect(() => {
-    loadUserId();
+    // Focus the PIN input when the screen mounts
+    const timer = setTimeout(() => {
+      pinRef.current?.focus();
+    }, 300); // slight delay ensures keyboard opens properly
+    return () => clearTimeout(timer);
   }, []);
-  useEffect(() => {
-    const getFcmToken = async () => {
-      try {
-        // ✅ iOS permission request 
-        if (Platform.OS === 'ios') {
-          const authStatus = await messaging().requestPermission();
-          const enabled =
-            authStatus === AuthorizationStatus.AUTHORIZED ||
-            authStatus === AuthorizationStatus.PROVISIONAL;
 
-          if (!enabled) {
-            console.log('❌ Notification permission not granted');
-            return;
-          }
-        }
-
-        // ✅ Get FCM token (Android + iOS) 
-        const token = await messaging().getToken();
-        console.log('✅ FCM Token:', token);
-        setfcmToken(token);
-
-      } catch (err) {
-        console.log('❌ FCM error:', err);
-      }
-    };
-
-    getFcmToken();
-  }, []);
+  useEffect(() => { loadUserId(); }, []);
   const loadUserId = async () => {
     try {
       const raw = await AsyncStorage.getItem("USER_DATA");
       if (!raw) return;
       const parsed = JSON.parse(raw);
       const extractedId =
-        parsed?.id ||
-        parsed?.data?.id ||
-        parsed?.data?.[0]?.id ||
-        null;
+        parsed?.id || parsed?.data?.id || parsed?.data?.[0]?.id || null;
       if (extractedId) {
         setUserId(String(extractedId));
         await AsyncStorage.setItem("USER_ID", String(extractedId));
       }
-    } catch (err) {
-      console.log("Load User ID Error:", err);
-    }
+    } catch (err) { console.log("Load User ID Error:", err); }
   };
-  const handleChange = (text, index) => {
-    const digits = text.replace(/[^0-9]/g, '');
-  
-    const updated = [...mpin];
-  
-    // If user clears the input
-    if (digits.length === 0) {
-      updated[index] = "";
-      setMpin(updated);
-      return;
-    }
-  
-    let nextIndex = index;
-  
-    for (let i = 0; i < digits.length && nextIndex < updated.length; i++) {
-      updated[nextIndex] = digits[i];
-      nextIndex++;
-    }
-  
-    setMpin(updated);
-  
-    if (nextIndex < updated.length) {
-      mpinRef.current[nextIndex]?.focus();
-    } else {
-      mpinRef.current[updated.length - 1]?.blur();
-    }
-  
-    if (updated.every(d => d !== "")) {
-      setTimeout(() => {
-        handleLogin(updated.join(""));
-      }, 50);
-    }
-  };
-  
-
-  const fnGetOtpForget = async () => {
-    setLoading(true);
-    try {
-      const response = await fetchData(
-        "app-employee-forgot-mpin",
-        "POST",
-        {
-          user_id: userId,
+  // FCM token
+  useEffect(() => {
+    const getFcmToken = async () => {
+      try {
+        if (Platform.OS === "ios") {
+          const authStatus = await messaging().requestPermission();
+          const enabled =
+            authStatus === AuthorizationStatus.AUTHORIZED ||
+            authStatus === AuthorizationStatus.PROVISIONAL;
+          if (!enabled) return;
         }
-      );
-      if (response?.text === "Success") {
-        showToast(response?.message, "success");
-        // Alert.alert('', JSON.stringify(response))
-        // navigation.replace("home");
-        // forgetotpVerfication
-        navigation.replace("forgetotpVerfication", response);
-      } else {
-        showToast(response?.message, "error");
-        setError(response?.message || "something_went_wrong");
-      }
-    } catch (err) {
-      console.log("MPIN Login Error:", err);
-      setError("something_went_wrong");
-      showToast(t("something_went_wrong"), "error");
-    } finally {
-      setLoading(false);
-    }
-  }
-  const handleKeyPress = (e, index) => {
-    if (e.nativeEvent.key === "Backspace") {
-      const updated = [...mpin];
-      if (updated[index]) {
-        updated[index] = "";
-      } else if (index > 0) {
-        mpinRef.current[index - 1]?.focus();
-        updated[index - 1] = "";
-      }
-      setMpin(updated);
-    }
-  };
-  const dispatch = useDispatch();
-
+        const token = await messaging().getToken();
+        setFcmToken(token);
+        console.log("FCM Token:", token);
+      } catch (err) { console.log("FCM Error:", err); }
+    };
+    getFcmToken();
+  }, []);
+  // Handle login
   const handleLogin = async (mpinValue = null) => {
-    // If called without argument, fallback to state
-    const mpinString = mpinValue || mpin.join("");
-
-    if (mpinString.length < 4) {
+    const mpinString = mpinValue || mpin;
+    if (mpinString.length !== 4) {
       setError("mpin_invalid");
       showToast(t("mpin_invalid"), "error");
       return;
     }
-
-    if (!userId) {
-      showToast("User not found", "error");
-      return;
-    }
-
+    if (!userId) { showToast("User not found", "error"); return; }
     setLoading(true);
     setError("");
-
     try {
-      const response = await fetchData(
-        "app-employee-login-mpin",
-        "POST",
-        {
-          user_id: userId,
-          mpin: mpinString,  // ✅ Use the passed 4-digit value
-          fcm_token: fcmToken,
-        }
-      );
-
+      const response = await fetchData("app-employee-login-mpin", "POST", {
+        user_id: userId,
+        mpin: mpinString,
+        fcm_token: fcmToken,
+      });
       if (response?.text === "Success") {
         await AsyncStorage.multiSet([["USER_DATA", JSON.stringify(response)]]);
         dispatch(setProfileDetails(response));
         showToast(response?.message, "success");
         navigation.replace("home");
       } else {
-        showToast(response?.message, "error");
         setError(response?.message || "something_went_wrong");
+        showToast(response?.message, "error");
       }
     } catch (err) {
       console.log("MPIN Login Error:", err);
@@ -197,11 +98,36 @@ export default function MpinLoginScreen() {
       showToast(t("something_went_wrong"), "error");
     } finally {
       setLoading(false);
-      setMpin(["", "", "", ""]);
+      setMpin(""); // reset
     }
   };
+  // Forgot MPIN
+  const fnGetOtpForget = async () => {
+    setLoading(true);
+    try {
+      const response = await fetchData("app-employee-forgot-mpin", "POST", { user_id: userId });
+      if (response?.text === "Success") {
+        showToast(response?.message, "success");
+        navigation.replace("forgetotpVerfication", response);
+      } else {
+        showToast(response?.message, "error");
+        setError(response?.message || "something_went_wrong");
+      }
+    } catch (err) {
+      console.log("Forgot MPIN Error:", err);
+      setError("something_went_wrong");
+      showToast(t("something_went_wrong"), "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+  const isButtonDisabled = mpin.length !== 4 || loading;
+  useEffect(() => {
+    if (mpin.length < 4) {
+      pinRef.current?.focus();
+    }
+  }, [mpin]);
 
-  const isButtonDisabled = mpin.join("").length !== 4 || loading;
   return (
     <KeyboardAvoidingView
       style={{ flex: 1 }}
@@ -214,86 +140,65 @@ export default function MpinLoginScreen() {
       >
         <View style={styles.container}>
           <LogoAnimated />
-          <Text style={[styles.title, {
-            fontFamily: "Poppins_400Regular",
-          }]}>{t("login_title")}</Text>
-          <Text style={styles.subtitle}>
-            {t("enter_mpin_instruction")}
-          </Text>
-
-          <View style={styles.otpContainer}>
-            {mpin.map((item, index) => (
-              <RNTextInput
-              selectTextOnFocus
-                key={index}
-                ref={(el) => (mpinRef.current[index] = el)}
-                value={item}
-                onChangeText={(text) => handleChange(text, index)}
-                onKeyPress={(e) => handleKeyPress(e, index)}
-                maxLength={1}
-                keyboardType="number-pad"
-                style={styles.otpInput}
-              />
-            ))}
-          </View>
+          <Text style={[styles.title, { fontFamily: "Poppins_400Regular" }]}>{t("login_title")}</Text>
+          <Text style={styles.subtitle}>{t("enter_mpin_instruction")}</Text>
+          <Pressable onPress={() => pinRef.current?.focus()}>
+            <SmoothPinCodeInput
+              ref={pinRef}
+              value={mpin}
+              onTextChange={setMpin}
+              cellStyle={styles.otpInput}
+              cellStyleFocused={{ ...styles.otpInput, borderColor: COLORS.primary, backgroundColor: "#fff", borderWidth: 2 }}
+              codeLength={4}
+              keyboardType="number-pad"
+              password={true}
+              restrictToNumbers
+              autoFocus={true} // optional
+              onFulfill={(code) => handleLogin(code)}
+            />
+          </Pressable>
           {error ? <Text style={styles.errorText}>{t(error)}</Text> : null}
-          {loading ? (
-            <ActivityIndicator color={COLORS?.primary
-            } />
-          ) : null}
-          <Pressable onPress={() => fnGetOtpForget()}>
+          {loading ? <ActivityIndicator color={COLORS.primary} style={{ marginTop: hp(2) }} /> : null}
+
+          <Pressable onPress={fnGetOtpForget}>
             <Text style={[styles.title, {
-              fontSize: wp(4), alignSelf: 'flex-end', marginHorizontal: wp(5),
+              fontSize: wp(4),
+              alignSelf: 'flex-end',
+              marginHorizontal: wp(5),
               fontFamily: "Poppins_600SemiBold",
             }]}>{t("forget_mpin")}</Text>
           </Pressable>
-
-          {/* <TouchableOpacity
-            disabled={isButtonDisabled}
-            onPress={handleLogin}
-            style={[
-              styles.button,
-              {
-                backgroundColor: isButtonDisabled
-                  ? COLORS.primary + "90"
-                  : COLORS.primary,
-              },
-            ]}
-          >
-            {loading ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={[styles.buttonText, {
-                fontFamily: "Poppins_600SemiBold",
-              }]}>{t("login")}</Text>
-            )}
-          </TouchableOpacity> */}
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
   );
 }
-/* 🎨 STYLES */
+
 const styles = StyleSheet.create({
-  scrollContainer: { flexGrow: 1, paddingBottom: hp(6), backgroundColor: "#fff", },
-  container: {
-    alignItems: "center", marginTop: hp(4),
-    paddingHorizontal: wp(5),
-  }, title: { fontSize: wp(4), color: COLORS.primary, marginVertical: hp(1), }, subtitle: {
-    fontSize: wp(3.5), textAlign: "center", marginBottom: hp(3),
-    color: "#444",
-  }, otpContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between", width: wp(80), marginBottom: hp(2),
-  }, otpInput: {
-    width: wp(16), height: hp(7), borderWidth: 1, borderColor: COLORS.primary, textAlign: "center",
-    fontSize: wp(6), borderRadius: wp(2), color: COLORS.primary, backgroundColor: "#f8f8f8",
-  }, errorText: {
-    color: "#e74c3c", marginTop: hp(1.5), textAlign: "center",
-  }, button: {
-    width: wp(90), height: hp(6), marginTop: hp(2),
-    alignItems: "center", justifyContent: "center", borderRadius: wp(2),
-  }, buttonText: {
-    color: "#fff", fontSize: wp(4), lineHeight: hp(6), textTransform: "capitalize",
+  scrollContainer: { flexGrow: 1, paddingBottom: hp(6), backgroundColor: "#fff" },
+  container: { alignItems: "center", marginTop: hp(4), paddingHorizontal: wp(5) },
+  title: { fontSize: wp(4), color: COLORS.primary, marginVertical: hp(1) },
+  subtitle: { fontSize: wp(3.5), textAlign: "center", marginBottom: hp(3), color: "#444" },
+  otpInput: {
+    width: wp(16),
+    height: hp(7),
+    borderWidth: 1,
+    borderColor: COLORS.ashGrey,
+    textAlign: "center",
+    fontSize: wp(6),
+    borderRadius: wp(2),
+    color: COLORS.primary,
+    backgroundColor: "#f8f8f8",
+    marginHorizontal: wp(1),
+    marginRight: wp(4),
+    otpInputFocused: {
+      // borderColor: COLORS.primary,
+      borderWidth: 2,
+      backgroundColor: "#fff",
+    },
+
   },
+
+
+  errorText: { color: "#e74c3c", marginTop: hp(1.5), textAlign: "center" },
 });

@@ -1,3 +1,4 @@
+
 export const COLORS = {
       background: '#FFFFFF',
       cardBackground: '#C4C4C2',
@@ -16,6 +17,8 @@ export const COLORS = {
       dropDownBg: '#E2E2E2',
       black: "#000000",
       white: "#FFFFFF",
-      ashGrey: "#eeeeec"
+      ashGrey: "#eeeeec",
+      red: "#ff0000",
+      green: "#008000",
   };
   

@@ -1,6 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
-import { Audio } from "expo-av";
+import { Audio, Video } from "expo-av";
+import * as FileSystem from 'expo-file-system/legacy';
 import * as ImagePicker from "expo-image-picker";
 import React, { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -29,6 +31,59 @@ export default function UpdateTask({ route }) {
   const { t } = useTranslation();
   const { id } = route?.params;
   const [currentLanguage, setcurrentLanguage] = useState(null);
+  const [videos, setVideos] = useState([]);
+
+
+  const saveAudioToDownloads = async (audioUri, fileName = 'audio.mp3') => {
+    try {
+      setIsDownloading(true);
+
+      // Step 1: Ensure local file
+      let localUri = audioUri;
+      if (audioUri.startsWith('http')) {
+        const downloadPath = FileSystem.cacheDirectory + fileName;
+        const download = await FileSystem.downloadAsync(audioUri, downloadPath);
+        localUri = download.uri;
+      }
+
+      // Step 2: Get Downloads folder URI
+      let directoryUri = await AsyncStorage.getItem('DOWNLOADS_URI');
+      if (!directoryUri) {
+        const permission = await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync();
+        if (!permission.granted) {
+          alert("Permission denied");
+          return;
+        }
+        directoryUri = permission.directoryUri;
+        await AsyncStorage.setItem('DOWNLOADS_URI', directoryUri);
+      }
+
+      // Step 3: Create SAF file
+      const fileUri = await FileSystem.StorageAccessFramework.createFileAsync(
+        directoryUri,
+        fileName,
+        'audio/mpeg',
+        { replace: true }
+      );
+
+      // Step 4: Read local file as Base64
+      const base64 = await FileSystem.readAsStringAsync(localUri, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+
+      // Step 5: Write to SAF file
+      await FileSystem.StorageAccessFramework.writeAsStringAsync(fileUri, base64, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+
+      showToast(`Audio saved as ${fileName}`, "success");
+    } catch (err) {
+      console.error("❌ Save Local Audio Error:", err);
+      alert("❌ Failed to save audio. Only works on Android.");
+    } finally {
+      setIsDownloading(false);
+    }
+  };
 
   useEffect(() => {
 
@@ -88,6 +143,10 @@ export default function UpdateTask({ route }) {
       setIsRecording(false);
     }
   };
+
+  const [mediaTypes, setmediaTypes] = useState('video');
+  const [video, setvideo] = useState(null);
+
   const stopRecording = async () => {
     if (!recording) return;
 
@@ -285,6 +344,7 @@ export default function UpdateTask({ route }) {
         headers: { Accept: "application/json" },
         body: formData,
       });
+      // Alert.alert(JSON.stringify(response))
       const result = await response.json();
       // Alert.alert(JSON.stringify(result))
       if (result?.success) {
@@ -306,33 +366,106 @@ export default function UpdateTask({ route }) {
     setfileModal(false);
 
     const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ImagePicker.MediaTypeOptions.All,
       quality: 0.7,
     });
-    if (!result.canceled && result.assets?.[0]?.uri) {
-      const img = result.assets[0];
-      setImages((prev) => [...prev, { ...img, source: "Camera" }]);
+
+    if (!result.canceled && result.assets?.length > 0) {
+      const file = result.assets[0];
+
+      if (file.type?.includes("video")) {
+        setVideos([{ ...file, source: "Camera" }]);
+      } else {
+        setImages((prev) => [...prev, { ...file, source: "Camera" }]);
+      }
     }
   };
+
   // Pick from gallery
   const pickFile = async () => {
     setModalVisible(false);
     setfileModal(false);
+
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ImagePicker.MediaTypeOptions.All,
       quality: 0.7,
       allowsMultipleSelection: true,
       selectionLimit: 3 - images.length,
     });
+
     if (!result.canceled && result.assets?.length > 0) {
-      const selected = result.assets.map((a) => ({ ...a, source: "Gallery" }));
-      setImages((prev) => [...prev, ...selected]);
+      result.assets.forEach((file) => {
+        if (file.type?.includes("video")) {
+          setVideos([{ ...file, source: "Gallery" }]);
+        } else {
+          setImages((prev) => [...prev, { ...file, source: "Gallery" }]);
+        }
+      });
     }
   };
-  const removeImage = (index) => {
-    setImages((prev) => prev.filter((_, i) => i !== index));
+  const requestCameraPermission = async () => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== "granted") {
+      showToast(t("camera_permission_required"), "error");
+      return false;
+    }
+    return true;
   };
-  const listData = ["title", "status", "priority", "description", "images", "button"];
+
+  const requestGalleryPermission = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") {
+      showToast(t("gallery_permission_required"), "error");
+      return false;
+    }
+    return true;
+  };
+  const pickMedia = async (source) => {
+    setfileModal(false);
+    // Request permission based on source
+    let hasPermission = false;
+    if (source === "camera") {
+      hasPermission = await requestCameraPermission();
+    } else if (source === "gallery") {
+      hasPermission = await requestGalleryPermission();
+    }
+    if (!hasPermission) return;
+    // Picker options based on media type
+    const options = {
+      mediaTypes:
+        mediaTypes === "video"
+          ? ImagePicker.MediaTypeOptions.Videos
+          : ImagePicker.MediaTypeOptions.Images,
+      quality: 0.7,
+    };
+    // Allow multiple selection for images from gallery
+    if (mediaTypes === "image" && source === "gallery") {
+      options.allowsMultipleSelection = true;
+      options.selectionLimit = 3 - images.length;
+    }
+    let result;
+    if (source === "camera") {
+      result = await ImagePicker.launchCameraAsync(options);
+    } else if (source === "gallery") {
+      result = await ImagePicker.launchImageLibraryAsync(options);
+    }
+    if (!result.canceled && result.assets?.length > 0) {
+      if (mediaTypes === "video") {
+        // Single video: replace previous
+        setvideo([{ ...result.assets[0], source: source === "camera" ? "Camera" : "Gallery" }]);
+      } else {
+        // Images: append selected images
+        const selectedImages = result.assets.map(a => ({
+          ...a,
+          source: source === "camera" ? "Camera" : "Gallery",
+        }));
+        setImages(prev => [...prev, ...selectedImages]);
+      }
+    }
+  };
+  const [isDownloading, setIsDownloading] = useState(false);
+  const listData = ["title", "status", "priority", "description", "images", "video", "button"];
+
   const renderItem = ({ item }) => {
     switch (item) {
       case "title":
@@ -343,6 +476,128 @@ export default function UpdateTask({ route }) {
             {newErrors.title && <Text style={styles.errorText}>{newErrors.title}</Text>}
           </View>
         );
+      case "video":
+        return (
+          <View style={styles.fieldContainer}>
+            <Text style={styles.label}>{t("video")}</Text>
+
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: wp(2) }}>
+              {video && (
+                <View
+                  style={{
+                    width: "100%",
+                    height: wp(35), // same height as button
+                    position: "relative",
+                    marginBottom: wp(2),
+                    borderWidth: wp(0.4), borderColor: COLORS?.gray, borderRadius: wp(2)
+                  }}
+                >
+                  <Video
+                    source={{ uri: video[0].uri }}
+                    style={{ width: "95%", height: "90%", borderRadius: wp(2), alignSelf: 'center', marginTop: hp(1) }}
+                    resizeMode="cover"
+                    useNativeControls
+                    usePoster={true}
+                    isLooping={true}
+                  />
+                  {/* Remove button */}
+                  <Pressable
+                    onPress={() => setvideo(null)}
+                    style={{
+                      position: "absolute",
+                      top: 0,
+                      right: 0,
+                      backgroundColor: "rgba(0,0,0,0.6)",
+                      borderRadius: 16,
+                      padding: 4,
+                      zIndex: 10,
+                    }}
+                  >
+                    <Icon name="trash" type="feather" size={wp(5)} color="#ff0000" />
+                  </Pressable>
+                  {/* <Text>{JSON.stringify(video)}</Text> */}
+                </View>
+              )}
+              {/* Show Selected Video */}
+              {videos.length > 0 && (
+                <View
+                  style={{
+                    position: "relative",
+                    width: wp(26),
+                    height: hp(14),
+                    marginRight: wp(2),
+                    marginBottom: hp(1),
+                  }}
+                >
+                  <TouchableOpacity
+                    onPress={() => {
+                      setViewerUri(videos[0].uri);
+                      setViewerVisible(true);
+                    }}
+                    style={{ flex: 1 }}
+                  >
+                    <Video
+                      source={{ uri: videos[0].uri }}
+                      style={{ width: "100%", height: "100%", borderRadius: wp(2) }}
+                      resizeMode="cover"
+                      usePoster
+                    />
+                    {/* Play Icon */}
+                    <View
+                      style={{
+                        position: "absolute",
+                        top: "35%",
+                        left: "35%",
+                      }}
+                    >
+                      <Ionicons name="play-circle" size={wp(9)} color="#fff" />
+                    </View>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => setVideos([])}
+                    style={{
+                      position: "absolute",
+                      top: 5,
+                      right: 5,
+                      backgroundColor: "#ddd",
+                      borderRadius: wp(5),
+                      padding: wp(1.5),
+                    }}
+                  >
+                    <Ionicons name="trash" size={wp(6)} color="#ff0000" />
+                  </TouchableOpacity>
+                </View>
+              )}
+
+              {/* Add Video Button (Only if no video selected) */}
+              {videos.length === 0 && (
+                <TouchableOpacity
+                  onPress={() => {
+                    setmediaTypes("video");
+                    setfileModal(true);
+                  }}
+                  style={{
+                    width: "100%",
+                    height: hp(14),
+                    backgroundColor: "#eee",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    borderRadius: wp(2),
+                    marginRight: wp(2),
+                    marginBottom: hp(1),
+                    borderStyle: "dashed", borderWidth: wp(0.3), borderColor: "#ccc",
+                  }}
+                >
+                  <Ionicons name="videocam" size={wp(9)} color={COLORS.primary} />
+                  <Text style={{ marginTop: 5, color: COLORS.primary }}>
+                    {t("add_video")}
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+        );
+
       case "status":
         return (
           <>
@@ -384,7 +639,7 @@ export default function UpdateTask({ route }) {
               />
               {errors.description && <Text style={styles.error}>{errors.description}</Text>}
               {
-                descAudio && (
+                (
                   <TouchableOpacity style={styles.mic}
                     // onPress={startRecording}
                     onPress={() => {
@@ -397,6 +652,9 @@ export default function UpdateTask({ route }) {
                 )}
             </View>
             {/*  */}
+            {/* <Text style={{}}>
+                        {JSON.stringify(descAudio)}
+                      </Text> */}
             <View style={{ width: wp(90), marginVertical: hp(1.5) }}>
               {descAudio ? (
                 <View
@@ -422,7 +680,6 @@ export default function UpdateTask({ route }) {
                       <Text style={styles.audioName}>{`(${descAudio.duration}s)`}</Text>
                     )}
                   </View>
-
                   {/* ▶️ Play / Pause */}
                   <TouchableOpacity onPress={isPlaying ? stopAudio : playAudio}>
                     <Icon
@@ -431,11 +688,20 @@ export default function UpdateTask({ route }) {
                       color={COLORS.primary}
                     />
                   </TouchableOpacity>
-
-                  {/* ❌ Delete */}
                   <TouchableOpacity onPress={deleteAudio}>
                     <Icon name="x-circle" type="feather" size={wp(7)} color={COLORS.primary} />
                   </TouchableOpacity>
+                  <TouchableOpacity
+                  disabled={isDownloading}
+                    onPress={() => saveAudioToDownloads(descAudio?.uri, "Dscaudio.mp3")}
+                  >
+                    {
+                      isDownloading ? <ActivityIndicator size={wp(6)} color={COLORS.primary} />
+                        :
+                        <Icon name="download" type="feather" size={wp(7)} color={COLORS.primary} />
+                    }
+                  </TouchableOpacity>
+
                 </View>
               ) : (
                 <TouchableOpacity
@@ -533,7 +799,10 @@ export default function UpdateTask({ route }) {
               {/* Show Add Image button only if images < 3 */}
               {images.length < 3 && (
                 <TouchableOpacity
-                  onPress={() => setfileModal(true)}
+                  onPress={() => {
+                    setfileModal(true),
+                      setmediaTypes("images");
+                  }}
                   style={{
                     width: wp(26),
                     height: hp(14),
@@ -667,13 +936,20 @@ export default function UpdateTask({ route }) {
             : setDescription((prev) => prev + value)
         }
       />
-      <AttachmentModal
+      {/* <AttachmentModal
         visible={fileModal}
         onClose={() => setfileModal(false)}
         onCamera={pickCamera}
         onFile={pickFile}
         // onAudioRecorded={handleAudioRecorded}
         hideMic={true}
+      /> */}
+      <AttachmentModal
+        visible={fileModal}
+        onClose={() => setfileModal(false)}
+        hideMic={true}
+        onCamera={() => pickMedia("camera")}
+        onFile={() => pickMedia("gallery")}
       />
     </KeyboardAvoidingView>
   );

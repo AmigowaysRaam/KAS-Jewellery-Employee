@@ -4,7 +4,6 @@ import { useTranslation } from "react-i18next";
 import { Animated, Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { COLORS } from "../../app/resources/colors";
 import { hp, wp } from "../../app/resources/dimensions";
-
 // Merge all info into a single object
 const TASKS_INFO = {
   open: {
@@ -13,12 +12,12 @@ const TASKS_INFO = {
     bgColor: "#FFE4DE",
   },
   in_progress: {
-    labelKey: "In Progress",
+    labelKey: "Inprogress",
     icon: require("../../assets/inprogress.png"),
     bgColor: "#FFD4D0",
   },
   waiting_for_approval: {
-    labelKey: "Waiting for Approval",
+    labelKey: "Waiting for QC",
     icon: require("../../assets/waitingApproval.png"),
     bgColor: "#FFCFCF",
   },
@@ -39,12 +38,9 @@ const MyTask = ({ homepageData }) => {
   const myTaskSection = homepageData?.sections?.find(
     (item) => item.section === "my_tasks"
   );
-
   const todayTasks = myTaskSection?.today_tasks || {};
   const totalTasks = myTaskSection?.total_tasks || {};
-
   const taskKeys = Object.keys(TASKS_INFO);
-
   // --- Animated refs for each card ---
   const todayAnimations = useRef(taskKeys.map(() => new Animated.Value(0))).current;
   const totalAnimations = useRef(taskKeys.map(() => new Animated.Value(0))).current;
@@ -75,7 +71,9 @@ const MyTask = ({ homepageData }) => {
   const renderTaskCard = (key, value, animValue, keyPrefix) => {
     const taskInfo = TASKS_INFO[key];
     return (
-      <Pressable onPress={() => navigation.navigate("MyTaskListScreen", { status: taskInfo.labelKey.replace(/\s+/g, '')})}>
+      <Pressable
+        key={`${keyPrefix}-${key}`}
+        onPress={() => navigation.navigate("MyTaskListScreen", { status: taskInfo.labelKey })}>
         <Animated.View
           key={`${keyPrefix}-${key}`}
           style={[
@@ -110,21 +108,23 @@ const MyTask = ({ homepageData }) => {
       backgroundColor: "#FFF0F0", width: wp(100), alignItems: "center", paddingVertical: hp(2), marginTop: hp(1)
     }}>
       <View style={styles.wrapper}>
-        <Text style={styles.greeting}>{t("my_task")}</Text>
-        <View
-          style={{
-            flexDirection: "row",
-            justifyContent: "space-between",
-            width: wp(92),
-          }}
-        >
-          <Text style={[styles.taskCountText, { color: COLORS.primary }]}>
-            {`${t("todays_task")}: ${todayTasks.count || 0}`}
-          </Text>
-          <Text style={[styles.taskCountText, { color: COLORS.primary }]}>
-            {formattedDate}
-          </Text>
-        </View>
+        <Pressable onPress={() => navigation.navigate("MyTaskListScreen", { status: null })}>
+          <Text style={styles.greeting}>{t("my_task")}</Text>
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              width: wp(92),
+            }}
+          >
+            <Text style={[styles.taskCountText, { color: COLORS.primary }]}>
+              {`${t("todays_task")}: ${todayTasks.count || 0}`}
+            </Text>
+            <Text style={[styles.taskCountText, { color: COLORS.primary }]}>
+              {formattedDate}
+            </Text>
+          </View>
+        </Pressable>
 
         {/* Today Task Cards */}
         <View

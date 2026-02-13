@@ -1,5 +1,6 @@
 import { createStackNavigator } from '@react-navigation/stack';
 import AssignTaskListScreen from '../AssignTaskListScreen';
+import Attendance from '../Attendance';
 import ChangeMpin from '../ChangeMpin';
 import CreateMpin from '../CreateMpin';
 import CreateTask from '../CreateTask';
@@ -12,6 +13,7 @@ import MyTaskListScreen from '../MyTaskListScreen';
 import Notification from '../Notification';
 import OtpVerfication from '../otpVerfication';
 import OurStoreScreen from '../Ourstore';
+import PayRollScreen from '../PayRollScreen';
 import PrivacyPolicyScreen from '../PrivacyPolicy';
 import ResetMpin from '../ResetMpin';
 import SettingsScreen from '../Settings';
@@ -47,6 +49,8 @@ export default function StackNavi() {
       <Stack.Screen name='PrivacyPolicyScreen' component={PrivacyPolicyScreen} />
       <Stack.Screen name='SettingsScreen' component={SettingsScreen} />
       <Stack.Screen name='UpdateTask' component={UpdateTask} />
+      <Stack.Screen name='Attendance' component={Attendance} />
+      <Stack.Screen name='PayRollScreen' component={PayRollScreen} />
     </Stack.Navigator>
   );
 }

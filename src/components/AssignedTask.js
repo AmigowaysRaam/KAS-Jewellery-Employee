@@ -12,12 +12,12 @@ const TASKS_INFO = {
     bgColor: "#FFE4DE",
   },
   in_progress: {
-    labelKey: "In Progress",
+    labelKey: "Inprogress",
     icon: require("../../assets/inprogress.png"),
     bgColor: "#FFD4D0",
   },
   waiting_for_approval: {
-    labelKey: "Waiting for Approval",
+    labelKey: "Waiting for QC",
     icon: require("../../assets/waitingApproval.png"),
     bgColor: "#FFCFCF",
   },
@@ -68,7 +68,9 @@ const AssignedTask = ({ homepageData }) => {
   const renderTaskCard = (key, value, animValue, keyPrefix) => {
     const taskInfo = TASKS_INFO[key];
     return (
-      <Pressable onPress={() => navigation.navigate("AssignTaskListScreen", { status: taskInfo.labelKey.replace(/\s+/g, '') })}>
+      <Pressable
+        key={`${keyPrefix}-${key}`}
+        onPress={() => navigation.navigate("AssignTaskListScreen", { status: taskInfo.labelKey })}>
         <Animated.View
           key={`${keyPrefix}-${key}`}
           style={[
@@ -94,7 +96,6 @@ const AssignedTask = ({ homepageData }) => {
           </View>
         </Animated.View>
       </Pressable>
-
     );
   };
   return (
@@ -103,22 +104,23 @@ const AssignedTask = ({ homepageData }) => {
       paddingVertical: hp(2),
     }}>
       <View style={styles.wrapper}>
-        <Text style={styles.greeting}>{t("assigned_task")}</Text>
-        <View
-          style={{
-            flexDirection: "row",
-            justifyContent: "space-between",
-            width: wp(92),
-          }}
-        >
-          <Text style={[styles.taskCountText, { color: COLORS.primary }]}>
-            {`${t("todays_task")}: ${todayTasks.count || 0}`}
-          </Text>
-          <Text style={[styles.taskCountText, { color: COLORS.primary }]}>
-            {formattedDate}
-          </Text>
-        </View>
-
+        <Pressable onPress={() => navigation.navigate("AssignTaskListScreen", { status: null })}>
+          <Text style={styles.greeting}>{t("assigned_task")}</Text>
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              width: wp(92),
+            }}
+          >
+            <Text style={[styles.taskCountText, { color: COLORS.primary }]}>
+              {`${t("todays_task")}: ${todayTasks.count || 0}`}
+            </Text>
+            <Text style={[styles.taskCountText, { color: COLORS.primary }]}>
+              {formattedDate}
+            </Text>
+          </View>
+        </Pressable>
         {/* Today Task Cards */}
         <View
           style={{

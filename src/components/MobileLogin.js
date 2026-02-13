@@ -24,10 +24,11 @@ export default function MobileLogin() {
   const [loading, setLoading] = useState(false);
   const { showToast } = useToast();
 
+
   useEffect(() => {
     if (__DEV__) {
-      // setPhone("9943904056");
-      setPhone("9999999999");
+      setPhone("9943904056");
+      // setPhone("9999999999");
 
     }
     loadTranslationsFromAPI("en");

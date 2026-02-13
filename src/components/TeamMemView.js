@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
     Animated,
     Easing,
@@ -19,15 +20,16 @@ export default function TeamMembersView({ teamMembers }) {
     const [modalVisible, setModalVisible] = useState(false);
     const scaleAnim = useRef(new Animated.Value(0.8)).current;
     const opacityAnim = useRef(new Animated.Value(0)).current;
+    const {t} = useTranslation();
 
     const teamUsers = teamMembers?.team_users || [];
 
     useEffect(() => {
         console.log("Team Members:", teamUsers);
     }, [teamUsers]);
-    if (!teamUsers) {
-        return null
-    }
+
+    if (!teamUsers) return null;
+
     const openModal = () => {
         setModalVisible(true);
         Animated.parallel([
@@ -61,77 +63,55 @@ export default function TeamMembersView({ teamMembers }) {
         ]).start(() => setModalVisible(false));
     };
 
-    if (!teamUsers) return null;
+    // Prepare data for horizontal list (show max 4, last one as +X if more)
+    const maxVisible = 4;
+    const horizontalData =
+        teamUsers.length > maxVisible
+            ? [...teamUsers.slice(0, maxVisible - 1), { isExtra: true, extraCount: teamUsers.length - (maxVisible - 1) }]
+            : teamUsers;
 
     return (
         <View style={{ marginHorizontal: hp(0.1) }}>
-            {/* Grid of team members */}
+            {/* Horizontal Scroll of team members */}
             <FlatList
-                ListHeaderComponent={
-                    <Text
-                        style={{
-                            marginHorizontal: wp(0.5),
-                            marginBottom: wp(2),
-                            fontFamily: "Poppins_400Regular",
-                            fontSize: wp(4),
-                        }}
-                    >
-                        Team Members
-                    </Text>
-                }
-                data={teamUsers}
+                data={horizontalData}
+                horizontal
+                showsHorizontalScrollIndicator={false}
                 keyExtractor={(item, index) => item.value?.toString() || index.toString()}
-                numColumns={4}
-                scrollEnabled={false}
-                ListEmptyComponent={<>
-                    <Text style={{
-                        marginHorizontal: wp(2), marginBottom: wp(2),
-                        fontFamily: "Poppins_600SemiBold",
-                    }}>
-                        No Members Found
-                    </Text>
-                </>}
-                renderItem={({ item, index }) => (
-                    <Pressable
-                        onPress={openModal}
-                        style={{
-                            alignItems: "center",
-                            marginRight: index % 4 !== 3 ? wp(2) : 0,
-                            marginBottom: hp(2),
-                        }}
-                    >
-                        <Image
-                            source={{ uri: item.image }}
-                            style={{
-                                width: wp(12),
-                                height: wp(12),
-                                borderRadius: wp(6),
-                                borderColor: COLORS.primary,
-                                borderWidth: wp(0.4),
-                            }}
-                        />
-                        <Text
-                            style={{
-                                fontSize: wp(3),
-                                marginTop: hp(0.5),
-                                textAlign: "center",
-                                maxWidth: wp(15),
-                                textTransform: "capitalize",
-                            }}
-                            numberOfLines={1}
-                            ellipsizeMode="tail"
-                        >
-                            {item.label}
-                        </Text>
-                    </Pressable>
-                )}
+                renderItem={({ item }) => {
+                    if (item.isExtra) {
+                        return (
+                            <Pressable
+                                onPress={openModal}
+                                style={styles.memberImag}
+                            >
+                                <View style={styles.extraCircle}>
+                                    <Text style={styles.extraText}>{`+${item.extraCount}`}</Text>
+                                </View>
+                                <Text style={styles.memberText} numberOfLines={1} ellipsizeMode="tail">
+                                    {"View" /* Placeholder, can be "More" or similar */}
+                                </Text>
+                            </Pressable>
+                        );
+                    }
+                    return (
+                        <Pressable onPress={openModal} style={styles.memberItem}>
+                            <Image
+                                source={{ uri: item.image }}
+                                style={styles.memberImage}
+                            />
+                            <Text style={styles.memberText} numberOfLines={1} ellipsizeMode="tail">
+                                {item.label}
+                            </Text>
+                        </Pressable>
+                    );
+                }}
             />
 
-            {/* Modal for vertical list */}
+            {/* Modal for full vertical list */}
             <Modal transparent visible={modalVisible} animationType="none">
                 <TouchableWithoutFeedback onPress={closeModal}>
                     <View style={styles.modalOverlay}>
-                        {/* Prevent closing when pressing inside modal content */}
                         <TouchableWithoutFeedback>
                             <Animated.View
                                 style={[
@@ -142,34 +122,17 @@ export default function TeamMembersView({ teamMembers }) {
                                     },
                                 ]}
                             >
-                                <Text
-                                    style={{
-                                        fontSize: wp(4),
-                                        fontFamily: "Poppins_600SemiBold",
-                                        marginBottom: hp(2),
-                                    }}
-                                >
-                                    Team Members
-                                </Text>
+                                <Text style={styles.modalTitle}>{t('team_members')}</Text>
                                 <ScrollView>
                                     {teamUsers.map((item, index) => (
-                                        <View
-                                            key={item.value?.toString() || index}
-                                            style={styles.modalItem}
-                                        >
-                                            <Image
-                                                source={{ uri: item.image }}
-                                                style={styles.modalImage}
-                                            />
+                                        <View key={item.value?.toString() || index} style={styles.modalItem}>
+                                            <Image source={{ uri: item.image }} style={styles.modalImage} />
                                             <Text style={styles.modalText}>{item.label}</Text>
                                         </View>
                                     ))}
                                 </ScrollView>
-                                <Pressable
-                                    onPress={closeModal}
-                                    style={styles.closeButton}
-                                >
-                                    <Text style={{ color: "#fff", fontSize: wp(5) }}>Close</Text>
+                                <Pressable onPress={closeModal} style={styles.closeButton}>
+                                    <Text style={{ color: "#fff", fontSize: wp(5) }}>{t('close')}</Text>
                                 </Pressable>
                             </Animated.View>
                         </TouchableWithoutFeedback>
@@ -181,6 +144,45 @@ export default function TeamMembersView({ teamMembers }) {
 }
 
 const styles = StyleSheet.create({
+    memberItem: {
+        alignItems: "center",
+        marginRight: wp(4),
+        marginBottom: hp(1.5),
+    },
+    memberImage: {
+        width: wp(13),
+        height: wp(13),
+        borderRadius: wp(6.5),
+        borderColor: COLORS.primary,
+        borderWidth: wp(0.4),
+    },
+    memberText: {
+        fontSize: wp(3.5),
+        marginTop: hp(0.5),
+        textAlign: "center",
+        maxWidth: wp(20),
+        textTransform: "capitalize",
+    },
+    extraItem: {
+        alignItems: "center",
+        justifyContent: "center",
+        marginRight: wp(3),
+    },
+    extraCircle: {
+        width: wp(13),
+        height: wp(13),
+        borderRadius: wp(6.5),
+        backgroundColor: COLORS.primary + 90,
+        alignItems: "center",
+        justifyContent: "center",
+        borderWidth: wp(0.4),
+        borderColor: COLORS.primary,
+    },
+    extraText: {
+        color: "#fff",
+        fontWeight: "600",
+        fontSize: wp(4),
+    },
     modalOverlay: {
         flex: 1,
         backgroundColor: "rgba(0,0,0,0.5)",
@@ -196,6 +198,11 @@ const styles = StyleSheet.create({
         width: wp(95),
         bottom: hp(4),
         alignSelf: "center",
+    },
+    modalTitle: {
+        fontSize: wp(4),
+        fontFamily: "Poppins_600SemiBold",
+        marginBottom: hp(2),
     },
     modalItem: {
         flexDirection: "row",

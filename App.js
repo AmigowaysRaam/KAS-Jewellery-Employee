@@ -10,7 +10,6 @@ import {
   Poppins_900Black, Poppins_900Black_Italic,
   useFonts,
 } from "@expo-google-fonts/poppins";
-
 import NetInfo from "@react-native-community/netinfo";
 import Constants from "expo-constants";
 import * as Device from "expo-device";
@@ -19,13 +18,11 @@ import React, { useEffect, useRef, useState } from "react";
 import {
   Alert,
   Linking,
-  Platform,
-  StyleSheet,
+  Platform, StatusBar, StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
-  View,
-} from "react-native";
+  TouchableOpacity, useColorScheme, View
+} from 'react-native';
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { createNavigationContainerRef, NavigationContainer } from "@react-navigation/native";
@@ -53,6 +50,8 @@ export default function App() {
   const [isConnected, setIsConnected] = useState(true);
   const notificationListener = useRef(null);
   const responseListener = useRef(null);
+  const colorScheme = useColorScheme(); // 'dark' or 'light'
+
   /** 🔤 Fonts */
   const [fontsLoaded] = useFonts({
     Poppins_100Thin, Poppins_100Thin_Italic,
@@ -113,7 +112,11 @@ export default function App() {
 
   return (
     <Provider store={store}>
-      <SafeAreaView style={{ flex: 1 }}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: colorScheme === 'dark' ? '#000' : '#fff' }}>
+        <StatusBar
+          barStyle={colorScheme === 'dark' ? 'light-content' : 'dark-content'}
+          backgroundColor={colorScheme === 'dark' ? '#000' : '#fff'}
+        />
         {!isConnected ? (
           <View style={styles.centerContainer}>
             <View style={styles.box}>

@@ -113,7 +113,6 @@ const ProfileScreen = () => {
   const infoData = [
     { icon: "mail-outline", value: profileDetails?.email || t("N/A") },
     { icon: "call-outline", value: `+91${profileDetails?.phone_number}` || t("N/A") },
-    { icon: "shield-checkmark-outline", value: profileDetails?.status || t("N/A") },
     { icon: "checkmark-done-outline", value: profileDetails?.is_verified || t("N/A") },
     { icon: "calendar-outline", value: formatDate(profileDetails?.created) },
   ];

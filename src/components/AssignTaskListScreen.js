@@ -14,11 +14,11 @@ import { COLORS } from "../../app/resources/colors";
 import { hp, wp } from "../../app/resources/dimensions";
 import { useToast } from "../../constants/ToastContext.js";
 import { fetchData } from "./api/Api";
+import AssignedTaskCard from "./AssignedTaskCard.js";
 import CommonHeader from "./CommonHeader";
 import DateandDownloadTask from "./DateandDownloadTask";
 import SearchContainer from "./SearchContainer";
 import TaskDetailModal from "./TaskDetailModal";
-import ViewButton from "./ViewBtn.js";
 export default function AssignedTasklistScreen() {
   const navigation = useNavigation();
   const { t } = useTranslation();
@@ -103,9 +103,18 @@ export default function AssignedTasklistScreen() {
             return true;
           });
         }
+        // Alert.alert(JSON.stringify(response?.data?.tasks?.length))
+        setHasMore(response?.data?.tasks?.length === 10);
+        // setTasks((prev) => (pageNo === 1 ? data : [...prev, ...data]));
+        setTasks((prev) => {
+          if (pageNo === 1) return data;
+          const newData = data.filter(
+            (newItem) => !prev.some((prevItem) => prevItem.id === newItem.id)
+          );
 
-        setHasMore(data.length === 10);
-        setTasks((prev) => (pageNo === 1 ? data : [...prev, ...data]));
+          return [...prev, ...newData];
+        });
+
         setPage(pageNo);
       } else {
         showToast(response?.message || "Failed to fetch tasks", "error");
@@ -120,8 +129,9 @@ export default function AssignedTasklistScreen() {
   };
   useFocusEffect(
     React.useCallback(() => {
+      setHasMore(true);
       fetchTasks(1, true, selectedStatus);
-    }, [profileDetails?.id, searchText, selectedStatus, hasMore, initialStatus,])
+    }, [profileDetails?.id, searchText, selectedStatus])
   );
   /** Pull to refresh */
   const onRefresh = () => {
@@ -179,59 +189,18 @@ export default function AssignedTasklistScreen() {
     </View>
   );
 
-  /** Render each task */
-  const renderTask = ({ item }) => {
-    const hasVoice = !!item.audio;
-    // console?.log(item,"item")
-    return (
-      <Pressable
-        onPress={() => openTaskModal(item)}
-        style={[styles.card, { borderLeftColor: getStatusColor(item.status), borderLeftWidth: wp(1) }]}
-      >
-        <View style={styles.cardHeader}>
-          <Text numberOfLines={1} style={styles.taskTitle}>{item?.title || t("Untitled Task")}</Text>
-          <View style={styles.rightHeader}>
-            <View style={[styles.voiceIcon, { opacity: hasVoice ? 1 : 0.3 }]}>
-              <Icon name="play-arrow" size={wp(5)} color={COLORS.primary} />
-            </View>
-            <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
-              <Text style={styles.statusText}>{item.status}</Text>
-            </View>
-          </View>
-        </View>
-        <View style={styles.dateRow}>
-          <View style={styles.dateBox}>
-            <Text style={styles.dateLabel}>{t('assigned_date')}</Text>
-            <Text numberOfLines={1} style={styles.dateText}>{item.assigned_date}</Text>
-          </View>
-          <View style={styles.dateBox}>
-            <Text style={styles.dateLabel}>{t('due_date')}</Text>
-            <Text numberOfLines={1} style={styles.dateText}>{item.due_date}</Text>
-          </View>
-        </View>
-        <ViewButton
-          priority={item.priority}
-          onPress={() =>
-            navigation?.navigate('TasKDetailById', { task: item })
-          }
-          label={t("View")}
-        />
-      </Pressable>
-    );
-  };
-
   const handleStatusSelect = (status) => {
-    if (!status) {
-      if (route?.params.status) {
-        setSelectedStatus(route?.params.status);
-      }
-    } else {
-      setSelectedStatus(status);
+    if (!status && route?.params?.status) {
+      setSelectedStatus(route?.params?.status)
+      setHasMore(true);
+      fetchTasks(1, true, status);
     }
-    setHasMore(true);
-    fetchTasks(1, true);
+    else {
+      setSelectedStatus(status);
+      setHasMore(true);
+      fetchTasks(1, true, status);
+    }
   };
-
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : "height"}>
       <View style={styles.container}>
@@ -241,9 +210,10 @@ export default function AssignedTasklistScreen() {
           onChangeText={setSearchText}
           placeholder="Search tasks..."
           selectedStatus={selectedStatus}
-          onStatusSelect={(itm) => handleStatusSelect(itm)}
+          onStatusSelect={handleStatusSelect}
           modalVisible={modalVisible}
           selectedStatuss={selectedStatus}
+          clearSearch={() => setSearchText("")}
         />
         {loading && page === 1 ? (
           // Initial load skeleton
@@ -256,22 +226,38 @@ export default function AssignedTasklistScreen() {
         ) : (
           // Actual task list
           <FlatList
-            ListHeaderComponent={<>
-              <DateandDownloadTask
-                fromDate={selectedDateRange.from}
-                toDate={selectedDateRange.to}
-                onDateSelect={(range) => {
-                  setSelectedDateRange(range);
-                  setHasMore(true);
-                  fetchTasks(1, true, selectedStatus);
-                }}
-                onDownload={() => showToast('Task list download is in progress...', 'info')}
-              />
-            </>}
+            ListHeaderComponent={
+              tasks?.length > 0 && (
+                <>
+                  <DateandDownloadTask
+                    // taskLength={tasks?.length}
+                    taskFlag={'assigned'}
+                    fromDate={selectedDateRange.from}
+                    toDate={selectedDateRange.to}
+                    onDateSelect={(range) => {
+                      setSelectedDateRange(range);
+                      setHasMore(true);
+                      fetchTasks(1, true, selectedStatus);
+                    }}
+                    onDownload={() => showToast('Task list download is in progress...', 'info')}
+                  />
+                </>
+              )
+            }
             contentContainerStyle={{ paddingBottom: hp(8) }}
             data={tasks}
-            keyExtractor={(item) => item?.id}
-            renderItem={renderTask}
+            // keyExtractor={(item) => item?.id}
+            keyExtractor={(item, index) => `${item?.id}-${index}`}
+
+            renderItem={({ item }) => (
+              <AssignedTaskCard
+                item={item}
+                t={t}
+                navigation={navigation}
+                openTaskModal={openTaskModal}
+                getStatusColor={getStatusColor}
+              />
+            )}
             refreshControl={
               <RefreshControl
                 refreshing={refreshing}
@@ -305,7 +291,7 @@ export default function AssignedTasklistScreen() {
           allowCreateTask == '1' &&
           <Pressable style={styles.fabButton} onPress={() => navigation?.navigate('CreateTask')}>
             <Icon name="add" size={wp(4.5)} color="#fff" />
-            <Text style={styles.fabText}>{t('create_new_task')}</Text>
+            <Text style={styles.fabText}>{t('create_task')}</Text>
           </Pressable>
         }
         <TaskDetailModal
@@ -322,7 +308,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#f8f9fb" },
   card: {
     backgroundColor: "#fff", marginHorizontal: wp(4),
-    marginBottom: hp(2), padding: wp(4), borderRadius: wp(2),
+    marginBottom: hp(2), padding: wp(3), borderRadius: wp(2),
     shadowColor: "#000", shadowOpacity: 0.05,
     shadowOffset: { width: 0, height: 2 },
     shadowRadius: 4,
@@ -331,7 +317,7 @@ const styles = StyleSheet.create({
   cardHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: hp(1) },
   taskTitle: {
     fontSize: wp(4), fontFamily: "Poppins_600SemiBold", flex: 1, color: "#222", textTransform: "capitalize",
-    maxWidth: wp(52)
+    maxWidth: wp(60), justifyContent: "center", lineHeight: wp(5)
   },
   rightHeader: { flexDirection: "row", alignItems: "center" },
   voiceIcon: { width: wp(7), height: wp(7), borderRadius: wp(3.5), backgroundColor: "#eef4ff", justifyContent: "center", alignItems: "center", marginRight: wp(2) },
@@ -341,10 +327,10 @@ const styles = StyleSheet.create({
   statusText: { color: "#fff", fontSize: wp(3.2) },
   dateRow: { flexDirection: "row", justifyContent: "space-between", marginTop: hp(1) },
   dateBox: {
-    backgroundColor: "#f1f1f1", padding: wp(2), borderRadius: wp(2), flex: 1, marginRight: wp(2),
+    backgroundColor: "#f1f1f1", padding: wp(1), paddingVertical: wp(2), borderRadius: wp(2), flex: 1, marginRight: wp(2),
     borderColor: COLORS?.primary, borderWidth: wp(0.4)
   }, dateLabel: { fontSize: wp(3), color: "#555", marginBottom: hp(0.3), fontFamily: "Poppins_400Regular" },
-  dateText: { fontSize: wp(3.5), color: "#333", fontFamily: "Poppins_400Regular" },
+  dateText: { fontSize: wp(3.3), color: "#333", fontFamily: "Poppins_400Regular" },
   fabButton: {
     position: "absolute", bottom: hp(4), right: wp(5), backgroundColor: COLORS.primary, flexDirection: "row",
     alignItems: "center",

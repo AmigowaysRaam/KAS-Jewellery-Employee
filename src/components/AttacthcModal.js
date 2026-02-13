@@ -6,9 +6,7 @@ import { Modal, StyleSheet, Text, TouchableOpacity, TouchableWithoutFeedback, Vi
 import { COLORS } from "../../app/resources/colors";
 import { hp, wp } from "../../app/resources/dimensions";
 
-export default function AttachmentModal({ visible, onClose, onCamera, onFile, onAudioRecorded,
-    hideMic = false
-}) {
+export default function AttachmentModal({ visible, onClose, onCamera, onFile, onAudioRecorded, hideMic = false }) {
     const [isRecording, setIsRecording] = useState(false);
     const [recording, setRecording] = useState(null);
     const [recordTime, setRecordTime] = useState(0);
@@ -16,7 +14,8 @@ export default function AttachmentModal({ visible, onClose, onCamera, onFile, on
     const [sound, setSound] = useState(null);
     const [isPlaying, setIsPlaying] = useState(false);
     const { t } = useTranslation();
-    // Request microphone permission
+
+    // Request microphone permission on mount
     useEffect(() => {
         Audio.requestPermissionsAsync();
     }, []);
@@ -30,30 +29,43 @@ export default function AttachmentModal({ visible, onClose, onCamera, onFile, on
         return () => clearInterval(interval);
     }, [isRecording]);
 
-    // Start recording
+    const [isPreparing, setIsPreparing] = useState(false);
+
     const startRecording = async () => {
+        if (isRecording || isPreparing) return; // prevent double-tap
+        setIsPreparing(true);
         try {
+            // Stop previous recording if exists
+            if (recording) {
+                await recording.stopAndUnloadAsync();
+                setRecording(null);
+            }
             setIsRecording(true);
-            const { recording } = await Audio.Recording.createAsync(
+            setRecordTime(0);
+            const { recording: newRecording } = await Audio.Recording.createAsync(
                 Audio.RECORDING_OPTIONS_PRESET_HIGH_QUALITY
             );
-            setRecording(recording);
-            setRecordTime(0);
+
+            setRecording(newRecording);
         } catch (err) {
             console.log("Recording error:", err);
             setIsRecording(false);
+        } finally {
+            setIsPreparing(false);
         }
     };
+
 
     // Stop recording
     const stopRecording = async () => {
         if (!recording) return;
+
         setIsRecording(false);
         await recording.stopAndUnloadAsync();
+
         const uri = recording.getURI();
         setAudioUri(uri);
 
-        // Get actual duration
         const status = await recording.getStatusAsync();
         setRecordTime(Math.floor(status.durationMillis / 1000));
 
@@ -72,16 +84,14 @@ export default function AttachmentModal({ visible, onClose, onCamera, onFile, on
                 { uri: audioUri },
                 { shouldPlay: true }
             );
+
             setSound(newSound);
             setIsPlaying(true);
 
-            // Update recordTime in real-time
             newSound.setOnPlaybackStatusUpdate((status) => {
                 if (status.isLoaded) {
                     setRecordTime(Math.floor(status.positionMillis / 1000));
-                    if (status.didJustFinish) {
-                        setIsPlaying(false);
-                    }
+                    if (status.didJustFinish) setIsPlaying(false);
                 }
             });
         }
@@ -96,62 +106,102 @@ export default function AttachmentModal({ visible, onClose, onCamera, onFile, on
         onClose();
     };
 
-    // Remove audio
-    const removeAudio = () => {
-        cleanup();
+    // Cleanup recording & sound
+    const cleanup = async () => {
+        if (recording) {
+            try {
+                await recording.stopAndUnloadAsync();
+            } catch (err) {
+                console.log("Error stopping recording during cleanup:", err);
+            }
+            setRecording(null);
+        }
+
+        if (sound) {
+            try {
+                await sound.unloadAsync();
+            } catch (err) {
+                console.log("Error unloading sound during cleanup:", err);
+            }
+            setSound(null);
+        }
+
+        setIsPlaying(false);
+        setAudioUri(null);
+        setRecordTime(0);
+        setIsRecording(false);
     };
 
-    // Cleanup state
-    const cleanup = () => {
-        setAudioUri(null);
-        setRecording(null);
-        setIsRecording(false);
-        setRecordTime(0);
-        sound && sound.unloadAsync();
-        setSound(null);
-        setIsPlaying(false);
+    // Close modal safely
+    const handleClose = async () => {
+        await cleanup();
+        onClose();
     };
 
     return (
-        <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-            <TouchableWithoutFeedback onPress={onClose}>
+        <Modal visible={visible} transparent animationType="fade" onRequestClose={handleClose}>
+            <TouchableWithoutFeedback onPress={handleClose}>
                 <View style={styles.overlay}>
                     <TouchableWithoutFeedback>
                         <View style={styles.container}>
-                            {/* <Text style={styles.title}>{t('select')}</Text> */}
+                            {/* Header */}
+                            <View style={styles.headerRow}>
+                                <Text style={styles.title}>{t("select_attachment") || "Select Attachment"}</Text>
+                                <TouchableOpacity onPress={handleClose}>
+                                    <Ionicons name="close" size={28} color={COLORS.primary} />
+                                </TouchableOpacity>
+                            </View>
+
                             {/* Icons Row */}
                             {!audioUri && !isRecording && (
                                 <View style={styles.iconRow}>
-                                    <TouchableOpacity style={styles.iconButton} onPress={onCamera}>
-                                        <Ionicons name="camera" size={32} color="#fff" />
-                                    </TouchableOpacity>
-
-                                    <TouchableOpacity style={styles.iconButton} onPress={onFile}>
-                                        <MaterialIcons name="insert-drive-file" size={32} color="#fff" />
-                                    </TouchableOpacity>
                                     {
-                                        !hideMic &&
-                                        <TouchableOpacity style={styles.iconButton} onPress={startRecording}>
-                                            <FontAwesome name="microphone" size={32} color="#fff" />
-                                        </TouchableOpacity>
+                                        hideMic &&
+                                        <>
+                                            < View style={styles.iconItem}>
+                                                <TouchableOpacity style={styles.iconButton} onPress={onCamera}>
+                                                    <Ionicons name="camera" size={32} color="#fff" />
+                                                </TouchableOpacity>
+                                                <Text style={styles.iconLabel}>{t("camera") || "Camera"}</Text>
+                                            </View>
+
+                                            {/* File */}
+                                            <View style={styles.iconItem}>
+                                                <TouchableOpacity style={styles.iconButton} onPress={onFile}>
+                                                    <MaterialIcons name="insert-drive-file" size={32} color="#fff" />
+                                                </TouchableOpacity>
+                                                <Text style={styles.iconLabel}>{t("file") || "File"}</Text>
+                                            </View>
+                                        </>
                                     }
+
+
+                                    {!hideMic && (
+                                        <View style={styles.iconItem}>
+                                            <TouchableOpacity
+                                                style={styles.iconButton}
+                                                onPress={startRecording}
+                                                disabled={isRecording}
+                                            >
+                                                <FontAwesome name="microphone" size={32} color="#fff" />
+                                            </TouchableOpacity>
+                                            <Text style={styles.iconLabel}>{t("audio") || "Audio"}</Text>
+                                        </View>
+                                    )}
                                 </View>
                             )}
-                            {/* Recording View */}
                             {isRecording && (
                                 <View style={styles.recordingContainer}>
-                                    <Text style={styles.recordingText}>{`${'recording'} ...`}</Text>
+                                    <Text style={styles.recordingText}>{`${t("recording") || "Recording"} ...`}</Text>
                                     <Text style={styles.recordTime}>{recordTime}s</Text>
                                     <TouchableOpacity
                                         style={[styles.stopButton, { marginTop: wp(4), backgroundColor: "#ff0000" }]}
                                         onPress={stopRecording}
                                     >
-                                        <Text style={styles.stopButtonText}>{`${'stop'}`}</Text>
+                                        <Text style={styles.stopButtonText}>{`${t("stop") || "Stop"}`}</Text>
                                     </TouchableOpacity>
                                 </View>
                             )}
-
-                            {/* Audio Playback Preview */}
                             {audioUri && (
                                 <View style={styles.recordingContainer}>
                                     <View style={{ flexDirection: "row", alignItems: "center" }}>
@@ -159,30 +209,22 @@ export default function AttachmentModal({ visible, onClose, onCamera, onFile, on
                                             <FontAwesome name={isPlaying ? "pause" : "play"} size={24} color="#fff" />
                                         </TouchableOpacity>
                                         <Text style={styles.recordTime}>{recordTime}s</Text>
-                                        <TouchableOpacity onPress={removeAudio} style={{ marginLeft: wp(3) }}>
-                                            <Ionicons name="trash" size={28} color="red" />
-                                        </TouchableOpacity>
                                     </View>
                                     <View style={{ flexDirection: "row", marginTop: hp(2) }}>
                                         <TouchableOpacity style={styles.confirmButton} onPress={confirmRecording}>
-                                            <Text style={styles.confirmText}>{`${'confirm'}`}</Text>
+                                            <Text style={styles.confirmText}>{`${t("confirm") || "Confirm"}`}</Text>
                                         </TouchableOpacity>
                                         <TouchableOpacity style={styles.stopButton} onPress={cleanup}>
-                                            <Text style={styles.stopButtonText}>{`${'cancel'}`}</Text>
+                                            <Text style={styles.stopButtonText}>{`${t("delete") || "Delete"}`}</Text>
                                         </TouchableOpacity>
                                     </View>
                                 </View>
                             )}
-
-                            {/* Close Button */}
-                            <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-                                <Ionicons name="close" size={28} color={COLORS.primary} />
-                            </TouchableOpacity>
                         </View>
                     </TouchableWithoutFeedback>
                 </View>
-            </TouchableWithoutFeedback>
-        </Modal>
+            </TouchableWithoutFeedback >
+        </Modal >
     );
 }
 
@@ -200,11 +242,18 @@ const styles = StyleSheet.create({
         borderTopLeftRadius: wp(5),
         borderTopRightRadius: wp(5),
         alignItems: "center",
+        height: hp(35),
+    },
+    headerRow: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        width: "100%",
+        alignItems: "center",
+        marginBottom: hp(3),
     },
     title: {
-        fontSize: wp(4.5),
+        fontSize: wp(5),
         fontWeight: "600",
-        marginBottom: hp(2),
         color: "#333",
     },
     iconRow: {
@@ -212,6 +261,9 @@ const styles = StyleSheet.create({
         justifyContent: "space-around",
         width: "100%",
         marginVertical: hp(2),
+    },
+    iconItem: {
+        alignItems: "center",
     },
     iconButton: {
         width: wp(16),
@@ -227,14 +279,12 @@ const styles = StyleSheet.create({
         shadowRadius: 3,
         elevation: 5,
     },
-    closeButton: {
-        marginTop: hp(2),
-        backgroundColor: "#f2f2f2",
-        width: wp(12),
-        height: wp(12),
-        borderRadius: wp(6),
-        justifyContent: "center",
-        alignItems: "center",
+    iconLabel: {
+        marginTop: hp(1),
+        fontSize: wp(3.2),
+        color: "#111",
+        textAlign: "center",
+        textTransform: "capitalize",
     },
     recordingContainer: {
         alignItems: "center",

@@ -42,51 +42,105 @@ export default function ChangeMpin() {
     return () => sub.remove();
   }, []);
   /** ---------- Input Handlers ---------- */
+
   const handleChange = (text, index, value, setValue, refArr) => {
-    if (/[^0-9]/.test(text)) return;
+    // Only allow digits
+    const digits = text.replace(/[^0-9]/g, '');
+    if (!digits) {
+      // If deleting, clear current box
+      const updated = [...value];
+      updated[index] = '';
+      setValue(updated);
+      return;
+    }
+
     const updated = [...value];
-    updated[index] = text;
+
+    // Replace current value with the newly typed digit
+    updated[index] = digits[digits.length - 1];
     setValue(updated);
-    if (text && index < 3) {
+
+    // Move focus to next input if current filled
+    if (index < updated.length - 1) {
       refArr.current[index + 1]?.focus();
+    } else {
+      refArr.current[index]?.blur();
     }
   };
+
+
   const handleKeyPress = (e, index, value, setValue, refArr) => {
-    if (e.nativeEvent.key === "Backspace") {
+    if (e.nativeEvent.key === 'Backspace') {
       const updated = [...value];
       if (updated[index]) {
-        updated[index] = "";
+        updated[index] = '';
       } else if (index > 0) {
         refArr.current[index - 1]?.focus();
-        updated[index - 1] = "";
+        updated[index - 1] = '';
       }
       setValue(updated);
     }
   };
+
   const renderOtpBoxes = (label, value, setValue, refArr) => (
     <>
       <Text style={styles.label}>{label}</Text>
       <View style={styles.otpContainer}>
         {value.map((item, index) => (
+
           <RNTextInput
-            selectTextOnFocus
             key={index}
             ref={(el) => (refArr.current[index] = el)}
-            value={item}
+            value={value[index]}
             maxLength={1}
             keyboardType="number-pad"
             style={styles.otpInput}
-            onChangeText={(text) =>
-              handleChange(text, index, value, setValue, refArr)
-            }
-            onKeyPress={(e) =>
-              handleKeyPress(e, index, value, setValue, refArr)
-            }
+            selectTextOnFocus={true}   // allow full selection on focus
+            contextMenuHidden={true}   // disable copy/paste menu
+            caretHidden={false}        // show cursor
+            onFocus={() => {
+              // Always select the entire digit when focused
+              setTimeout(() => {
+                refArr.current[index]?.setNativeProps({
+                  selection: { start: 0, end: 1 },
+                });
+              }, 0);
+            }}
+            onChangeText={(text) => {
+              const digits = text.replace(/[^0-9]/g, '');
+              if (!digits) return;
+              const updated = [...value];
+              // Replace the current value
+              updated[index] = digits[digits.length - 1];
+              setValue(updated);
+              // Move focus to next input automatically
+              if (index < updated.length - 1) {
+                refArr.current[index + 1]?.focus();
+              } else {
+                refArr.current[index]?.blur();
+              }
+            }}
+            onSelectionChange={(e) => {
+              const start = e.nativeEvent.selection.start;
+              const end = e.nativeEvent.selection.end;
+
+              // Only allow selection of the full input (0 → 1)
+              if (start !== 0 || end !== 1) {
+                refArr.current[index]?.setNativeProps({
+                  selection: { start: 0, end: 1 },
+                });
+              }
+            }}
+            onKeyPress={(e) => handleKeyPress(e, index, value, setValue, refArr)}
+            onLongPress={(e) => e.preventDefault()} // prevent partial drag/select
           />
+
+
         ))}
       </View>
     </>
   );
+
   /** ---------- Submit API ---------- */
   const handleSubmit = async () => {
     if (newMpin.join("") !== confirmMpin.join("")) {
