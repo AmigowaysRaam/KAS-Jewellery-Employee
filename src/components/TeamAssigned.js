@@ -1,35 +1,29 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
-    Animated,
-    Easing,
-    FlatList,
-    Image,
-    Modal,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableWithoutFeedback,
+    Animated, Easing, FlatList,
+    Image, Modal, Pressable, ScrollView,
+    StyleSheet, Text, TouchableWithoutFeedback,
     View,
 } from "react-native";
 import { COLORS } from "../../app/resources/colors";
 import { hp, wp } from "../../app/resources/dimensions";
 
-export default function TeamMembersView({ teamMembers }) {
+export default function TeamAssigned({ teamMembers }) {
     const [modalVisible, setModalVisible] = useState(false);
     const scaleAnim = useRef(new Animated.Value(0.8)).current;
     const opacityAnim = useRef(new Animated.Value(0)).current;
-    const {t} = useTranslation();
+    //    "employee_id": "EMP2",
+    //    "name": "amigoways",
+    //    "phone_number": "9943921242",
+    //    "photo": "https://www.kasjewellery.com/assets/images/employees/user-thumb.png"
 
-    const teamUsers = teamMembers?.team_users || [];
-
+    const { t } = useTranslation();
+    const teamUsers = teamMembers || [];
     useEffect(() => {
         console.log("Team Members:", JSON.stringify(teamMembers, null, 2));
     }, [teamUsers]);
-
     if (!teamUsers) return null;
-
     const openModal = () => {
         setModalVisible(true);
         Animated.parallel([
@@ -69,10 +63,10 @@ export default function TeamMembersView({ teamMembers }) {
         teamUsers.length > maxVisible
             ? [...teamUsers.slice(0, maxVisible - 1), { isExtra: true, extraCount: teamUsers.length - (maxVisible - 1) }]
             : teamUsers;
-
     return (
         <View style={{ marginHorizontal: hp(0.1) }}>
             {/* Horizontal Scroll of team members */}
+            <Text style={styles.modalTitle}>{t('team_members')}</Text>
             <FlatList
                 data={horizontalData}
                 horizontal
@@ -97,11 +91,11 @@ export default function TeamMembersView({ teamMembers }) {
                     return (
                         <Pressable onPress={openModal} style={styles.memberItem}>
                             <Image
-                                source={{ uri: item.image }}
+                                source={{ uri: item.photo }}
                                 style={styles.memberImage}
                             />
                             <Text style={styles.memberText} numberOfLines={1} ellipsizeMode="tail">
-                                {item.label}
+                                {item.name}
                             </Text>
                         </Pressable>
                     );
@@ -126,8 +120,13 @@ export default function TeamMembersView({ teamMembers }) {
                                 <ScrollView>
                                     {teamUsers.map((item, index) => (
                                         <View key={item.value?.toString() || index} style={styles.modalItem}>
-                                            <Image source={{ uri: item.image }} style={styles.modalImage} />
-                                            <Text style={styles.modalText}>{item.label}</Text>
+                                            <Image source={{ uri: item.photo }} style={styles.modalImage} />
+                                            <View>
+                                                <Text style={styles.modalText}>{item.name}</Text>
+                                                <Text style={{ fontSize: wp(3.1) }}>{item.employee_id}</Text>
+                                            </View>
+
+
                                         </View>
                                     ))}
                                 </ScrollView>
@@ -196,7 +195,7 @@ const styles = StyleSheet.create({
         maxHeight: hp(70),
         position: "absolute",
         width: wp(95),
-        bottom: hp(4),
+        bottom: hp(8),
         alignSelf: "center",
     },
     modalTitle: {

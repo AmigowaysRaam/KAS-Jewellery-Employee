@@ -13,7 +13,7 @@ import { hp, wp } from "../../app/resources/dimensions";
 const ViewButton = ({ onPress, label = "View", priority = "Low" }) => {
     const scaleAnim = useRef(new Animated.Value(1)).current;
     const opacityAnim = useRef(new Animated.Value(1)).current;
-    const pulseAnim = useRef(new Animated.Value(0)).current; // For Critical animation
+    const pulseAnim = useRef(new Animated.Value(0)).current;
 
     // Priority config
     const getPriorityConfig = (level) => {
@@ -31,8 +31,7 @@ const ViewButton = ({ onPress, label = "View", priority = "Low" }) => {
         }
     };
 
-    const { color: priorityColor, icon: priorityIcon } =
-        getPriorityConfig(priority);
+    const { color: priorityColor, icon: priorityIcon } = getPriorityConfig(priority);
 
     // Press animations
     const handlePressIn = () => {
@@ -62,9 +61,10 @@ const ViewButton = ({ onPress, label = "View", priority = "Low" }) => {
             }),
         ]).start();
     };
-    // Critical animation (pink pulse)
+
+    // Critical animation
     useEffect(() => {
-        if (priority == "Critical") {
+        if (priority === "Critical") {
             Animated.loop(
                 Animated.sequence([
                     Animated.timing(pulseAnim, { toValue: 1, duration: 150, useNativeDriver: true }),
@@ -73,9 +73,10 @@ const ViewButton = ({ onPress, label = "View", priority = "Low" }) => {
             ).start();
         }
     }, [priority]);
+
     const pulseStyle = {
         ...StyleSheet.absoluteFillObject,
-        borderRadius: wp(5),
+        borderRadius: wp(2),
         backgroundColor: "red",
         opacity: pulseAnim.interpolate({
             inputRange: [0, 1],
@@ -100,19 +101,18 @@ const ViewButton = ({ onPress, label = "View", priority = "Low" }) => {
                     styles.priorityChip,
                     {
                         backgroundColor: `${priorityColor}18`,
+                        borderColor: priorityColor,
                     },
                 ]}
             >
-                {priority == "Critical" && <Animated.View style={[pulseStyle, {
-                    zIndex: 9999
-                }]} />}
+                {priority === "Critical" && <Animated.View style={[pulseStyle, { zIndex: 9999 }]} />}
                 <Icon
                     name={priorityIcon}
                     type="feather"
                     size={wp(3.8)}
                     color={priorityColor}
                 />
-                <Text style={[styles.priorityText, { color: priority == "Critical" ? "#ff0000" : priorityColor }]}>
+                <Text style={[styles.priorityText, { color: priority === "Critical" ? "#ff0000" : priorityColor }]}>
                     {priority}
                 </Text>
             </View>
@@ -125,15 +125,12 @@ const ViewButton = ({ onPress, label = "View", priority = "Low" }) => {
                 android_ripple={{ color: "rgba(255,255,255,0.2)" }}
                 style={styles.buttonWrapper}
             >
-
-
                 <Animated.View
                     style={[
                         styles.buttonContainer,
                         {
                             transform: [{ scale: scaleAnim }],
                             opacity: opacityAnim,
-                            zIndex: 1, // Button above the pulse
                         },
                     ]}
                 >
@@ -168,35 +165,35 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         alignItems: "center",
         marginTop: hp(1.8),
+        justifyContent: "space-between",
     },
-
-    /* ---------------- Priority Chip ---------------- */
     priorityChip: {
         flexDirection: "row",
         alignItems: "center",
-        paddingHorizontal: wp(3),
-        paddingVertical: hp(0.6),
-        borderRadius: wp(6),
+        paddingHorizontal: hp(3.2),
+        paddingVertical: hp(1.5),
+        borderRadius: wp(3),
         marginRight: wp(3),
+        borderWidth: wp(0.5),
+        width: "45%",
     },
     priorityText: {
         marginLeft: wp(1.5),
         fontSize: wp(3),
         fontFamily: "Poppins_600SemiBold",
         letterSpacing: 0.6,
-        textTransform: "uppercase",
+        textTransform: "uppercase",lineHeight:wp(4.5)
     },
-
-    /* ---------------- Button ---------------- */
     buttonWrapper: {
         flex: 1,
         borderRadius: wp(3),
         overflow: "hidden",
+        alignItems: "center",
     },
     buttonContainer: {
         flexDirection: "row",
         alignItems: "center",
-        justifyContent: "space-between",
+        justifyContent: "center", // center everything
         backgroundColor: COLORS.primary || "#3A7AFE",
         paddingVertical: hp(1.4),
         paddingHorizontal: wp(5),
@@ -206,11 +203,15 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.18,
         shadowRadius: 6,
         shadowOffset: { width: 0, height: 4 },
+        width: "100%",
     },
     buttonText: {
+        flex: 1,
+        textAlign: "center", // center text
         color: COLORS.white,
         fontSize: wp(3.8),
         fontFamily: "Poppins_600SemiBold",
         letterSpacing: 0.5,
+        marginHorizontal: wp(2),
     },
 });

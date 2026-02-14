@@ -23,17 +23,10 @@ export default function AssignedTasklistScreen() {
   const navigation = useNavigation();
   const { t } = useTranslation();
   const route = useRoute();
+  const { todayKey } = route?.params || {};
   const siteDetails = useSelector((state) => state.auth?.siteDetails?.data[0]);
   const profileDetails = useSelector((state) => state?.auth?.profileDetails?.data);
   const { showToast } = useToast();
-  /** Initial states */
-  const initialStatus = route?.params?.status || null;
-  // Get initialStatus label from route params
-  const initialStatusLabel = route?.params?.status ?? null;
-  // Map label to value
-  const initialStatusValue = siteDetails?.ticketstatusList.find(
-    (item) => item.label.toLowerCase() === (initialStatusLabel || '').toLowerCase()
-  )?.value;
   const initialDateRange = { from: null, to: null };
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -44,10 +37,12 @@ export default function AssignedTasklistScreen() {
   const [selectedTask, setSelectedTask] = useState(null);
   const [allowCreateTask, setallowCreateTask] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
+  const [canAssign, setCanAssign] = useState(false);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   /** Fetch tasks from API */
   const fetchTasks = async (pageNo = 1, isRefresh = false, initialStatus) => {
+    // Alert.alert('',JSON.stringify(todayKey))
     if (!hasMore && !isRefresh) return;
     const lang = await getStoredLanguage();
     setLoading(pageNo === 1);
@@ -68,6 +63,7 @@ export default function AssignedTasklistScreen() {
           lang: lang,
           from: selectedDateRange.from,
           to: selectedDateRange.to,
+          todayKey: todayKey,
           ...(statusValue && { status: statusValue }), // Only send if value exists
         }
       );
@@ -75,6 +71,7 @@ export default function AssignedTasklistScreen() {
       if (response?.text === "Success") {
         let data = response?.data?.tasks || [];
         setallowCreateTask(response?.data?.allowCreateTask)
+        setCanAssign(response?.data?.canAssign)
         if (searchText) {
           data = data.filter((task) =>
             (task.title || "").toLowerCase().includes(searchText.toLowerCase())
@@ -289,8 +286,10 @@ export default function AssignedTasklistScreen() {
         )}
         {
           allowCreateTask == '1' &&
-          <Pressable style={styles.fabButton} onPress={() => navigation?.navigate('CreateTask')}>
-            <Icon name="add" size={wp(4.5)} color="#fff" />
+          <Pressable style={styles.fabButton} onPress={() => navigation?.navigate('CreateTask', {
+            canAssign: canAssign
+          })}>
+            <Icon name="add" size={wp(4.5)} color="#fff" style={{ marginRight: wp(2) }} />
             <Text style={styles.fabText}>{t('create_task')}</Text>
           </Pressable>
         }
@@ -332,11 +331,11 @@ const styles = StyleSheet.create({
   }, dateLabel: { fontSize: wp(3), color: "#555", marginBottom: hp(0.3), fontFamily: "Poppins_400Regular" },
   dateText: { fontSize: wp(3.3), color: "#333", fontFamily: "Poppins_400Regular" },
   fabButton: {
-    position: "absolute", bottom: hp(4), right: wp(5), backgroundColor: COLORS.primary, flexDirection: "row",
+    position: "absolute", bottom: hp(4), right: hp(4), backgroundColor: COLORS.primary, flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: wp(3.2), paddingVertical: hp(1.2), borderRadius: wp(10),
     shadowColor: "#000", shadowOffset: { width: 0, height: hp(0.5) },
-    shadowOpacity: 0.3, shadowRadius: wp(3), elevation: 5,
+    shadowOpacity: 0.3, shadowRadius: wp(3), elevation: 5, borderWidth: wp(0.4), borderColor: COLORS?.primary + "90"
   },
-  fabText: { color: "#fff", fontSize: wp(3.5), fontWeight: "600", marginLeft: wp(2), fontFamily: 'Poppins_600SemiBold', lineHeight: wp(4.9) },
+  fabText: { color: "#fff", fontSize: wp(3.5), fontWeight: "600", fontFamily: 'Poppins_600SemiBold', lineHeight: wp(4.9) },
 });

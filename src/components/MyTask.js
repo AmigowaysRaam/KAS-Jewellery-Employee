@@ -1,7 +1,7 @@
 import { useNavigation } from "expo-router";
 import React, { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { Animated, Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { Animated, Image, Pressable, StyleSheet, Text, ToastAndroid, View } from "react-native";
 import { COLORS } from "../../app/resources/colors";
 import { hp, wp } from "../../app/resources/dimensions";
 // Merge all info into a single object
@@ -68,12 +68,23 @@ const MyTask = ({ homepageData }) => {
     month: "short",
     year: "numeric",
   });
-  const renderTaskCard = (key, value, animValue, keyPrefix) => {
+  const renderTaskCard = (key, value, animValue, keyPrefix, todayKey) => {
     const taskInfo = TASKS_INFO[key];
     return (
       <Pressable
+        style={{ opacity: value != '0' ? 1 : 0.9 }} // Dim card if value is 0 or undefined
         key={`${keyPrefix}-${key}`}
-        onPress={() => navigation.navigate("MyTaskListScreen", { status: taskInfo.labelKey })}>
+        onPress={() => {
+          if (value != 0) {
+            navigation.navigate("MyTaskListScreen", {
+              status: taskInfo.labelKey,
+              todayKey: keyPrefix
+            })
+          }
+          else {
+            ToastAndroid.show(t(`no_task_available`), ToastAndroid.SHORT);
+          }
+        }}>
         <Animated.View
           key={`${keyPrefix}-${key}`}
           style={[
@@ -108,7 +119,7 @@ const MyTask = ({ homepageData }) => {
       backgroundColor: "#FFF0F0", width: wp(100), alignItems: "center", paddingVertical: hp(2), marginTop: hp(1)
     }}>
       <View style={styles.wrapper}>
-        <Pressable onPress={() => navigation.navigate("MyTaskListScreen", { status: null })}>
+        <Pressable onPress={() => navigation.navigate("MyTaskListScreen", { status: null, })}>
           <Text style={styles.greeting}>{t("my_task")}</Text>
           <View
             style={{

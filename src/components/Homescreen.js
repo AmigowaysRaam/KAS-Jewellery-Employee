@@ -103,8 +103,6 @@ export default function Homescreen() {
     setRefreshing(true);
     fetchHomepageData();
   };
-
-
   return (
     <View style={[styles.container, {
       // opacity: punchLoading ? 0.5 : 1,

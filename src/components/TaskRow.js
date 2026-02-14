@@ -3,7 +3,7 @@ import React, { useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Animated, Image, ImageBackground, Pressable,
-  StyleSheet, Text, View,
+  StyleSheet, Text, View
 } from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { COLORS } from "../../app/resources/colors";
@@ -21,15 +21,19 @@ const TAB_ITEMS = [
     route: "AssignTaskListScreen",
   },
 ];
-const TaskRow = () => {
+const TaskRow = ({ homepageData }) => {
   const { t } = useTranslation();
   const navigation = useNavigation();
   const leftAnim = useRef(new Animated.Value(-wp(50))).current;
   const rightAnim = useRef(new Animated.Value(wp(50))).current;
   const opacityLeft = useRef(new Animated.Value(0)).current;
   const opacityRight = useRef(new Animated.Value(0)).current;
+  // useEffect(() => {
+  //   Alert.alert("Welcome Back!", "Check out your tasks for today.", JSON.stringify(homepageData))
+  // }, [])
   useFocusEffect(
     useCallback(() => {
+
       leftAnim.setValue(-wp(50));
       rightAnim.setValue(wp(50));
       opacityLeft.setValue(0);
@@ -103,37 +107,47 @@ const TaskRow = () => {
           );
         })}
       </View>
-      <Pressable
-        style={{ alignSelf: "center", marginBottom: hp(1), width: wp(94) }}
-        onPress={() => navigation?.navigate('CreateTask')}
-      >
-        <Animated.View >
-          <View>
-            <ImageBackground
-              resizeMode="cover"
-              source={require("../../assets/cardBg.png")}
-              style={[styles.card, {
-                width: wp(94), alignItems: "center", justifyContent: "center", height: hp(7)
-              }]}
-              imageStyle={[styles.cardImage, {
-                borderRadius: wp(2)
-              }]}
+      {/* <Text>{JSON.stringify(homepageData?.canAssign, null, 2)}</Text> */}
+      {
+        homepageData?.allowCreateTask && (
+          <>
+            <Pressable
+              style={{ alignSelf: "center", marginBottom: hp(1), width: wp(94) }}
+              onPress={() => navigation?.navigate('CreateTask',{
+                canAssign: homepageData?.canAssign,
+              })}
             >
-              <Icon name="add-circle" size={wp(8)} color="#fff" style={{ marginRight: hp(2) }} />
-              <Text
-                style={[styles.greeting, {
-                  maxWidth: wp(70), fontSize: wp(4.3), lineHeight: wp(6)
-                }]}
-                numberOfLines={2}
-                ellipsizeMode="tail"
+              <Animated.View>
+                <View>
+                  <ImageBackground
+                    resizeMode="cover"
+                    source={require("../../assets/cardBg.png")}
+                    style={[styles.card, {
+                      width: wp(94), alignItems: "center", justifyContent: "center", height: hp(7)
+                    }]}
+                    imageStyle={[styles.cardImage, {
+                      borderRadius: wp(2)
+                    }]}
+                  >
+                    <Icon name="add-circle" size={wp(8)} color="#fff" style={{ marginRight: hp(2) }} />
+                    <Text
+                      style={[styles.greeting, {
+                        maxWidth: wp(70), fontSize: wp(4.3), lineHeight: wp(6)
+                      }]}
+                      numberOfLines={2}
+                      ellipsizeMode="tail"
 
-              >
-                {t("create_new_task")}
-              </Text>
-            </ImageBackground>
-          </View>
-        </Animated.View>
-      </Pressable>
+                    >
+                      {t("create_new_task")}
+                    </Text>
+                  </ImageBackground>
+                </View>
+              </Animated.View>
+            </Pressable>
+          </>
+        )
+      }
+
 
     </>
   );

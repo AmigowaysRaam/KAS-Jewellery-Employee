@@ -1,7 +1,7 @@
 import { useNavigation } from "@react-navigation/native";
 import React, { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { Animated, Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { Animated, Image, Pressable, StyleSheet, Text, ToastAndroid, View } from "react-native";
 import { COLORS } from "../../app/resources/colors";
 import { hp, wp } from "../../app/resources/dimensions";
 // Merge all info into a single object
@@ -55,7 +55,7 @@ const AssignedTask = ({ homepageData }) => {
     Animated.stagger(150, staggerAnims).start();
   };
   useEffect(() => {
-    console.log("Animating AssignedTask cards", JSON.stringify(myTaskSection));
+    // console.log("Animating AssignedTask cards", JSON.stringify(myTaskSection));
     animateCards(todayAnimations);
     animateCards(totalAnimations);
   }, [homepageData]);
@@ -70,7 +70,17 @@ const AssignedTask = ({ homepageData }) => {
     return (
       <Pressable
         key={`${keyPrefix}-${key}`}
-        onPress={() => navigation.navigate("AssignTaskListScreen", { status: taskInfo.labelKey })}>
+        onPress={() => {
+          if (value != 0) {
+            navigation.navigate("AssignTaskListScreen", {
+              status: taskInfo.labelKey,
+              todayKey: keyPrefix
+            })
+          }
+          else {
+            ToastAndroid.show(t(`no_task_available`), ToastAndroid.SHORT);
+          }
+        }}>
         <Animated.View
           key={`${keyPrefix}-${key}`}
           style={[

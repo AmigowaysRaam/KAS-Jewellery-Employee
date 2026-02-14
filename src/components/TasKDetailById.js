@@ -4,16 +4,11 @@ import * as ImagePicker from "expo-image-picker";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
-  ActivityIndicator,
-  Image,
-  Keyboard,
-  KeyboardAvoidingView,
-  Platform,
+  ActivityIndicator, Image, Keyboard, KeyboardAvoidingView, Platform,
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
-  View
+  TouchableOpacity, View
 } from "react-native";
 import { useSelector } from "react-redux";
 import { getStoredLanguage } from "../../app/i18ns";
@@ -67,13 +62,7 @@ export default function TaskMessages({ route }) {
     };
   }, []);
   const [selectedMedia, setSelectedMedia] = useState(null);
-
-  // const openImageViewer = (uri) => {
-  //   setViewerUri(uri);
-  //   setViewerVisible(true);
-  // };
   const openMediaViewer = (item) => {
-    // Alert.alert('',JSON.stringify(item))
     setSelectedMedia(item);
     setViewerVisible(true);
   };
@@ -164,18 +153,16 @@ export default function TaskMessages({ route }) {
     }
   };
   const handleAudioRecorded = (audio) => setAudioAttachment(audio);
-
   const removeAudioAttachment = () => setAudioAttachment(null);
 
   const handleSend = async () => {
-    if (!text.trim() && images.length === 0 && !audioAttachment) {
+    if (!text.trim() && images.length === 0 && !audioAttachment && !vidoe.length) {
       showToast(
         "Please write a comment, select an image, or record audio",
         "error"
       );
       return;
     }
-    // Alert.alert('', JSON.stringify(vidoe))
     if (!profileDetails?.id || !task?.id) return;
     setSending(true);
     try {
@@ -194,7 +181,7 @@ export default function TaskMessages({ route }) {
       vidoe.forEach((img, index) => {
         formData.append("video", {
           uri: img.uri,
-          name: `comment_${Date.now()}_${index}.jpg`,
+          name: `comment_${Date.now()}_${index}`,
           type: img.mimeType || "mp4",
         });
       });
@@ -228,8 +215,9 @@ export default function TaskMessages({ route }) {
         setText("");
         setImages([]);
         setAudioAttachment(null);
+        setVideo([]);
         loadCommentsD();
-        setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 200);
+        setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
       } else {
         showToast(resultJson?.message || "Failed to send comment", "error");
       }
@@ -261,8 +249,8 @@ export default function TaskMessages({ route }) {
         ticketDetails={ticketDetails}
         task={task}
         flatListRef={flatListRef}
-        openImageViewer={(viewerUri) => openMediaViewer({ uri: viewerUri, type: "image" })}
-        loadData={loadCommentsD}
+        openImageViewer={(uri) => openMediaViewer({ uri, type: "image" })}
+        openVideoViewer={(uri) => openMediaViewer({ uri, type: "video" })} loadData={loadCommentsD}
       />
       <View style={styles.inputWrapper}>
         {audioAttachment && (
@@ -307,6 +295,7 @@ export default function TaskMessages({ route }) {
           </View>
         )}
 
+
         <View style={styles.bottomRow}>
           <View style={styles.textInputContainer}>
             <TextInput
@@ -337,30 +326,36 @@ export default function TaskMessages({ route }) {
             </TouchableOpacity>
           </View>
 
-          <TouchableOpacity
-            onPress={() => {
-              setMediaType("mic");
-              setModalVisible(true);
-            }}
-            style={styles.attachButton}
-          >
-            <Ionicons name="mic" size={wp(8)} color="#000" />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={handleSend}
-            style={[styles.sendButton]}
-            disabled={sending}
-          >
-            {sending ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Ionicons name="send" size={wp(8)} color={COLORS.primary} style={{ marginRight: wp(2) }} />
-            )}
-          </TouchableOpacity>
+          {sending ? (
+            <ActivityIndicator color={COLORS?.primary} size={wp(8)} style={{ alignSelf: "center", marginHorizontal: wp(2) }} />
+          ) : text.trim() || audioAttachment || mediaList.length > 0 ? (
+            <TouchableOpacity
+              onPress={handleSend}
+              style={[styles.sendButton]}
+              disabled={sending}
+            >
+              <Ionicons
+                name="send"
+                size={wp(8)}
+                color={COLORS.primary}
+                style={{ marginRight: wp(2) }}
+              />
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity
+              onPress={() => {
+                setMediaType("mic");
+                setModalVisible(true);
+              }}
+              style={[styles.attachButton, {
+                left: hp(1),
+              }]}
+            >
+              <Ionicons name="mic" size={wp(9)} color="#000" />
+            </TouchableOpacity>
+          )}
         </View>
       </View>
-
       <AttachmentModal
         visible={modalVisible}
         onClose={() => setModalVisible(false)}
@@ -387,83 +382,49 @@ export default function TaskMessages({ route }) {
 }
 const styles = StyleSheet.create({
   inputWrapper: {
-    padding: wp(1),
-    backgroundColor: "#fff",
-    borderTopWidth: 1,
+    padding: wp(1), backgroundColor: "#fff", borderTopWidth: 1,
     borderTopColor: "#ddd",
-  },
-  playIconContainer: {
+  }, playIconContainer: {
     position: "absolute", top: hp(0.5), left: wp(3),
     borderRadius: wp(10),
     padding: wp(1),
-  },
-  playIcon: {
+  }, playIcon: {
     color: "#ccc",
     fontSize: wp(8),
   },
-
   bottomRow: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-  },
-  textInputContainer: {
-    // flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#f0f0f0",
-    borderRadius: wp(1),
-    paddingHorizontal: wp(2),
-    marginHorizontal: wp(1),
+    flexDirection: "row", alignItems: "flex-end",
+  }, textInputContainer: {
+    flexDirection: "row", alignItems: "center",
+    backgroundColor: "#f0f0f0", borderRadius: wp(1),
+    paddingHorizontal: wp(4), marginHorizontal: wp(1),
     maxHeight: hp(15),
-    width: wp(73),
-  },
-  textInput: {
+    width: wp(82),
+  }, textInput: {
     flex: 1,
-    paddingVertical: hp(1.5),
-    fontSize: 14,
+    paddingVertical: hp(1.9), fontSize: wp(3.6), fontFamily: "Poppins_400Regular", lineHeight: wp(5.5),
     color: "#000",
-  },
-
-  inlineIcon: {
-    marginLeft: wp(2),
-  },
-  attachButton: {
+  }, inlineIcon: {
+    marginLeft: wp(4),
+  }, attachButton: {
     justifyContent: "center",
-    alignItems: "center",
-    position: "relative",
-    bottom: hp(0.5),
-    marginHorizontal: wp(0.5),
-  },
-  sendButton: {
-    paddingHorizontal: wp(3),
-    paddingVertical: hp(0.5),
-    borderRadius: wp(20),
-    justifyContent: "center",
-    alignItems: "center",
+    alignItems: "center", position: "relative",
+    bottom: hp(0.5), marginHorizontal: wp(1),
+  }, sendButton: {
+    paddingHorizontal: wp(3), paddingVertical: hp(0.5), borderRadius: wp(20),
+    justifyContent: "center", alignItems: "center",
   },
   selectedImagesContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    marginVertical: hp(1),
-  },
-  selectedImageWrapper: {
-    marginRight: wp(2),
-    marginBottom: hp(1),
+    flexDirection: "row", flexWrap: "wrap", marginVertical: hp(1),
+  }, selectedImageWrapper: {
+    marginRight: wp(2), marginBottom: hp(1),
     position: "relative",
-  },
-  selectedImage: { width: wp(16), height: wp(16), borderRadius: wp(2) },
+  }, selectedImage: { width: wp(16), height: wp(16), borderRadius: wp(2) },
   removeImageButton: {
-    position: "absolute",
-    top: -wp(2),
-    right: -wp(2),
-    backgroundColor: "#fff",
-    borderRadius: wp(3),
-    padding: 0,
-  },
-  removeImageText: { fontSize: wp(6), color: "red" },
-  audioPreviewContainer: {
+    position: "absolute", top: -wp(2), right: -wp(2),
+    backgroundColor: "#fff", borderRadius: wp(3), padding: 0,
+  }, removeImageText: { fontSize: wp(6), color: "red" }, audioPreviewContainer: {
     flexDirection: "row",
-    alignItems: "center",
-    marginVertical: hp(1),
+    alignItems: "center", marginVertical: hp(1),
   },
 });

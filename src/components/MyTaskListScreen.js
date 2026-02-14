@@ -24,6 +24,7 @@ export default function MyTaskListScreen({ route }) {
   const siteDetails = useSelector((state) => state.auth?.siteDetails?.data[0]);
   const profileDetails = useSelector((state) => state?.auth?.profileDetails?.data);
   const { showToast } = useToast();
+  const { todayKey } = route?.params || {};
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -40,9 +41,11 @@ export default function MyTaskListScreen({ route }) {
     )?.value;
   };
   const fetchTasks = async (pageNo = 1, isRefresh = false, status = selectedStatus) => {
+    // Alert.alert("Debug Info", todayKey);
     if (!hasMore && !isRefresh) return;
     const lang = await getStoredLanguage();
     setLoading(pageNo === 1);
+    // todayKey == 'today' ? new Date() : null
     try {
       const statusValue = status ? getStatusValue(status) : null;
       const response = await fetchData("app-employee-list-my-tasks", "POST", {
@@ -52,16 +55,18 @@ export default function MyTaskListScreen({ route }) {
         lang: lang,
         from: selectedDateRange.from,
         to: selectedDateRange.to,
+        search: searchText || null,
         ...(statusValue && { status: statusValue }),
+        todayKey: todayKey || null,
       });
       if (response?.text === "Success") {
         let data = response?.data?.tasks || [];
         // Apply search filter
-        if (searchText) {
-          data = data.filter((task) =>
-            (task.title || "").toLowerCase().includes(searchText.toLowerCase())
-          );
-        }
+        // if (searchText) {
+        //   data = data.filter((task) =>
+        //     (task.title || "").toLowerCase().includes(searchText.toLowerCase())
+        //   );
+        // }
         // Apply status filter only if status exists
         if (status) {
           data = data.filter(
@@ -175,6 +180,9 @@ export default function MyTaskListScreen({ route }) {
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : "height"}>
       <View style={styles.container}>
         <CommonHeader title={t('my_task')} showBackButton={route?.params ? true : false} onBackPress={() => navigation?.goBack()} />
+        {/* <Text style={{ color: COLORS.primary, fontFamily: "Poppins_400Regular", fontSize: wp(3.5), marginHorizontal: wp(4), marginTop: hp(1) }}>
+          {JSON.stringify(route?.params)}
+        </Text> */}
         <SearchContainer
           value={searchText}
           onChangeText={setSearchText}

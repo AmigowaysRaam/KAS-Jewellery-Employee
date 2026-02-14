@@ -27,10 +27,11 @@ import CustomSingleDatePickerModal from "./SingleDateSelect";
 import SpeechToTextModal from "./SpeechToTextMOdal";
 import TeamMembersView from "./TeamMemView";
 import UserCustomDropdown from "./UserSelect";
-export default function CreateTask() {
+export default function CreateTask({ route }) {
   const navigation = useNavigation();
   const scrollRef = useRef(null);
   const { showToast } = useToast();
+  const { canAssign } = route?.params || {};
   // -------- TEXT STATES --------
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -55,7 +56,6 @@ export default function CreateTask() {
   const profileDetails = useSelector(
     (state) => state?.auth?.profileDetails?.data
   );
-
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
   const [dropDownData, setdropDownData] = useState({ teams: [], users: [] });
   const [mediaModal, setmediaModal] = useState(false);
@@ -77,11 +77,9 @@ export default function CreateTask() {
   const [mediaTypes, setmediaTypes] = useState('video');
   const [images, setImages] = useState([]);
   const [video, setvideo] = useState(null);
-
   useEffect(() => {
     Audio.requestPermissionsAsync();
   }, []);
-
   useEffect(() => {
     fetchDropDownData();
   }, [selectedTeam, assignType, assignedBy, priority]);
@@ -127,13 +125,23 @@ export default function CreateTask() {
           user_id: profileDetails.id,
           lang: lang ?? "en",
           team_id: selectedTeam ? selectedTeam?.value : null,
-          assignType: assignType,
+          assignType: assignType == 'group' ? 'team' : assignType == 'department' ? 'department' : 'individual',
           assignedBy: assignedBy ? assignedBy?.value : null,
           priority: priority ? priority?.value : null
         }
       );
+      // Alert.alert("API Response", JSON.stringify(  {
+      //   user_id: profileDetails.id,
+      //   lang: lang ?? "en",
+      //   team_id: selectedTeam ? selectedTeam?.value : null,
+      //   assignType: assignType == 'group' ? 'team' : assignType == 'department' ? 'department' : 'individual',
+      //   assignedBy: assignedBy ? assignedBy?.value : null,
+      //   priority: priority ? priority?.value : null
+      // }, null, 2));
+
       if (response?.data) {
         setdropDownData(response.data);
+        // Alert.alert("Dropdown Data", JSON.stringify(response.data,null,2));
         setDueDate(response.data?.max_date ? dayjs(response.data.max_date).toDate() : null)
       }
     } catch (error) {
@@ -341,7 +349,7 @@ export default function CreateTask() {
     if (!title.trim()) newErrors.title = t('title_Required');
     if (!description.trim()) newErrors.description = t('desc_Required');
     if (!priority?.value.trim()) newErrors.priority = t('priority_required');
-    if (!assignedBy && dropDownData?.canAssign) newErrors.assignedBy = t('pls_Selct_user');
+    if (!assignedBy && canAssign) newErrors.assignedBy = t('pls_Selct_user');
     if (
       // assignType === "group" && 
       !selectedTeam)
@@ -378,7 +386,7 @@ export default function CreateTask() {
     try {
       const formData = new FormData();
       formData.append("user_id", profileDetails.id.toString());
-      formData.append("assign_to_type", assignType);
+      formData.append("assign_to_type", assignType == "group" ? "teem" : assignType == "department" ? "department" : "individual");
       formData.append("assign_to", selectedTeam?.value?.toString() || "");
       formData.append("title", title);
       formData.append("description", description);
@@ -608,17 +616,6 @@ export default function CreateTask() {
                           color={COLORS.red}
                         />
                       </TouchableOpacity>
-                      {/* <TouchableOpacity
-                        onPress={() => saveLocalAudioToDownloads(descAudio?.uri, descAudio?.name || "audio.mp3")}
-                        style={{ marginLeft: wp(2) }}
-                      >
-                        {isDownloading ? (
-                          <ActivityIndicator color={COLORS.primary} />
-                        ) : (
-                          <Icon name="download" size={wp(6)} color={COLORS.primary} />
-                        )}
-                      </TouchableOpacity> */}
-
                     </View>
                   </View>
                 ) : (
@@ -626,7 +623,6 @@ export default function CreateTask() {
                 )}
               <TouchableOpacity
                 style={styles.micIconContainer} // Absolute inside TextInput
-                // onPress={() => startRecording("desc")}
                 onPress={() => {
                   setspeechTextModal(true),
                     setSpeechFlag('description')
@@ -746,7 +742,7 @@ export default function CreateTask() {
               </View>
             </Modal>
             {
-              dropDownData?.canAssign &&
+              canAssign &&
               <CustomDropdown
                 title={`${t('assignBy')} *`}
                 data={dropDownData?.users}
@@ -761,7 +757,7 @@ export default function CreateTask() {
             <View style={styles.radioContainer}>
               <Pressable
                 style={styles.radioButton}
-                onPress={() => setAssignType("individual")}
+                onPress={() => {setAssignType("individual"),setSelectedTeam(null)}}
               >
                 <Icon
                   name={assignType === "individual" ? "check-circle" : "circle"}
@@ -774,7 +770,7 @@ export default function CreateTask() {
               </Pressable>
               <Pressable
                 style={styles.radioButton}
-                onPress={() => setAssignType("group")}
+                onPress={() => {setAssignType("group"),setSelectedTeam(null)}}
               >
                 <Icon
                   name={assignType === "group" ? "check-circle" : "circle"}
@@ -783,7 +779,20 @@ export default function CreateTask() {
                   color={COLORS.primary}
                   style={{ marginRight: hp(1) }}
                 />
-                <Text style={styles.radioLabel}>{`${t('group')}`}</Text>
+                <Text style={styles.radioLabel}>{`${t('Team')}`}</Text>
+              </Pressable>
+              <Pressable
+                style={styles.radioButton}
+                onPress={() => {setAssignType("department"), setSelectedTeam(null)}}
+              >
+                <Icon
+                  name={assignType === "department" ? "check-circle" : "circle"}
+                  type="feather"
+                  size={wp(5.5)}
+                  color={COLORS.primary}
+                  style={{ marginRight: hp(1) }}
+                />
+                <Text style={styles.radioLabel}>{`${t('department')}`}</Text>
               </Pressable>
             </View>
             {
@@ -791,18 +800,37 @@ export default function CreateTask() {
                 <UserCustomDropdown
                   loading={loading}
                   assignType={assignType}
-                  title={`${t(assignType == 'group' ? 'select_team' : "select_user")} *`}
-                  data={assignType == 'group' ? dropDownData?.teams : dropDownData?.individual_users}
-                  placeholder={`${t(assignType == 'group' ? 'select_team' : "select_user")}`}
-                  // onSelect={(item) => setSelectedTeam(item)}
+                  title={`${t(
+                    assignType === 'department' ? 'assign_department' :
+                      assignType === 'group' ? 'select_team' :
+                        'select_user'
+                  )} *`}
+                  data={
+                    assignType === 'department' ? dropDownData?.departments :
+                      assignType === 'group' ? dropDownData?.teams :
+                        dropDownData?.individual_users
+                  }
+                  placeholder={`${t(
+                    assignType === 'department' ? 'assign_department' :
+                      assignType === 'group' ? 'select_team' :
+                        'select_user'
+                  )}`}
                   selected={selectedTeam?.value} // pass selected item
                   onSelect={(item) => setSelectedTeam(item)} // update selected item
                 />
-              )}
-            {
-              errors.selectedTeam && <Text style={styles.errorText}>{`${t(assignType == 'group' ? 'select_team' : "select_user")}`}</Text>
+              )
             }
-            {assignType === "group" && selectedTeam?.value &&
+            {errors.selectedTeam && (
+              <Text style={styles.errorText}>
+                {t(
+                  assignType === 'department' ? 'assign_department' :
+                    assignType === 'group' ? 'select_team' :
+                      'select_user'
+                )}
+              </Text>
+            )}
+            {
+            assignType === "group" || assignType === "department" && selectedTeam?.value &&
               <View>
                 <TeamMembersView teamMembers={dropDownData} />
               </View>}

@@ -1,16 +1,16 @@
-import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
-import { Audio, Video } from "expo-av";
+import { Audio } from "expo-av";
 import * as FileSystem from 'expo-file-system/legacy';
 import * as ImagePicker from "expo-image-picker";
 import React, { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
-  Animated, Easing, FlatList, Image,
+  Animated, Easing, FlatList,
   Keyboard, KeyboardAvoidingView, Modal, Platform, Pressable,
-  StyleSheet, Text, TextInput, TouchableOpacity,
+  StyleSheet, Text,
+  TouchableOpacity,
   View
 } from "react-native";
 import { Icon } from "react-native-elements";
@@ -23,8 +23,11 @@ import { BASE_URL, fetchData } from "./api/Api";
 import AttachmentModal from "./AttacthcModal";
 import CommonHeader from "./CommonHeader";
 import CustomDropdown from "./CustomDropDown";
+import DescriptionFormSection from "./DescriptionFormSection";
+import ImagesFormSection from "./ImagesFormSection";
 import ImageViewerModal from "./ImageViewver";
 import SpeechToTextModal from "./SpeechToTextMOdal";
+import VideoFormSection from "./VideoForm";
 
 export default function UpdateTask({ route }) {
   const navigation = useNavigation();
@@ -57,7 +60,6 @@ export default function UpdateTask({ route }) {
         directoryUri = permission.directoryUri;
         await AsyncStorage.setItem('DOWNLOADS_URI', directoryUri);
       }
-
       // Step 3: Create SAF file
       const fileUri = await FileSystem.StorageAccessFramework.createFileAsync(
         directoryUri,
@@ -86,7 +88,6 @@ export default function UpdateTask({ route }) {
   };
 
   useEffect(() => {
-
     let timer;
     if (isRecording) {
       timer = setInterval(() => setRecordTime((t) => t + 1), 1000);
@@ -99,6 +100,7 @@ export default function UpdateTask({ route }) {
   const [ticketDetails, setTicketDetails] = useState(null);
   const [loading, setLoading] = useState(false);
   const [description, setDescription] = useState("");
+
   const [selectedStatus, setSelectedStatus] = useState(null);
   const [selectedPriority, setSelectedPriority] = useState(null);
   const [newErrors, setNewErrors] = useState({});
@@ -107,7 +109,6 @@ export default function UpdateTask({ route }) {
   const [images, setImages] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
   // 🎙 AUDIO STATE
-
   const [descAudio, setDescAudio] = useState(null);
   const [recording, setRecording] = useState(null);
   const [isRecording, setIsRecording] = useState(false);
@@ -116,10 +117,7 @@ export default function UpdateTask({ route }) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [speechTextModal, setspeechTextModal] = useState(false);
   const [speechFlag, setSpeechFlag] = useState('');
-
-
   // ---------------- AUDIO ----------------
-
   const startRecording = async () => {
     try {
       await Audio.requestPermissionsAsync();
@@ -161,7 +159,6 @@ export default function UpdateTask({ route }) {
     // Get actual duration
     const status = await recording.getStatusAsync();
     const durationSeconds = Math.floor(status.durationMillis / 1000);
-
     // Store audio info including duration
     setDescAudio({
       uri,
@@ -185,25 +182,40 @@ export default function UpdateTask({ route }) {
       if (s.didJustFinish) setIsPlaying(false);
     });
   };
-
   const stopAudio = async () => {
     if (playbackSound) {
       await playbackSound.stopAsync();
       setIsPlaying(false);
     }
   };
-
   const deleteAudio = async () => {
     if (playbackSound) await playbackSound.unloadAsync();
-    setDescAudio(null);
-    setIsPlaying(false);
+    setLoading(true);
+    // Alert.alert("jk");
+    try {
+      const response = await fetchData("app-employee-remove-task-media", "POST", {
+        id,
+        user_id: profileDetails?.id,
+        "delete_audio": "1",
+      });
+      if (response) {
+        showToast(response?.message, "success");
+        setDescAudio(null);
+        setIsPlaying(false);
+        setLoading(false);
+      }
+    }
+    catch (err) {
+      console.log(err);
+      setLoading(false);
+      showToast(t("failed_to_delete_video"), "error");
+    }
   };
   const intervalRef = useRef(null);
 
   const profileDetails = useSelector((state) => state?.auth?.profileDetails?.data);
   const siteDetails = useSelector((state) => state.auth?.siteDetails?.data?.[0]);
   const { showToast } = useToast();
-
   const flatListRef = useRef(null);
   const descriptionInputRef = useRef(null);
 
@@ -243,14 +255,11 @@ export default function UpdateTask({ route }) {
   };
   const [viewerVisible, setViewerVisible] = useState(false);
   const [viewerUri, setViewerUri] = useState(null);
-
   const [fileModal, setfileModal] = useState(false);
-
   const openImageViewer = (uri) => {
     setViewerUri(uri);
     setViewerVisible(true);
   };
-
   // Keyboard listeners
   useEffect(() => {
     const showSub = Keyboard.addListener("keyboardDidShow", () => setIsKeyboardOpen(true));
@@ -260,57 +269,122 @@ export default function UpdateTask({ route }) {
       hideSub.remove();
     };
   }, []);
-
   // Load ticket details
-  useEffect(() => {
-    const loadTicket = async () => {
-      setLoading(true);
+  const loadTicket = async () => {
+    setLoading(true);
+    const lang = await getStoredLanguage();
+    setcurrentLanguage(lang)
+    try {
       const lang = await getStoredLanguage();
-      setcurrentLanguage(lang)
-      try {
-        const lang = await getStoredLanguage();
-        const response = await fetchData("app-employee-task-detail", "POST", {
-          id,
-          lang,
-          user_id: profileDetails?.id,
-        });
-        const ticket = response?.data?.ticket_detail;
-        setTicketDetails(ticket);
-        const plainText = ticket?.description?.replace(/<[^>]+>/g, "") || "";
-        setDescription(plainText);
-        setSelectedStatus(ticket?.statusv);
-        setSelectedPriority(ticket?.priorityv);
-        // Alert.alert(ticket?.priorityv)
-        setDescAudio({ uri: ticket?.audio });
-        setImages(
-          ticket?.image?.map((uri) => ({ uri, source: "API" })) || []
-        );
-      } catch (err) {
-        console.log(err);
-        showToast(t("failed_to_load_task_details"), "error");
-      } finally {
-        setLoading(false);
+      const response = await fetchData("app-employee-task-detail", "POST", {
+        id,
+        lang,
+        user_id: profileDetails?.id,
+      });
+      const ticket = response?.data?.ticket_detail;
+      setTicketDetails(ticket);
+      const plainText = ticket?.description?.replace(/<[^>]+>/g, "") || "";
+      setDescription(plainText);
+      setSelectedStatus(ticket?.statusv);
+      setSelectedPriority(ticket?.priorityv);
+      if (ticket?.audio) {
+        setDescAudio({ uri: ticket?.audio, source: "API", name: ticket?.audio_name || "description_audio.mp3" });
       }
-    };
+      // setvideo({ uri: ticket?.video });
+      // VIDEO
+      if (ticket?.video) {
+        setvideo([
+          {
+            uri: ticket.video,       // string from API
+            source: "API",           // mark as already on server
+            fileName: ticket.video_name || ticket.video.split("/").pop(),
+            mimeType: "video/mp4",   // assuming backend only returns mp4
+          }
+        ]);
+      }
+      const formattedImages = ticket?.image.map((img) => ({
+        id: img.id,
+        uri: img.image,
+        source: "API", // optional to distinguish API vs newly uploaded
+      }));
+      setImages(formattedImages);
+    } catch (err) {
+      console.log(err);
+      showToast(t("failed_to_load_task_details"), "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+  useEffect(() => {
     if (id) loadTicket();
   }, [id]);
-  // Validation
-  const deleteImage = (index) => {
-    setImages((prev) => prev.filter((_, i) => i !== index));
+
+  const deleteImage = async (selectedItem) => {
+    if (!selectedItem) return;
+    const { id, source, index } = selectedItem;
+    setLoading(true);
+    // If image is local (not from API), just remove from state
+    if (source !== "API") {
+      setImages((prev) => prev.filter((_, i) => i !== index));
+      setLoading(false);
+      return;
+    }
+    try {
+      const response = await fetchData("app-employee-remove-task-media", "POST", {
+        id, // image id from API
+        user_id: profileDetails?.id,
+        delete_image: "1",
+        image_id: id,
+      });
+      // Alert.alert("Delete Response", JSON.stringify(response));
+      if (response?.success) {
+        // Remove from state
+        setImages((prev) => prev.filter((img) => img.id !== id));
+        showToast(t("image_deleted_success"), "success");
+        loadTicket(); // Refresh ticket data from server
+      } else {
+        showToast(t("failed_to_delete_image"), "error");
+      }
+    } catch (err) {
+      console.log(err);
+      showToast(t("failed_to_delete_image"), "error");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const validate = () => {
     const errors = {};
     // if (!ticketDetails?.title?.trim()) errors.title = t("title_Required");
-    if (!description.trim()) errors.description = t("desc_Required");
+    if (!description.trim()) {
+      errors.description = t("desc_Required")
+      if (descriptionInputRef.current) {
+        descriptionInputRef.current.focus();
+      }
+      if (flatListRef.current) {
+        // Assuming the description input is at index N (e.g., index 2)
+        const indexOfDescription = 2; // change this according to your list
+        flatListRef.current.scrollToIndex({
+          index: indexOfDescription,
+          viewPosition: 0.1, // 0.5 means middle of the view
+          animated: true,
+        });
+      }
+    };
     if (!selectedStatus) errors.status = t("pls_selct_status");
     if (!selectedPriority) errors.priority = t("pls_selct_priotty");
     setErrors(errors);
     setNewErrors(errors)
+
     return Object.keys(errors).length === 0;
   };
   // Update task
   const handleUpdateTask = async () => {
+    // if (video[0]) {
+    //   Alert.alert('', JSON.stringify(video[0]))
+    //   return
+    // }
+
     if (!validate()) {
       showToast(t("failed_to_update_task"), "error");
       return
@@ -323,20 +397,40 @@ export default function UpdateTask({ route }) {
       formData.append("status", selectedStatus);
       formData.append("priority", selectedPriority);
       formData.append("user_id", profileDetails?.id);
-      images.forEach((img, index) => {
-        const uriParts = img.uri.split(".");
-        const fileType = uriParts[uriParts.length - 1];
-        formData.append("image[]", {
-          uri: img.uri,
-          name: `photo_${index}.${fileType}`,
-          type: `image/${fileType}`,
+      // IMAGES
+      images
+        .filter(img => img.source !== "API")
+        .forEach((img, index) => {
+          const uriParts = img.uri.split(".");
+          const fileType = uriParts[uriParts.length - 1];
+          formData.append("image[]", {
+            uri: Platform.OS === "android"
+              ? img.uri
+              : img.uri.replace("file://", ""),
+            name: `photo_${index}.${fileType}`,
+            type: `image/${fileType === "jpg" ? "jpeg" : fileType}`,
+          });
         });
-      });
-      if (descAudio) {
+      // VIDEO
+      const sourceTYpe = video[0].source;
+      if (video && video.length > 0 && sourceTYpe !== "API") {
+        const videoFile = video[0];
+        formData.append("video", {
+          uri: Platform.OS === "android"
+            ? videoFile.uri
+            : videoFile.uri.replace("file://", ""),
+          name: videoFile.fileName || "updatetask_video.mp4",
+          type: videoFile.mimeType || "video/mp4", // ✅ IMPORTANT FIX
+        });
+      }
+      // AUDIO
+      if (descAudio?.uri && !descAudio.uri.startsWith("http")) {
         formData.append("audio", {
-          uri: descAudio.uri,
-          type: descAudio.type || "audio/mpeg",
-          name: `${descAudio.name}.mp3` || "DummyAudio.mp3",
+          uri: Platform.OS === "android"
+            ? descAudio.uri
+            : descAudio.uri.replace("file://", ""),
+          type: "audio/mpeg",
+          name: `${descAudio.name || "audio"}.mp3`,
         });
       }
       const response = await fetch(`${BASE_URL}app-employee-update-task`, {
@@ -364,12 +458,10 @@ export default function UpdateTask({ route }) {
   const pickCamera = async () => {
     setModalVisible(false);
     setfileModal(false);
-
     const result = await ImagePicker.launchCameraAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.All,
       quality: 0.7,
     });
-
     if (!result.canceled && result.assets?.length > 0) {
       const file = result.assets[0];
 
@@ -385,7 +477,6 @@ export default function UpdateTask({ route }) {
   const pickFile = async () => {
     setModalVisible(false);
     setfileModal(false);
-
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.All,
       quality: 0.7,
@@ -411,7 +502,6 @@ export default function UpdateTask({ route }) {
     }
     return true;
   };
-
   const requestGalleryPermission = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== "granted") {
@@ -466,6 +556,30 @@ export default function UpdateTask({ route }) {
   const [isDownloading, setIsDownloading] = useState(false);
   const listData = ["title", "status", "priority", "description", "images", "video", "button"];
 
+  const handleRemoveVideo = async () => {
+    setLoading(true);
+    // Alert.alert("jk");
+    try {
+      const response = await fetchData("app-employee-remove-task-media", "POST", {
+        id,
+        user_id: profileDetails?.id,
+        "delete_video": "1",
+      });
+      // Alert.alert("Success", JSON.stringify(response));
+      if (response) {
+        // Alert.alert("Success", JSON.stringify(response));
+        setVideos([]); // Clear video from UI
+        setvideo(null);
+        setLoading(false);
+      }
+    }
+    catch (err) {
+      console.log(err);
+      setLoading(false);
+      showToast(t("failed_to_delete_video"), "error");
+    }
+  }
+
   const renderItem = ({ item }) => {
     switch (item) {
       case "title":
@@ -478,126 +592,19 @@ export default function UpdateTask({ route }) {
         );
       case "video":
         return (
-          <View style={styles.fieldContainer}>
-            <Text style={styles.label}>{t("video")}</Text>
-
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: wp(2) }}>
-              {video && (
-                <View
-                  style={{
-                    width: "100%",
-                    height: wp(35), // same height as button
-                    position: "relative",
-                    marginBottom: wp(2),
-                    borderWidth: wp(0.4), borderColor: COLORS?.gray, borderRadius: wp(2)
-                  }}
-                >
-                  <Video
-                    source={{ uri: video[0].uri }}
-                    style={{ width: "95%", height: "90%", borderRadius: wp(2), alignSelf: 'center', marginTop: hp(1) }}
-                    resizeMode="cover"
-                    useNativeControls
-                    usePoster={true}
-                    isLooping={true}
-                  />
-                  {/* Remove button */}
-                  <Pressable
-                    onPress={() => setvideo(null)}
-                    style={{
-                      position: "absolute",
-                      top: 0,
-                      right: 0,
-                      backgroundColor: "rgba(0,0,0,0.6)",
-                      borderRadius: 16,
-                      padding: 4,
-                      zIndex: 10,
-                    }}
-                  >
-                    <Icon name="trash" type="feather" size={wp(5)} color="#ff0000" />
-                  </Pressable>
-                  {/* <Text>{JSON.stringify(video)}</Text> */}
-                </View>
-              )}
-              {/* Show Selected Video */}
-              {videos.length > 0 && (
-                <View
-                  style={{
-                    position: "relative",
-                    width: wp(26),
-                    height: hp(14),
-                    marginRight: wp(2),
-                    marginBottom: hp(1),
-                  }}
-                >
-                  <TouchableOpacity
-                    onPress={() => {
-                      setViewerUri(videos[0].uri);
-                      setViewerVisible(true);
-                    }}
-                    style={{ flex: 1 }}
-                  >
-                    <Video
-                      source={{ uri: videos[0].uri }}
-                      style={{ width: "100%", height: "100%", borderRadius: wp(2) }}
-                      resizeMode="cover"
-                      usePoster
-                    />
-                    {/* Play Icon */}
-                    <View
-                      style={{
-                        position: "absolute",
-                        top: "35%",
-                        left: "35%",
-                      }}
-                    >
-                      <Ionicons name="play-circle" size={wp(9)} color="#fff" />
-                    </View>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    onPress={() => setVideos([])}
-                    style={{
-                      position: "absolute",
-                      top: 5,
-                      right: 5,
-                      backgroundColor: "#ddd",
-                      borderRadius: wp(5),
-                      padding: wp(1.5),
-                    }}
-                  >
-                    <Ionicons name="trash" size={wp(6)} color="#ff0000" />
-                  </TouchableOpacity>
-                </View>
-              )}
-
-              {/* Add Video Button (Only if no video selected) */}
-              {videos.length === 0 && (
-                <TouchableOpacity
-                  onPress={() => {
-                    setmediaTypes("video");
-                    setfileModal(true);
-                  }}
-                  style={{
-                    width: "100%",
-                    height: hp(14),
-                    backgroundColor: "#eee",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    borderRadius: wp(2),
-                    marginRight: wp(2),
-                    marginBottom: hp(1),
-                    borderStyle: "dashed", borderWidth: wp(0.3), borderColor: "#ccc",
-                  }}
-                >
-                  <Ionicons name="videocam" size={wp(9)} color={COLORS.primary} />
-                  <Text style={{ marginTop: 5, color: COLORS.primary }}>
-                    {t("add_video")}
-                  </Text>
-                </TouchableOpacity>
-              )}
-            </View>
-          </View>
-        );
-
+          <VideoFormSection
+            handleDeleteVideo={handleRemoveVideo}
+            taskDetails={ticketDetails}
+            t={t}
+            video={video}
+            videos={videos}
+            setvideo={setvideo}
+            setVideos={setVideos}
+            setmediaTypes={setmediaTypes}
+            setfileModal={setfileModal}
+            styles={styles}
+          />
+        )
       case "status":
         return (
           <>
@@ -627,201 +634,38 @@ export default function UpdateTask({ route }) {
         );
       case "description":
         return (
-          <View style={styles.field}>
-            <Text style={styles.label}>{t("description")}</Text>
-            <View style={styles.inputWrap}>
-              <TextInput
-                value={description}
-                onChangeText={setDescription}
-                multiline
-                style={styles.textInput}
-                placeholder={t("description")}
-              />
-              {errors.description && <Text style={styles.error}>{errors.description}</Text>}
-              {
-                (
-                  <TouchableOpacity style={styles.mic}
-                    // onPress={startRecording}
-                    onPress={() => {
-                      setspeechTextModal(true),
-                        setSpeechFlag('description')
-                    }}
-                  >
-                    <Icon name="mic" type="feather" size={wp(5)} color={COLORS.gray} />
-                  </TouchableOpacity>
-                )}
-            </View>
-            {/*  */}
-            {/* <Text style={{}}>
-                        {JSON.stringify(descAudio)}
-                      </Text> */}
-            <View style={{ width: wp(90), marginVertical: hp(1.5) }}>
-              {descAudio ? (
-                <View
-                  style={[
-                    styles.audioRow,
-                    {
-                      borderWidth: wp(0.3),
-                      borderColor: "#ccc",
-                      borderRadius: wp(2),
-                      paddingVertical: wp(0.5),
-                      height: hp(6),
-                      alignItems: "center",
-                    },
-                  ]}
-                >
-                  {/* 🎵 File name + animation */}
-                  <View style={styles.audioInfo}>
-                    <PlayingAnimation isPlaying={isPlaying} />
-                    <Text numberOfLines={1} style={styles.audioName}>
-                      {descAudio.name || "DescriptionAudio.mp3"}
-                    </Text>
-                    {descAudio.duration && (
-                      <Text style={styles.audioName}>{`(${descAudio.duration}s)`}</Text>
-                    )}
-                  </View>
-                  {/* ▶️ Play / Pause */}
-                  <TouchableOpacity onPress={isPlaying ? stopAudio : playAudio}>
-                    <Icon
-                      name={isPlaying ? "pause" : "play-arrow"}
-                      size={wp(7)}
-                      color={COLORS.primary}
-                    />
-                  </TouchableOpacity>
-                  <TouchableOpacity onPress={deleteAudio}>
-                    <Icon name="x-circle" type="feather" size={wp(7)} color={COLORS.primary} />
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                  disabled={isDownloading}
-                    onPress={() => saveAudioToDownloads(descAudio?.uri, "Dscaudio.mp3")}
-                  >
-                    {
-                      isDownloading ? <ActivityIndicator size={wp(6)} color={COLORS.primary} />
-                        :
-                        <Icon name="download" type="feather" size={wp(7)} color={COLORS.primary} />
-                    }
-                  </TouchableOpacity>
-
-                </View>
-              ) : (
-                <TouchableOpacity
-                  style={[
-                    {
-                      justifyContent: "flex-start", // Align content to start
-                      borderWidth: wp(0.3),
-                      borderColor: "#ccc",
-                      borderRadius: wp(2),
-                      paddingVertical: wp(0.5),
-                      paddingHorizontal: wp(2), // Add some left padding
-                      height: hp(6),
-                      alignItems: "center",
-                      flexDirection: "row",
-                      width: "100%",
-                    },
-                  ]}
-                  onPress={startRecording} // function to start recording
-                >
-                  <Icon
-                    name={"mic"}
-                    size={wp(6)}
-                    color={COLORS.gray}
-                  />
-                  <Text
-                    numberOfLines={1}
-                    style={{
-                      fontFamily: "Poppins_400Regular",
-                      color: COLORS?.gray,
-                      fontSize: wp(3.5),
-                      marginLeft: wp(2), // Space between icon and text
-                    }}
-                    ellipsizeMode="tail"
-                  >
-                    {t("add_description_audio")}
-                  </Text>
-                </TouchableOpacity>
-
-              )}
-            </View>
-
-
-          </View>
+          <DescriptionFormSection
+            descriptionInputRef={descriptionInputRef}
+            t={t}
+            description={description}
+            setDescription={setDescription}
+            errors={errors}
+            styles={styles}
+            setspeechTextModal={setspeechTextModal}
+            setSpeechFlag={setSpeechFlag}
+            descAudio={descAudio}
+            isPlaying={isPlaying}
+            stopAudio={stopAudio}
+            playAudio={playAudio}
+            deleteAudio={deleteAudio}
+            isDownloading={isDownloading}
+            saveAudioToDownloads={saveAudioToDownloads}
+            startRecording={startRecording}
+            PlayingAnimation={PlayingAnimation}
+          />
         );
-
-
       case "images":
         return (
-          <View style={styles.fieldContainer}>
-            <Text style={styles.label}>{t("images")}</Text>
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: wp(2) }}>
-              {/* Render existing images */}
-              {images?.map((img, idx) => (
-                <Pressable
-                  onPress={() => openImageViewer(img?.uri)}
-                  key={idx}
-                  style={{
-                    position: "relative",
-                    width: wp(26),
-                    height: hp(14),
-                    marginRight: wp(2),
-                    marginBottom: hp(1),
-                  }}
-                >
-                  <Image
-                    source={{ uri: img.uri }}
-                    style={{ width: "100%", height: "100%", borderRadius: wp(2) }}
-                    resizeMode="cover"
-                  />
-
-                  <View
-                    style={{
-                      position: "absolute",
-                      top: 5,
-                      right: 5,
-                      flexDirection: "row",
-                      gap: wp(1),
-                      zIndex: 10,
-                    }}
-                  >
-                    <TouchableOpacity
-                      onPress={() => deleteImage(idx)}
-                      style={{
-                        backgroundColor: "#ddd",
-                        borderRadius: wp(5),
-                        padding: wp(1.5),
-                      }}
-                    >
-                      <Ionicons name="trash" size={wp(6)} color="#ff0000" />
-                    </TouchableOpacity>
-                  </View>
-                </Pressable>
-              ))}
-
-              {/* Show Add Image button only if images < 3 */}
-              {images.length < 3 && (
-                <TouchableOpacity
-                  onPress={() => {
-                    setfileModal(true),
-                      setmediaTypes("images");
-                  }}
-                  style={{
-                    width: wp(26),
-                    height: hp(14),
-                    backgroundColor: "#eee",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    borderRadius: wp(2),
-                    marginRight: wp(2),
-                    marginBottom: hp(1),
-                  }}
-                >
-                  <Ionicons name="add" size={wp(10)} color={COLORS.primary} />
-                  <Text style={{ marginTop: 5, color: COLORS.primary }}>{t("add_image")}</Text>
-                </TouchableOpacity>
-              )}
-            </View>
-          </View>
+          <ImagesFormSection
+            t={t}
+            images={images}
+            openImageViewer={openImageViewer}
+            deleteImage={deleteImage}
+            setfileModal={setfileModal}
+            setmediaTypes={setmediaTypes}
+            styles={styles}
+          />
         );
-
       case "button":
         return (
           <TouchableOpacity style={styles.updateButton} onPress={handleUpdateTask} disabled={loading}>
@@ -936,14 +780,6 @@ export default function UpdateTask({ route }) {
             : setDescription((prev) => prev + value)
         }
       />
-      {/* <AttachmentModal
-        visible={fileModal}
-        onClose={() => setfileModal(false)}
-        onCamera={pickCamera}
-        onFile={pickFile}
-        // onAudioRecorded={handleAudioRecorded}
-        hideMic={true}
-      /> */}
       <AttachmentModal
         visible={fileModal}
         onClose={() => setfileModal(false)}
@@ -957,13 +793,16 @@ export default function UpdateTask({ route }) {
 const styles = StyleSheet.create({
   container: { backgroundColor: "#fff" },
   skeletonBox: { backgroundColor: "#e0e0e0", borderRadius: wp(1), marginVertical: hp(0.5) },
-  fieldContainer: { marginBottom: hp(2) },
+  fieldContainer: {
+    marginBottom: hp(2)
+  },
   label: { fontSize: wp(4), fontFamily: "Poppins_400Regular", color: "#000", marginBottom: hp(0.5) },
   readOnlyText: { fontSize: wp(4), fontFamily: "Poppins_500Medium", color: "#333", backgroundColor: "#eee", padding: wp(3), borderRadius: wp(2) },
-  textInput: { fontSize: wp(4), fontFamily: "Poppins_400Regular", color: "#111", backgroundColor: "#fff", borderWidth: 1, borderColor: "#ccc", borderRadius: wp(2), padding: wp(3), minHeight: hp(12), textAlignVertical: "top" },
-  audioRow: {
-    marginTop: hp(1),
-    borderRadius: wp(20),
+  textInput: {
+    fontSize: wp(4), fontFamily: "Poppins_400Regular", color: "#111",
+    backgroundColor: "#fff", borderWidth: 1,
+    borderColor: "#ccc", borderRadius: wp(2), padding: wp(3), minHeight: hp(12),
+    textAlignVertical: "top"
   }, audioInfo: {
     flexDirection: "row", alignItems: "center", gap: wp(2), flex: 1,
 
@@ -980,7 +819,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: wp(3), paddingVertical: hp(2),
   },
-  mic: { position: "absolute", right: wp(3), top: hp(1.5) }, audioRow: { flexDirection: "row", gap: wp(4), marginTop: hp(1), paddingHorizontal: wp(2) }, btn: { backgroundColor: COLORS.primary, padding: wp(3), borderRadius: wp(2), alignItems: "center" }, btnText: { color: "#fff", fontSize: wp(4.5) }, error: { color: "red", marginTop: hp(0.5) }, recordingOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.6)", justifyContent: "center", alignItems: "center" }, recordingBox: { width: wp(80), height: wp(80), borderRadius: wp(40), backgroundColor: "#fff", alignItems: "center", justifyContent: "center", }, recordingText: { fontSize: wp(4) }, recordingTime: { fontSize: wp(5), marginVertical: hp(2) }, stopBtn: { backgroundColor: COLORS.primary, paddingHorizontal: wp(6), paddingVertical: hp(1), borderRadius: wp(2) },
+  mic: { position: "absolute", right: wp(1), top: hp(0.4), marginLeft: hp(1) },
+  audioRow: { flexDirection: "row", gap: wp(4), marginTop: hp(1), paddingHorizontal: wp(2) }, btn: { backgroundColor: COLORS.primary, padding: wp(3), borderRadius: wp(2), alignItems: "center" }, btnText: { color: "#fff", fontSize: wp(4.5) }, error: { color: "red", marginTop: hp(0.5) }, recordingOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.6)", justifyContent: "center", alignItems: "center" }, recordingBox: { width: wp(80), height: wp(80), borderRadius: wp(40), backgroundColor: "#fff", alignItems: "center", justifyContent: "center", }, recordingText: { fontSize: wp(4) }, recordingTime: { fontSize: wp(5), marginVertical: hp(2) }, stopBtn: { backgroundColor: COLORS.primary, paddingHorizontal: wp(6), paddingVertical: hp(1), borderRadius: wp(2) },
   iconButton: {
     width: wp(16), height: wp(16),
     borderRadius: wp(8), alignItems: "center", justifyContent: "center",

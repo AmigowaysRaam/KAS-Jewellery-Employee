@@ -17,13 +17,14 @@ export default function StatusSelectModal({
     visible,
     statuses = [],
     onSelect,
-    onClose,
+    onClose, currentStatus
 }) {
     const { t } = useTranslation();
     const translateY = useRef(new Animated.Value(hp(100))).current;
 
     useEffect(() => {
         if (visible) {
+            // console.log("Opening modal with statuses:",currentStatus);
             Animated.timing(translateY, {
                 toValue: 0,
                 duration: 280,
@@ -44,6 +45,7 @@ export default function StatusSelectModal({
 
     const renderOption = ({ item }) => (
         <Pressable
+            disabled={item?.label === currentStatus}
             style={({ pressed }) => [
                 styles.option,
                 pressed && styles.optionPressed,
@@ -53,8 +55,11 @@ export default function StatusSelectModal({
                 closeModal();
             }}
         >
-            <Text style={styles.optionText}>
-                {item?.label || item?.name || item}
+            <Text style={[styles.optionText, {
+                color: item?.label === currentStatus ? "#999" : COLORS.black,
+                fontSize: item?.label === currentStatus ? wp(4.2) : wp(5),
+            }]}>
+                {item?.label || item?.name}
             </Text>
         </Pressable>
     );
@@ -184,8 +189,6 @@ const styles = StyleSheet.create({
     optionText: {
         fontSize: wp(4.9),
         fontFamily: "Poppins_500Medium",
-        color: "#333",
-        // textAlign: "center",
     },
 
     empty: {

@@ -4,6 +4,7 @@ import {
     Animated, Dimensions, Pressable,
     StyleSheet, Text, View
 } from "react-native";
+import { ActivityIndicator } from "react-native-paper";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { useSelector } from "react-redux";
 import { COLORS } from "../../app/resources/colors";
@@ -29,18 +30,18 @@ export default function TaskCard({ task, loadData }) {
     /** STATUS COLOR */
     const getStatusColor = (status) => {
         switch (status) {
-          case "Open":
-            return "#3498db";        // Blue
-          case "Inprogress":
-            return "#f39c12";        // Orange
-          case "Waiting for QC":
-            return "#9b59b6";        // Purple
-          case "Completed":
-            return "#2ecc71";        // Green
-          default:
-            return COLORS.primary;   // Fallback
+            case "Open":
+                return "#3498db";        // Blue
+            case "Inprogress":
+                return "#f39c12";        // Orange
+            case "Waiting for QC":
+                return "#9b59b6";        // Purple
+            case "Completed":
+                return "#2ecc71";        // Green
+            default:
+                return COLORS.primary;   // Fallback
         }
-      };
+    };
     /** PRIORITY STYLE */
     const getPriorityStyle = (priority) => {
         switch (priority) {
@@ -66,6 +67,7 @@ export default function TaskCard({ task, loadData }) {
             useNativeDriver: true,
         }).start();
     };
+    const [loading, setLoading] = useState(false);
 
     /** CLOSE DETAIL MODAL */
     const closeDetailModal = () => {
@@ -77,7 +79,7 @@ export default function TaskCard({ task, loadData }) {
     };
 
     const handleUpdateStatus = async (sta) => {
-        // setLoading(true);
+        setLoading(true);
         try {
             const formData = new FormData();
             formData.append("id", task.id);
@@ -99,7 +101,7 @@ export default function TaskCard({ task, loadData }) {
             console.log(err);
             showToast(t("something_went_wrong"), "error");
         } finally {
-            // setLoading(false);
+            setLoading(false);
         }
     };
     return (
@@ -121,15 +123,24 @@ export default function TaskCard({ task, loadData }) {
                     </Text>
                     {/* STATUS BUTTON */}
                     <Pressable
+                        disabled={loading}
                         onPress={() => setShowStatusModal(true)}
                         style={[
                             styles.statusBtn,
                             { backgroundColor: getStatusColor(task?.status) },
                         ]}
                     >
-                        <Text style={styles.statusText}>{task?.status}</Text>
-                        <Icon name="edit" size={wp(4)} color="#fff" />
+                        {
+                            loading ?
+                                <ActivityIndicator size={wp(4)} color="#fff" style={{ marginLeft: wp(2) }} />
+                                :
+                                <>
+                                    <Text style={styles.statusText}>{task?.status}</Text>
+                                    <Icon name="edit" size={wp(4)} color="#fff" />
+                                </>
+                        }
                     </Pressable>
+
                 </View>
                 <View style={styles.footer}>
                     <View style={[styles.priorityBadge, {
@@ -141,7 +152,7 @@ export default function TaskCard({ task, loadData }) {
                     </View>
 
                     <View style={styles.viewBtn}>
-                        <Text style={styles.viewText}>View</Text>
+                        <Text style={styles.viewText}>{t('view')}</Text>
                         <Icon
                             name="arrow-forward-ios"
                             size={wp(4)}
@@ -152,6 +163,7 @@ export default function TaskCard({ task, loadData }) {
                 </View>
             </Pressable>
             <StatusSelectModal
+                currentStatus={task?.status}
                 visible={showStatusModal}
                 statuses={siteDetails?.ticketstatusList || []}
                 onClose={() => setShowStatusModal(false)}
@@ -195,10 +207,11 @@ const styles = StyleSheet.create({
         borderWidth: wp(0.3),
     }, viewBtn: {
         flexDirection: "row", alignItems: "center",
-        backgroundColor: COLORS.primary, paddingHorizontal: wp(6), paddingVertical: hp(0.6),
+        backgroundColor: COLORS.primary, paddingHorizontal: wp(6),
+        height: hp(4.2),
         borderRadius: wp(2),
     }, viewText: {
         color: "#fff", fontSize: wp(3.6),
-        fontWeight: "600",
+        fontWeight: "600", lineHeight: hp(4.2)
     },
 });

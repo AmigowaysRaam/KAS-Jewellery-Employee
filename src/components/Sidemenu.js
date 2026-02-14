@@ -72,7 +72,7 @@ export default function SideMenu({ visible, onClose, onItemPress }) {
                 setMenuData([]); // fallback empty menu
             }
         } catch (err) {
-            console.error("Side Menu API Error:", err);
+            // console.error("Side Menu API Error:", err);
             setMenuData([]); // fallback empty menu
         } finally {
             setLoadingMenu(false);
