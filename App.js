@@ -21,12 +21,14 @@ import {
   Platform, StatusBar, StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity, useColorScheme, View
+  useColorScheme, View
 } from 'react-native';
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { createNavigationContainerRef, NavigationContainer } from "@react-navigation/native";
 import { Provider } from "react-redux";
+import { COLORS } from "./app/resources/colors";
+import { hp } from "./app/resources/dimensions";
 import { ToastProvider } from "./constants/ToastContext";
 import StackNavi from "./src/components/navigation/StackNavi";
 import { store } from "./src/components/store/store";
@@ -66,12 +68,6 @@ export default function App() {
   });
   /** 🔔 Push notifications */
   useEffect(() => {
-    // registerForPushNotificationsAsync().then(token => {
-    //   if (token) {
-    //     console.log("✅ Expo Push Token:", token);
-    //   }
-    // });
-    // Foreground receive
     notificationListener.current =
       Notifications.addNotificationReceivedListener(notification => {
         console.log("📩 Foreground notification:", notification);
@@ -109,7 +105,6 @@ export default function App() {
   Text.defaultProps.allowFontScaling = false;
   TextInput.defaultProps = TextInput.defaultProps || {};
   TextInput.defaultProps.allowFontScaling = false;
-
   return (
     <Provider store={store}>
       <SafeAreaView style={{ flex: 1, backgroundColor: colorScheme === 'dark' ? '#000' : '#fff' }}>
@@ -124,9 +119,6 @@ export default function App() {
               <Text style={styles.subtitle}>
                 Please check your network settings
               </Text>
-              <TouchableOpacity style={styles.button} onPress={openSettings}>
-                <Text style={styles.buttonText}>Open Settings</Text>
-              </TouchableOpacity>
             </View>
           </View>
         ) : (
@@ -184,13 +176,13 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
+    backgroundColor:COLORS?.primary,
     padding: 20,
   },
   box: {
     width: "100%",
     maxWidth: 320,
-    padding: 20,
+    padding: hp(5),
     borderRadius: 12,
     borderWidth: 1,
     borderColor: "#FF4D4D",
@@ -201,25 +193,12 @@ const styles = StyleSheet.create({
     fontFamily: "Poppins_600SemiBold",
     fontSize: 16,
     color: "#D8000C",
-    marginBottom: 6,
     textAlign: "center",
   },
   subtitle: {
     fontFamily: "Poppins_400Regular",
     fontSize: 13,
     color: "#333",
-    marginBottom: 16,
     textAlign: "center",
-  },
-  button: {
-    backgroundColor: "#FF4D4D",
-    paddingVertical: 10,
-    paddingHorizontal: 24,
-    borderRadius: 8,
-  },
-  buttonText: {
-    fontFamily: "Poppins_500Medium",
-    color: "#FFFFFF",
-    fontSize: 14,
   },
 });

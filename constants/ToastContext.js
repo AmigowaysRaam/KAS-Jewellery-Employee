@@ -15,7 +15,6 @@ export const ToastProvider = ({ children }) => {
 
     const showToast = (message, type = "info", duration = 2000) => {
         setToast({ message, type });
-
         // Show animation
         Animated.parallel([
             Animated.timing(slideAnim, {
@@ -58,7 +57,6 @@ export const ToastProvider = ({ children }) => {
                 return "#34495e"; // info
         }
     };
-
     return (
         <ToastContext.Provider value={{ showToast }}>
             {children}
@@ -73,7 +71,10 @@ export const ToastProvider = ({ children }) => {
                         },
                     ]}
                 >
-                    <Image source={appIcon} style={styles.icon} />
+                    {
+                        appIcon != '' &&
+                        <Image source={appIcon} style={styles.icon} />
+                    }
                     <View style={styles.textContainer}>
                         <Text numberOfLines={2} style={styles.text}>
                             {toast.message}
@@ -93,7 +94,7 @@ const styles = StyleSheet.create({
         alignItems: "center",
         paddingHorizontal: wp(5),
         paddingVertical: hp(1.2),
-        borderRadius: wp(12),
+        borderRadius: wp(10),
         zIndex: 9999,
         maxWidth: wp(90),
         shadowColor: "#000",

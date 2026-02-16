@@ -10,7 +10,7 @@ import { Icon } from "react-native-elements";
 import { COLORS } from "../../app/resources/colors";
 import { hp, wp } from "../../app/resources/dimensions";
 
-const ViewButton = ({ onPress, label = "View", priority = "Low" }) => {
+const ViewButton = ({ onPress, label = "View", priority = "Low", status}) => {
     const scaleAnim = useRef(new Animated.Value(1)).current;
     const opacityAnim = useRef(new Animated.Value(1)).current;
     const pulseAnim = useRef(new Animated.Value(0)).current;
@@ -61,10 +61,11 @@ const ViewButton = ({ onPress, label = "View", priority = "Low" }) => {
             }),
         ]).start();
     };
+    const taskCompStatus = status;
 
     // Critical animation
     useEffect(() => {
-        if (priority === "Critical") {
+        if (priority === "Critical" && status) {
             Animated.loop(
                 Animated.sequence([
                     Animated.timing(pulseAnim, { toValue: 1, duration: 150, useNativeDriver: true }),
@@ -182,7 +183,7 @@ const styles = StyleSheet.create({
         fontSize: wp(3),
         fontFamily: "Poppins_600SemiBold",
         letterSpacing: 0.6,
-        textTransform: "uppercase",lineHeight:wp(4.5)
+        textTransform: "uppercase", lineHeight: wp(4.5)
     },
     buttonWrapper: {
         flex: 1,

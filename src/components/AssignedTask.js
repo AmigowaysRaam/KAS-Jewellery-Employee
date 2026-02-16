@@ -4,7 +4,6 @@ import { useTranslation } from "react-i18next";
 import { Animated, Image, Pressable, StyleSheet, Text, ToastAndroid, View } from "react-native";
 import { COLORS } from "../../app/resources/colors";
 import { hp, wp } from "../../app/resources/dimensions";
-// Merge all info into a single object
 const TASKS_INFO = {
   open: {
     labelKey: "Open",
@@ -31,6 +30,11 @@ const TASKS_INFO = {
     icon: require("../../assets/rework.png"),
     bgColor: "#FFD2E0",
   },
+  over_due: {   // 👈 NEW STATUS
+    labelKey: "Overdue",
+    icon: require("../../assets/alertmark.png"),
+    bgColor: '#ff0000',
+  },
 };
 const AssignedTask = ({ homepageData }) => {
   const { t } = useTranslation();
@@ -43,6 +47,25 @@ const AssignedTask = ({ homepageData }) => {
   // --- Animated refs for each card ---
   const todayAnimations = useRef(taskKeys.map(() => new Animated.Value(0))).current;
   const totalAnimations = useRef(taskKeys.map(() => new Animated.Value(0))).current;
+  const overdueBlinkAnim = useRef(new Animated.Value(1)).current;
+  useEffect(() => {
+    const blinkLoop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(overdueBlinkAnim, {
+          toValue: 0,        // fade out
+          duration: 150,
+          useNativeDriver: true,
+        }),
+        Animated.timing(overdueBlinkAnim, {
+          toValue: 1,        // fade in
+          duration: 150,
+          useNativeDriver: true,
+        }),
+      ])
+    );
+    blinkLoop.start();
+    return () => blinkLoop.stop(); // clean up on unmount
+  }, []);
   // --- Staggered animation ---
   const animateCards = (animations) => {
     const staggerAnims = animations.map((anim) =>
@@ -55,7 +78,6 @@ const AssignedTask = ({ homepageData }) => {
     Animated.stagger(150, staggerAnims).start();
   };
   useEffect(() => {
-    // console.log("Animating AssignedTask cards", JSON.stringify(myTaskSection));
     animateCards(todayAnimations);
     animateCards(totalAnimations);
   }, [homepageData]);
@@ -67,20 +89,22 @@ const AssignedTask = ({ homepageData }) => {
   const navigation = useNavigation()
   const renderTaskCard = (key, value, animValue, keyPrefix) => {
     const taskInfo = TASKS_INFO[key];
+    const numericValue = Number(value) || 0;
     return (
       <Pressable
+        style={{ opacity: numericValue > 0 ? 1 : 0.9 }}
         key={`${keyPrefix}-${key}`}
         onPress={() => {
-          if (value != 0) {
+          if (numericValue > 0) {
             navigation.navigate("AssignTaskListScreen", {
               status: taskInfo.labelKey,
               todayKey: keyPrefix
-            })
-          }
-          else {
+            });
+          } else {
             ToastAndroid.show(t(`no_task_available`), ToastAndroid.SHORT);
           }
-        }}>
+        }}
+      >
         <Animated.View
           key={`${keyPrefix}-${key}`}
           style={[
@@ -99,13 +123,27 @@ const AssignedTask = ({ homepageData }) => {
             },
           ]}
         >
-          <Image style={styles.icon} source={taskInfo.icon} />
+          {key === "over_due" ? (
+            <Animated.Image
+              source={taskInfo.icon}
+              style={[
+                styles.icon,
+                { opacity: overdueBlinkAnim } // apply blinking animation
+              ]}
+            />
+          ) : (
+            <Image style={styles.icon} source={taskInfo.icon} />
+          )}
           <View style={{ marginHorizontal: wp(2) }}>
-            <Text style={styles.taskLabel}>{t(taskInfo.labelKey)}</Text>
-            <Text style={styles.taskValue}>{`${value || 0} Task`}</Text>
+            <Text style={[styles.taskLabel, {
+              color: taskInfo.labelKey == 'Overdue' ? "#fff" : '#000'
+            }]}>{t(taskInfo.labelKey)}</Text>
+            <Text style={[styles.taskValue, {
+              color: taskInfo.labelKey == 'Overdue' ? "#fff" : '#000'
+            }]}>{`${value || 0} Task`}</Text>
           </View>
         </Animated.View>
-      </Pressable>
+      </Pressable >
     );
   };
   return (

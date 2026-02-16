@@ -78,25 +78,21 @@ export default function SplashScreen() {
   const fnGetToken = async () => {
     try {
       await loadStoredLanguage();
-
       const data = await fetchData("app-employee-generate-token", "POST");
       if (data?.text === "Success") {
         dispatch(setTokens(data));
-
         try {
           const siteDetailsData = await fetchData("app-employee-site-settings", "POST", {
             Authorization: `${tokenDetail?.token}`,
           });
-
           if (siteDetailsData?.text === "Success") {
             if (siteDetailsData?.data[0].site_mode == "1") {
               navigation.replace("MaintainancePage");
               return;
             }
-
             setSiteData(siteDetailsData);
             dispatch(setSiteDetails(siteDetailsData));
-
+            // Alert.alert("Login Success", JSON.stringify(siteDetailsData));
             const userDataString = await AsyncStorage.getItem("USER_DATA");
             const userData = JSON.parse(userDataString);
 
@@ -114,7 +110,7 @@ export default function SplashScreen() {
       }
     } catch (error) {
       console.error("TOKEN API Error:", error);
-      Alert.alert("TOKEN fetching error", error.message);
+      // Alert.alert("TOKEN fetching error", error.message);
     }
   };
 

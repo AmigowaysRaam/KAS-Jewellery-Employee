@@ -31,13 +31,36 @@ const TASKS_INFO = {
     icon: require("../../assets/rework.png"),
     bgColor: "#FFD2E0",
   },
+  over_due: {   // 👈 NEW STATUS
+    labelKey: "Overdue",
+    icon: require("../../assets/alertmark.png"),
+    bgColor: '#ff0000',
+  },
 };
-
 const MyTask = ({ homepageData }) => {
   const { t } = useTranslation();
   const myTaskSection = homepageData?.sections?.find(
     (item) => item.section === "my_tasks"
   );
+  const overdueBlinkAnim = useRef(new Animated.Value(1)).current;
+  useEffect(() => {
+    const blinkLoop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(overdueBlinkAnim, {
+          toValue: 0,        // fade out
+          duration: 150,
+          useNativeDriver: true,
+        }),
+        Animated.timing(overdueBlinkAnim, {
+          toValue: 1,        // fade in
+          duration: 150,
+          useNativeDriver: true,
+        }),
+      ])
+    );
+    blinkLoop.start();
+    return () => blinkLoop.stop(); // clean up on unmount
+  }, []);
   const todayTasks = myTaskSection?.today_tasks || {};
   const totalTasks = myTaskSection?.total_tasks || {};
   const taskKeys = Object.keys(TASKS_INFO);
@@ -57,6 +80,15 @@ const MyTask = ({ homepageData }) => {
     Animated.stagger(150, staggerAnims).start();
   };
 
+
+  useEffect(() => {
+    todayAnimations.current = taskKeys.map(() => new Animated.Value(0));
+    totalAnimations.current = taskKeys.map(() => new Animated.Value(0));
+
+    animateCards(todayAnimations.current);
+    animateCards(totalAnimations.current);
+  }, [homepageData]);
+
   const navigation = useNavigation();
   useEffect(() => {
     animateCards(todayAnimations);
@@ -68,23 +100,26 @@ const MyTask = ({ homepageData }) => {
     month: "short",
     year: "numeric",
   });
-  const renderTaskCard = (key, value, animValue, keyPrefix, todayKey) => {
+  const renderTaskCard = (key, value, animValue, keyPrefix) => {
     const taskInfo = TASKS_INFO[key];
+    const numericValue = Number(value) || 0;
+
     return (
       <Pressable
-        style={{ opacity: value != '0' ? 1 : 0.9 }} // Dim card if value is 0 or undefined
+        style={{ opacity: numericValue > 0 ? 1 : 0.9 }}
         key={`${keyPrefix}-${key}`}
         onPress={() => {
-          if (value != 0) {
+          if (numericValue > 0) {
             navigation.navigate("MyTaskListScreen", {
               status: taskInfo.labelKey,
               todayKey: keyPrefix
-            })
-          }
-          else {
+            });
+          } else {
             ToastAndroid.show(t(`no_task_available`), ToastAndroid.SHORT);
           }
-        }}>
+        }}
+      >
+
         <Animated.View
           key={`${keyPrefix}-${key}`}
           style={[
@@ -102,14 +137,27 @@ const MyTask = ({ homepageData }) => {
               ],
             },
           ]}
-        >
+        >{key === "over_due" ? (
+          <Animated.Image
+            source={taskInfo.icon}
+            style={[
+              styles.icon,
+              { opacity: overdueBlinkAnim } // apply blinking animation
+            ]}
+          />
+        ) : (
           <Image style={styles.icon} source={taskInfo.icon} />
+        )}
           <View style={{ marginHorizontal: wp(2) }}>
-            <Text style={styles.taskLabel}>{t(taskInfo.labelKey)}</Text>
-            <Text style={styles.taskValue}>{`${value || 0} Task`}</Text>
+            <Text style={[styles.taskLabel, {
+              color: taskInfo.labelKey == 'Overdue' ? "#fff" : '#000'
+            }]}>{t(taskInfo.labelKey)}</Text>
+            <Text style={[styles.taskValue, {
+              color: taskInfo.labelKey == 'Overdue' ? "#fff" : '#000'
+            }]}>{`${value || 0} Task`}</Text>
           </View>
         </Animated.View>
-      </Pressable>
+      </Pressable >
 
     );
   };

@@ -1,31 +1,43 @@
 import React, { useEffect, useRef } from "react";
 import {
-    Animated,
-    Image,
-    Pressable,
-    StyleSheet,
-    Text,
-    View,
+    Animated, Image, Pressable, StyleSheet, Text, View,
 } from "react-native";
 import { COLORS } from "../../app/resources/colors";
 import { hp, wp } from "../../app/resources/dimensions";
 import ViewButton from "./ViewBtn";
 // Dummy avatar image
-const TaskCard = ({
-    item,
-    t,
-    navigation,
-    openTaskModal,
-    getStatusColor,
-}) => {
+const TaskCard = ({ item, t, navigation, openTaskModal, getStatusColor, }) => {
     const scaleAnim = useRef(new Animated.Value(1)).current;
-    // "assigned_by_employee_photo": "",
-    // "assigned_by_employee_name": "testinuser",
-    // "assigned_by_employee_phone_number": "9999999999",
-    // "assigned_by_employee_id": "EMP6",
+    const getProgressData = (status) => {
+        switch (status?.toLowerCase()) {
+            case "open":
+                return { progress: 0.25, color: "#3498db" }; // Blue
+            case "inprogress":
+                return { progress: 0.6, color: "#f39c12" }; // Orange
+            case "waiting for qc":
+                return { progress: 0.85, color: "#9b59b6" }; // Purple
+            case "rework":
+                return { progress: 0.5, color: "#e74c3c" }; // Red
+            case "completed":
+                return { progress: 1, color: "#2ecc71" }; // Green
+            case "overdue":
+                return { progress: 0, color: "#D32F2F" }; // Deep Red for Overdue
+                default:
+                return { progress: 0.1, color: COLORS.primary };
+        }
+    };
+    
+    const progressAnim = useRef(new Animated.Value(0)).current;
+
     useEffect(() => {
-        console.log(JSON.stringify(item, null, 2), "MyTaskCard");
-    }, [])
+        const { progress } = getProgressData(item.status);
+
+        Animated.timing(progressAnim, {
+            toValue: progress,
+            duration: 600,
+            useNativeDriver: false,
+        }).start();
+    }, [item.status]);
     const handlePressIn = () => {
         Animated.spring(scaleAnim, {
             toValue: 0.97,
@@ -90,7 +102,28 @@ const TaskCard = ({
                         </View>
                     </View>
                 </View>
-                <View style={styles.divider} />
+                <View style={styles.progressWrapper}>
+                    <View style={styles.progressHeader}>
+                        <Text style={styles.progressLabel}>{t('progress')}</Text>
+                        <Text style={styles.progressPercent}>
+                            {Math.round(getProgressData(item.status).progress * 100)}%
+                        </Text>
+                    </View>
+                    <View style={styles.progressTrack}>
+                        <Animated.View
+                            style={[
+                                styles.progressFill,
+                                {
+                                    width: progressAnim.interpolate({
+                                        inputRange: [0, 1],
+                                        outputRange: ["0%", "100%"],
+                                    }),
+                                    backgroundColor: getProgressData(item.status).color,
+                                },
+                            ]}
+                        />
+                    </View>
+                </View>
                 {/* Date Section */}
                 {/* Dates */}
                 <View style={styles.dateRow}>
@@ -115,6 +148,7 @@ const TaskCard = ({
                 {/* Button */}
                 <View style={{ marginTop: hp(0.5) }}>
                     <ViewButton
+                        status={item?.status?.toLowerCase() !== 'completed'}
                         priority={item.priority}
                         onPress={() =>
                             navigation?.navigate("TasKDetailById", { task: item })
@@ -132,7 +166,43 @@ const styles = StyleSheet.create({
         backgroundColor: "#fff", padding: wp(4),
         borderRadius: wp(3), borderLeftWidth: wp(1), shadowColor: "#000", shadowOpacity: 0.08,
         shadowOffset: { width: 0, height: 6 }, shadowRadius: 8, elevation: 4,
-    }, cardHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", },
+    },
+    // 
+    progressWrapper: {
+        marginTop: hp(1.5),
+        marginBottom: hp(1.2),
+    },
+    progressHeader: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginBottom: hp(0.6),
+    },
+    progressLabel: {
+        fontSize: wp(3.2),
+        fontFamily: "Poppins_500Medium",
+        color: "#666", textTransform: "capitalize"
+    },
+    progressPercent: {
+        fontSize: wp(3.2),
+        fontFamily: "Poppins_600SemiBold",
+        color: "#333",
+    },
+    progressTrack: {
+        height: hp(1.6),
+        width: "100%",
+        backgroundColor: "#edf0f5",
+        borderRadius: wp(3),
+        overflow: "hidden",
+    },
+
+    progressFill: {
+        height: "100%",
+        borderRadius: wp(3),
+    },
+    // 
+
+    cardHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", },
     taskTitle: {
         fontSize: wp(4.2), fontFamily: "Poppins_600SemiBold", flex: 1, color: "#1e1e1e",
         marginRight: wp(2),
@@ -144,12 +214,9 @@ const styles = StyleSheet.create({
     }, assignedRow: { flexDirection: "row", alignItems: "center", marginTop: hp(1.2), },
     avatar: {
         width: wp(10), height: wp(10), borderRadius: wp(5),
-        marginRight: wp(2), backgroundColor: "#ccc",
+        marginRight: wp(2), backgroundColor: "#ccc", borderColor: COLORS?.primary, borderWidth: wp(0.3)
     }, assignedText: { fontSize: wp(3.2), color: "#555", fontFamily: "Poppins_400Regular", },
-    divider: {
-        height: 1, backgroundColor: COLORS?.primary + '80',
-        marginVertical: hp(1.5),
-    }, dateRow: {
+    dateRow: {
         flexDirection: "row", justifyContent: "space-between",
     }, dateBox: {
         backgroundColor: "#f8f9fb", padding: wp(3),

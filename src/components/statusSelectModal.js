@@ -17,14 +17,56 @@ export default function StatusSelectModal({
     visible,
     statuses = [],
     onSelect,
-    onClose, currentStatus
+    onClose,
+    currentStatus
 }) {
     const { t } = useTranslation();
     const translateY = useRef(new Animated.Value(hp(100))).current;
 
+    // Map status to icon and color
+    const getStatusStyle = (status) => {
+        switch (status) {
+            case "Open":
+                return {
+                    color: "#3498db",
+                    icon: "folder-open",
+                };
+            case "Inprogress":
+                return {
+                    color: "#f39c12",
+                    icon: "autorenew",
+                };
+            case "Waiting for QC":
+                return {
+                    color: "#9b59b6",
+                    icon: "hourglass-empty",
+                };
+            case "Completed":
+                return {
+                    color: "green",
+                    icon: "check-circle",
+                };
+            case "Rework":
+                return {
+                    color: "#e67e22",
+                    icon: "build",
+                };
+            case "Over Due":
+                return {
+                    color: "#D32F2F",
+                    icon: "error-outline",
+                };
+            default:
+                return {
+                    color: COLORS.primary,
+                    icon: "help-outline",
+                };
+        }
+    };
+
+    // Animate modal opening
     useEffect(() => {
         if (visible) {
-            // console.log("Opening modal with statuses:",currentStatus);
             Animated.timing(translateY, {
                 toValue: 0,
                 duration: 280,
@@ -43,26 +85,50 @@ export default function StatusSelectModal({
         });
     };
 
-    const renderOption = ({ item }) => (
-        <Pressable
-            disabled={item?.label === currentStatus}
-            style={({ pressed }) => [
-                styles.option,
-                pressed && styles.optionPressed,
-            ]}
-            onPress={() => {
-                onSelect?.(item?.value || item);
-                closeModal();
-            }}
-        >
-            <Text style={[styles.optionText, {
-                color: item?.label === currentStatus ? "#999" : COLORS.black,
-                fontSize: item?.label === currentStatus ? wp(4.2) : wp(5),
-            }]}>
-                {item?.label || item?.name}
-            </Text>
-        </Pressable>
-    );
+    // Render each option
+    const renderOption = ({ item }) => {
+        const statusLabel = item?.label || item?.name || item;
+        const statusValue = item?.value || item;
+        const { color, icon } = getStatusStyle(statusLabel);
+
+        const isDisabled = statusLabel === currentStatus;
+
+        return (
+            <Pressable
+                disabled={isDisabled}
+                style={({ pressed }) => [
+                    styles.option,
+                    pressed && !isDisabled && styles.optionPressed,
+                ]}
+                onPress={() => {
+                    if (!isDisabled) {
+                        onSelect?.(statusValue);
+                        closeModal();
+                    }
+                }}
+            >
+                <View style={styles.optionContent}>
+                    <Icon
+                        name={icon}
+                        size={hp(3)}
+                        color={isDisabled ? "#999" : color}
+                        style={{ marginRight: wp(3) }}
+                    />
+                    <Text
+                        style={[
+                            styles.optionText,
+                            {
+                                color: isDisabled ? "#999" : COLORS.black,
+                                fontSize: isDisabled ? wp(4.2) : wp(5),
+                            },
+                        ]}
+                    >
+                        {t(statusLabel)}
+                    </Text>
+                </View>
+            </Pressable>
+        );
+    };
 
     return (
         <Modal
@@ -73,9 +139,7 @@ export default function StatusSelectModal({
         >
             <Pressable style={styles.overlay} onPress={closeModal} />
 
-            <Animated.View
-                style={[styles.sheet, { transform: [{ translateY }] }]}
-            >
+            <Animated.View style={[styles.sheet, { transform: [{ translateY }] }]}>
                 {/* Handle */}
                 <View style={styles.handleContainer}>
                     <View style={styles.handle} />
@@ -83,10 +147,7 @@ export default function StatusSelectModal({
 
                 {/* Header Row */}
                 <View style={styles.headerRow}>
-                    <Text style={styles.title}>
-                        {t("select_status")}
-                    </Text>
-
+                    <Text style={styles.title}>{t("select_status")}</Text>
                     <Pressable
                         style={({ pressed }) => [
                             styles.closeButton,
@@ -101,9 +162,7 @@ export default function StatusSelectModal({
                 {/* Options */}
                 <View style={styles.optionsContainer}>
                     {statuses.length === 0 ? (
-                        <Text style={styles.empty}>
-                            {t("no_status_available")}
-                        </Text>
+                        <Text style={styles.empty}>{t("no_status_available")}</Text>
                     ) : (
                         <FlatList
                             data={statuses}
@@ -176,6 +235,7 @@ const styles = StyleSheet.create({
     optionsContainer: {
         maxHeight: hp(50),
     },
+
     option: {
         paddingVertical: hp(1.4),
         paddingHorizontal: wp(3),
@@ -183,9 +243,16 @@ const styles = StyleSheet.create({
         marginBottom: hp(1),
         backgroundColor: "#f7f9fc",
     },
+
     optionPressed: {
         backgroundColor: "#e6f0ff",
     },
+
+    optionContent: {
+        flexDirection: "row",
+        alignItems: "center",
+    },
+
     optionText: {
         fontSize: wp(4.9),
         fontFamily: "Poppins_500Medium",

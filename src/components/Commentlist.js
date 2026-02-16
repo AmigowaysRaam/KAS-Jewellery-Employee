@@ -3,21 +3,13 @@ import { Audio, Video } from "expo-av";
 import React, { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
-  ActivityIndicator,
-  Animated,
-  FlatList,
-  Image,
-  ImageBackground,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View
+  ActivityIndicator, Animated, FlatList, Image, ImageBackground, Pressable,
+  ScrollView, StyleSheet, Text, View
 } from "react-native";
+import { useSelector } from "react-redux";
 import { COLORS } from "../../app/resources/colors";
 import { hp, wp } from "../../app/resources/dimensions";
 import TaskCard from "./TaskCard";
-
 export default function CommentList({
   comments,
   loading, ticketDetails, task, flatListRef,
@@ -28,6 +20,7 @@ export default function CommentList({
   const soundRef = useRef(null);
   const [playingId, setPlayingId] = useState(null);
   const [loadingId, setLoadingId] = useState(null);
+
   useEffect(() => {
     return () => {
       if (soundRef.current) {
@@ -35,8 +28,11 @@ export default function CommentList({
       }
     };
   }, []);
+  const siteDetails = useSelector(
+    (state) => state.auth?.siteDetails?.data[0]
+  );
   const handleAudioPress = async (uri, id) => {
-    console.log("Audio button pressed for ID:", id, playingId);
+    // console.log("Audio button pressed for ID:", id, playingId);
     if (playingId === id && soundRef.current) {
       await soundRef.current.pauseAsync();
       setPlayingId(null);
@@ -73,21 +69,31 @@ export default function CommentList({
               <View style={styles.userRow}>
                 <Image source={{ uri: item.user_image }} style={styles.avatar} />
                 <View style={styles.userTextContainer}>
-                  <Text numberOfLines={1} style={styles.userName}>
-                    {`${item.user_name} (${item.employee_id})`}
-                  </Text>
+                  <View style={{
+                    flexDirection: "row",
+                    maxWidth: wp(70)
+                    , justifyContent: "space-between",
+                  }}>
+                    <Text numberOfLines={1} style={[styles.userName, {
+                      maxWidth: wp(50)
+                    }]}>
+                      {`${item.user_name}`}
+
+                    </Text>
+                    <Text style={{ fontSize: wp(3.5), color: "#444" }}>
+                      {`(${item.employee_id})`}
+                    </Text>
+                  </View>
+
                   <Text numberOfLines={1} style={styles.userSubText}>
                     {item?.phone_number ? item.phone_number : t("no_phone")}
                   </Text>
                 </View>
               </View>
-              <Text style={styles.dateText}>{item.created}</Text>
             </View>
-
             {item.description && (
               <Text style={styles.commentText}>{item.description}</Text>
             )}
-
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -127,24 +133,28 @@ export default function CommentList({
                 aName={item.audio_name}
               />
             )}
+            <Text style={styles.dateText}>{item.created}</Text>
           </View>
         </View>
         {/* ✅ Show center info only if updated_info exists */}
-        {item?.updated_info  && item?.description != '' ?  (
-          <View style={styles.centerInfoContainer}>
-            <View style={styles.centerInfoText}>
-              <Text style={styles.centerInfoText}>{item?.created}</Text>
-              <Text numberOfLines={1} style={styles.centerInfoText}>{item?.description}</Text>
+        {item?.updated_info && item?.description ? (
+          <View style={styles.updateWrapper}>
+            <View style={styles.updateLine} />
+            <View style={styles.updateContent}>
+              <Text numberOfLines={3} style={styles.updateMessage}>
+                {`${item.description}`}
+              </Text>
+              <Text style={styles.updateTime}>
+                {item.created}
+              </Text>
             </View>
-
-
+            <View style={styles.updateLine} />
           </View>
         ) : null}
+
       </>
     );
   };
-
-
   const renderHeader = () => (
     <View style={{ paddingBottom: hp(2) }}>
       {loading ? (
@@ -155,20 +165,21 @@ export default function CommentList({
       ) : task ? (
         <TaskCard task={ticketDetails} loadData={loadData} />
       ) : null}
-      {/* <Text style={styles.sectionTitle}>{t("comments")}</Text> */}
     </View>
   );
   return (
     <ImageBackground
-      source={require('../../assets/dodleBg.jpg')}
-      style={{ flex: 1 }}
+      source={{ uri: siteDetails?.chatbg }}
+      style={{
+        flex: 1,
+      }}
       resizeMode="cover"
     >
+      {/* <Text>{JSON.stringify(siteDetails?.chatbg, null, 2)}</Text> */}
       <FlatList
         ref={flatListRef}
         data={comments}
         renderItem={renderComment}
-
         keyExtractor={(item, index) =>
           item.id?.toString() || index.toString()
         }
@@ -177,7 +188,6 @@ export default function CommentList({
         contentContainerStyle={{
           paddingHorizontal: wp(3),
           paddingBottom: hp(5),
-          backgroundColor: COLORS.primary + "90",
         }}
         refreshing={loading}
         onRefresh={loadData}
@@ -185,7 +195,16 @@ export default function CommentList({
         ListEmptyComponent={() =>
           !loading && (
             <View style={{ marginTop: hp(5), alignItems: "center" }}>
-              <Text style={{ color: "#444", fontSize: wp(4) }}>
+              <Text
+                style={{
+                  fontFamily: "Poppins_600SemiBold",
+                  color: "#444",
+                  fontSize: wp(4.9),
+                  textShadowColor: "rgba(0,0,0,0.15)",
+                  textShadowOffset: { width: 1, height: 1 },
+                  textShadowRadius: 2,
+                }}
+              >
                 {t("no_comments")}
               </Text>
             </View>
@@ -244,104 +263,92 @@ const styles = StyleSheet.create({
     marginTop: hp(1),
     color: COLORS.primary,
   },
-  commentRow: {
-    width: "100%",
-    marginBottom: hp(1),
-  },
-  commentBubble: {
-    maxWidth: "85%",
-    paddingHorizontal: wp(3),
-    paddingVertical: hp(1),
-    borderRadius: wp(3),
-  },
-  leftBubble: {
-    alignSelf: "flex-start",
-    backgroundColor: "#f1f1f1",
-    marginRight: wp(10),
-    borderTopLeftRadius: wp(0.5),
-    width: "100%",
-  },
-  mediaItem: {
-    width: wp(20),
-    height: wp(20),
-    borderRadius: wp(2),
-    borderWidth: wp(0.5),
-    borderColor: COLORS.primary,
-    marginRight: wp(2),
-    justifyContent: "center",
+  updateWrapper: {
+    flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#000",
-    overflow: "hidden",
+    marginVertical: hp(1.5),
+    paddingHorizontal: wp(5),
+  }, updateLine: {
+    flex: 1,
+    height: 1, backgroundColor: "#e0e0e0",
   },
-  playButtonOverlay: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.3)",
-    borderRadius: wp(2),
+  updateContent: {
+    maxWidth: wp(70), marginHorizontal: wp(3),
+    backgroundColor: "#f4f6f8", paddingVertical: hp(0.8), paddingHorizontal: wp(4),
+    borderRadius: wp(4), alignItems: "center",
+    borderWidth: wp(0.4), borderColor: COLORS?.primary, borderRadius: wp(5)
+
+  }, updateLabel: {
+    fontSize: wp(3),
+    fontFamily: "Poppins_600SemiBold", color: "#666",
+    marginBottom: hp(0.3),
+  },
+  updateMessage: {
+    fontSize: wp(3.2), fontFamily: "Poppins_400Regular",
+    color: "#444", textAlign: "center",
   },
 
-  rightBubble: {
-    alignSelf: "flex-end",
-    backgroundColor: "#DCF8C6",
-    marginLeft: wp(10),
-    borderTopRightRadius: wp(0.5),
-    width: "100%",
+  updateTime: {
+    fontSize: wp(2.8), color: "#999",
+    marginTop: hp(0.4),
+  }, commentRow: {
+    width: "100%", marginBottom: hp(1),
+  }, commentBubble: {
+    maxWidth: "85%", paddingHorizontal: wp(3), paddingVertical: hp(1),
+    borderRadius: wp(3),
+  }, leftBubble: {
+    alignSelf: "flex-start", backgroundColor: "#f1f1f1",
+    marginRight: wp(10),
+    borderTopLeftRadius: wp(0.5), width: "100%",
   },
-  headerRow: {
+  mediaItem: {
+    width: wp(20), height: wp(20), borderRadius: wp(2),
+    borderWidth: wp(0.5), borderColor: COLORS.primary,
+    marginRight: wp(2), justifyContent: "center", alignItems: "center",
+    backgroundColor: "#000", overflow: "hidden",
+  }, playButtonOverlay: {
+    position: "absolute",
+    top: 0, left: 0, right: 0, bottom: 0,
+    justifyContent: "center", alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.3)", borderRadius: wp(2),
+  },
+  rightBubble: {
+    alignSelf: "flex-end", backgroundColor: "#DCF8C6",
+    marginLeft: wp(10), borderTopRightRadius: wp(0.5),
+    width: "100%",
+  }, headerRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     marginBottom: hp(0.3),
-  },
-  dateText: {
-    fontSize: wp(2.6),
-    color: "#444",
+  }, dateText: {
+    fontSize: wp(2.9), color: "#555",
+    fontFamily: "Poppins_600SemiBold", alignSelf: "flex-end", marginTop: hp(0.1)
+  }, commentText: {
     fontFamily: "Poppins_400Regular",
-  },
-  commentText: {
-    fontFamily: "Poppins_400Regular",
-    fontSize: wp(4),
-    color: "#000",
-    marginTop: hp(0.5),
-  },
-
-  audioContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: hp(1.2),
-  },
-  audioButton: {
-    width: wp(8),
-    height: wp(8),
-    borderRadius: wp(4),
-    backgroundColor: COLORS.primary,
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: wp(3),
-  },
-  audioLabel: {
+    fontSize: wp(4), color: "#000", marginTop: hp(0.5),
+  }, audioContainer: {
+    flexDirection: "row", alignItems: "center", marginTop: hp(1.2),
+  }, audioButton: {
+    width: wp(8), height: wp(8),
+    borderRadius: wp(4), backgroundColor: COLORS.primary,
+    justifyContent: "center", alignItems: "center", marginRight: wp(3),
+  }, audioLabel: {
     fontFamily: "Poppins_600SemiBold",
     color: COLORS.primary, lineHeight: hp(2.6),
-  },
-  skeletonContainer: {
+  }, skeletonContainer: {
     backgroundColor: "#ccc",
-    padding: wp(3),
-    borderRadius: wp(2),
+    padding: wp(3), borderRadius: wp(2),
     marginTop: wp(2),
   }, centerInfoContainer: {
     alignItems: "center",
-    marginVertical: hp(1),borderRadius: wp(0),
+    marginVertical: hp(1), borderRadius: wp(0),
   }, centerInfoText: {
     fontSize: wp(3.5),
     color: "#999",
     backgroundColor: "#f2f2f2",
     paddingHorizontal: wp(4),
     paddingVertical: hp(0.1),
-    borderRadius: wp(10),lineHeight: hp(3)
+    borderRadius: wp(10), lineHeight: hp(3)
   },
   skeletonTitle: {
     width: "60%",
@@ -358,7 +365,6 @@ const styles = StyleSheet.create({
   },
   userRow: {
     flexDirection: "row",
-    alignItems: "center",
     flex: 1,
   },
   avatar: {
@@ -373,14 +379,14 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   userName: {
-    fontFamily: "Poppins_400Regular",
+    fontFamily: "Poppins_600SemiBold",
     fontSize: wp(3.5),
     color: COLORS.primary,
     textTransform: "capitalize",
   },
   userSubText: {
-    fontFamily: "Poppins_400Regular",
-    fontSize: wp(2.8),
+    fontFamily: "Poppins_600SemiBold",
+    fontSize: wp(3),
     color: "#222",
     position: "relative", bottom: hp(0.4)
   },

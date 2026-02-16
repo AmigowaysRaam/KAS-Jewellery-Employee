@@ -27,6 +27,7 @@ import DescriptionFormSection from "./DescriptionFormSection";
 import ImagesFormSection from "./ImagesFormSection";
 import ImageViewerModal from "./ImageViewver";
 import SpeechToTextModal from "./SpeechToTextMOdal";
+import TaskPriority from "./TaskPriority";
 import VideoFormSection from "./VideoForm";
 
 export default function UpdateTask({ route }) {
@@ -610,7 +611,7 @@ export default function UpdateTask({ route }) {
           <>
             <CustomDropdown
               title={t("task_status") + " *"}
-              data={siteDetails?.ticketstatusList || []}
+              data={siteDetails?.ticketstatusnooverdueList || []}
               placeholder={t("task_status")}
               selected={selectedStatus}
               onSelect={(item) => setSelectedStatus(item?.value)}
@@ -622,7 +623,7 @@ export default function UpdateTask({ route }) {
       case "priority":
         return (
           <>
-            <CustomDropdown
+            <TaskPriority
               title={t("task_priority") + " *"}
               data={siteDetails?.prioritiesList || []}
               placeholder={t("choose_priority")}

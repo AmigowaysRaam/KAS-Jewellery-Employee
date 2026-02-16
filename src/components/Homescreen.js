@@ -130,8 +130,8 @@ export default function Homescreen() {
         ) : homepageData ? (
           <>
             <Banner homepageData={homepageData} />
-            {/* <PunchInOut homepageData={homepageData} onLoading={setpunchLoading} /> */}
-            {/* <HomeMenuRow homepageData={homepageData} /> */}
+             {/* <PunchCard homepageData={homepageData} onLoading={setpunchLoading} />
+            <HomeMenuRow homepageData={homepageData} /> */}
             <TaskRow homepageData={homepageData} />
             <MyTask homepageData={homepageData} />
             <AssignedTask homepageData={homepageData} />

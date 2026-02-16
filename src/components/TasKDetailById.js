@@ -5,10 +5,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator, Image, Keyboard, KeyboardAvoidingView, Platform,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity, View
+  StyleSheet, Text, TextInput, TouchableOpacity, View
 } from "react-native";
 import { useSelector } from "react-redux";
 import { getStoredLanguage } from "../../app/i18ns";
@@ -331,12 +328,15 @@ export default function TaskMessages({ route }) {
           ) : text.trim() || audioAttachment || mediaList.length > 0 ? (
             <TouchableOpacity
               onPress={handleSend}
-              style={[styles.sendButton]}
+              style={[styles.sendButton, {
+                left: hp(0.1),
+                bottom: hp(0.2),
+              }]}
               disabled={sending}
             >
               <Ionicons
                 name="send"
-                size={wp(8)}
+                size={wp(8.8)}
                 color={COLORS.primary}
                 style={{ marginRight: wp(2) }}
               />
@@ -348,7 +348,8 @@ export default function TaskMessages({ route }) {
                 setModalVisible(true);
               }}
               style={[styles.attachButton, {
-                left: hp(1),
+                left: hp(0.5),
+                bottom: hp(0.9),
               }]}
             >
               <Ionicons name="mic" size={wp(9)} color="#000" />
@@ -396,10 +397,10 @@ const styles = StyleSheet.create({
     flexDirection: "row", alignItems: "flex-end",
   }, textInputContainer: {
     flexDirection: "row", alignItems: "center",
-    backgroundColor: "#f0f0f0", borderRadius: wp(1),
-    paddingHorizontal: wp(4), marginHorizontal: wp(1),
+    backgroundColor: "#f0f0f0", borderRadius: wp(8),
+    paddingHorizontal: wp(4), marginHorizontal: wp(1), borderWidth: wp(0.3), borderColor: "#999",
     maxHeight: hp(15),
-    width: wp(82),
+    width: wp(83),
   }, textInput: {
     flex: 1,
     paddingVertical: hp(1.9), fontSize: wp(3.6), fontFamily: "Poppins_400Regular", lineHeight: wp(5.5),

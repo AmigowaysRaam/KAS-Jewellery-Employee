@@ -42,6 +42,16 @@ const SearchContainer = ({ value, onChangeText,
           color: "#2ecc71", // Green
           icon: <Icon name="check-circle" size={hp(3)} color="#000" />,
         };
+        case "Rework":
+          return {
+            color: "#2ecc71", // Green
+            icon: <Icon name="build" size={hp(3)} color="#000" />,
+          };
+          case "Over Due":
+            return {
+              color: "#ff0000", // Green
+              icon: <Icon name="warning" size={hp(3)} color="#000" />,
+            };
       default:
         return {
           color: COLORS.primary,
@@ -49,19 +59,15 @@ const SearchContainer = ({ value, onChangeText,
         };
     }
   };
-
   useEffect(() => {
     if (selectedStatuss) {
       setSelectedStatus(selectedStatuss);
     }
-
     setFilterList(siteDetails?.ticketstatusList?.map((i) => i.label) || []);
-
     if (modalVisible) {
       setShowDropdown(false);
     }
   }, [modalVisible, selectedStatuss]);
-
   const handleStatusSelect = (status) => {
     setSelectedStatus(status);
     setShowDropdown(false);
@@ -241,7 +247,7 @@ const styles = StyleSheet.create({
     zIndex: 9999,
   },
   bottomSheet: {
-    height: hp(40),
+    height: hp(50),
     backgroundColor: "#F0F0F0",
     paddingTop: hp(3),
     paddingBottom: hp(2),
@@ -263,7 +269,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: wp(5),
   },
   dropdownText: {
-    fontSize: wp(4),
+    fontSize: wp(4.9),
     fontFamily: "Poppins_400Regular",
     color: "#333",
   },

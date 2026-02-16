@@ -6,6 +6,7 @@ import {
   RefreshControl, StyleSheet,
   Text, View
 } from "react-native";
+import { ActivityIndicator } from "react-native-paper";
 import { useSelector } from "react-redux";
 import { getStoredLanguage } from "../../app/i18ns.js";
 import { COLORS } from "../../app/resources/colors";
@@ -201,6 +202,14 @@ export default function MyTaskListScreen({ route }) {
           />
         ) : (
           <FlatList
+          ListFooterComponent={
+            loading && page > 1 ? 
+            (
+              <View style={{ paddingVertical: hp(2) }}>
+                <ActivityIndicator size="small" color={COLORS.primary} />
+              </View>
+            ) : null
+          }
             ListHeaderComponent={<>
               <DateandDownloadTask
                 taskFlag={'myTask'}
@@ -237,7 +246,6 @@ export default function MyTaskListScreen({ route }) {
             }
             onEndReached={loadMore}
             onEndReachedThreshold={0.5}
-
             ListEmptyComponent={
               !loading && (
                 <View style={{ alignItems: "center", marginTop: hp(5) }}>

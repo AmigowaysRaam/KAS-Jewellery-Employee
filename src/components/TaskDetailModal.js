@@ -192,151 +192,172 @@ const TaskDetailModal = ({ visible, task, onClose, getStatusColor }) => {
   return (
     <Modal transparent visible={showModal} animationType="none" onRequestClose={onClose}>
       <View style={styles.overlay}>
-
         <Pressable style={styles.overlay} onPress={() => !isDownloading && onClose()} />
         <Animated.View style={[styles.modalContainer, { transform: [{ translateY }] }]}>
           <Pressable style={styles.closeButton} onPress={() => !isDownloading && onClose()}>
             <Icon name="close" size={wp(8)} color="#fff" />
           </Pressable>
 
-          <Text style={styles.modalTitle}>{task?.title}</Text>
-          {task?.description && (
-            <View style={styles.descriptionContainer}>
-              <ScrollView style={styles.descriptionScroll} contentContainerStyle={{ paddingVertical: hp(1) }}>
-                {parseHTML(task.description)}
-              </ScrollView>
-            </View>
-          )}
 
-          <View style={styles.statusEditRow}>
-            <View style={[styles.statusBadge, { backgroundColor: getStatusColor(task.status) }]}>
-              <Icon name="info" size={wp(5)} color="#fff" style={{ marginRight: wp(1) }} />
-              <Text style={styles.statusText}>{task.status}</Text>
-            </View>
-            {task?.allowEdit && (
-              <TouchableOpacity style={styles.editButton} onPress={handleEdit}>
-                <Icon name="edit" size={wp(5)} color={COLORS?.white} />
-                <Text style={styles.editText}>{t("edit")}</Text>
-              </TouchableOpacity>
+
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ paddingBottom: hp(5) }}
+          >
+
+
+
+            <Text style={styles.modalTitle}>{task?.title}</Text>
+            {task?.description && (
+              <View style={styles.descriptionContainer}>
+                <ScrollView style={styles.descriptionScroll} contentContainerStyle={{ paddingVertical: hp(1) }}>
+                  {parseHTML(task.description)}
+                </ScrollView>
+              </View>
             )}
-          </View>
-          {
-            task?.assigned_to_members?.length > 0 && (
-              <View>
-                <TeamAssigned teamMembers={task?.assigned_to_members} />
+            <View style={styles.statusEditRow}>
+              <View style={[styles.statusBadge, { backgroundColor: getStatusColor(task.status) }]}>
+                <Icon name="info" size={wp(5)} color="#fff" style={{ marginRight: wp(1) }} />
+                <Text style={styles.statusText}>{task.status}</Text>
               </View>
-            )
-          }
-          {/* Media Section */}
-          {mediaList.length > 0 && (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: hp(1) }}>
-              {mediaList.map((item, idx) => (
-                <Pressable
-                  key={idx}
-                  onPress={() => openMediaViewer(item)}
-                  style={{ marginRight: wp(3) }}
-                >
-                  <View style={styles.mediaItem}>
-                    {item.type === "image" ? (
-                      <Image source={{ uri: item.uri }} style={StyleSheet.absoluteFill} resizeMode="cover" />
-                    ) : (
-                      <>
-                        <Video
-                          source={{ uri: item.uri }}
-                          style={StyleSheet.absoluteFill}
-                          resizeMode="cover"
-                          shouldPlay={false}
-                          useNativeControls={false}
-                        />
-                        <View style={styles.playButtonOverlay}>
-                          <Icon name="play-arrow" size={wp(6)} color="#fff" />
-                        </View>
-                      </>
-                    )}
-                  </View>
-                </Pressable>
-              ))}
-            </ScrollView>
-          )}
-
-          {/* Audio Section */}
-          {task?.audio && (
-            <View style={styles.audioContainer}>
-              <Video
-                ref={videoRef}
-                source={{ uri: task.audio }}
-                useNativeControls={false}
-                resizeMode="contain"
-                shouldPlay={isPlaying}
-                onPlaybackStatusUpdate={(status) => {
-                  if (!status.isLoaded) return;
-                  setPosition(status.positionMillis);
-                  setDuration(status.durationMillis || 0);
-                  if (status.didJustFinish) {
-                    setIsPlaying(false);
-                    setPosition(0);
-                  }
-                }}
-                style={{ width: 0, height: 0 }}
-              />
-              <View style={styles.audioTitleRow}>
-                <Text style={styles.audioName}>
-                  <Icon name="audiotrack" size={wp(4)} color={COLORS.primary} /> {task?.audio_name || "Audio File"}
-                </Text>
-                <TouchableOpacity
-                  disabled={isDownloading}
-                  onPress={() => downloadAudio(task.audio, task.audio_name || 'audio.mp3')}
-                  style={{
-                    width: wp(10),
-                    height: wp(10),
-                    borderRadius: wp(5),
-                    backgroundColor: COLORS.primary + "20",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    position: "absolute",
-                    right: wp(2),
-                    top: hp(0)
-                  }}
-                >
-                  {isDownloading ? (
-                    <ActivityIndicator size="small" color={COLORS.primary} />
-                  ) : (
-                    <Icon name="download" size={wp(6)} color={COLORS.primary} />
-                  )}
+              {task?.allowEdit && (
+                <TouchableOpacity style={styles.editButton} onPress={handleEdit}>
+                  <Icon name="edit" size={wp(5)} color={COLORS?.white} />
+                  <Text style={styles.editText}>{t("edit")}</Text>
                 </TouchableOpacity>
+              )}
+            </View>
+            {
+              task?.assigned_to_members?.length > 0 && (
+                <View>
+                  <TeamAssigned teamMembers={task?.assigned_to_members} />
+                </View>
+              )
+            }
+            {/* Media Section */}
+            {mediaList.length > 0 && (
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: hp(1) }}>
+                {mediaList.map((item, idx) => (
+                  <Pressable
+                    key={idx}
+                    onPress={() => openMediaViewer(item)}
+                    style={{ marginRight: wp(3) }}
+                  >
+                    <View style={styles.mediaItem}>
+                      {item.type === "image" ? (
+                        <Image source={{ uri: item.uri }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+                      ) : (
+                        <>
+                          <Video
+                            source={{ uri: item.uri }}
+                            style={StyleSheet.absoluteFill}
+                            resizeMode="cover"
+                            shouldPlay={false}
+                            useNativeControls={false}
+                          />
+                          <View style={styles.playButtonOverlay}>
+                            <Icon name="play-arrow" size={wp(6)} color="#fff" />
+                          </View>
+                        </>
+                      )}
+                    </View>
+                  </Pressable>
+                ))}
+              </ScrollView>
+            )}
+          
+            <View style={styles.datesRow}>
+              <View style={styles.dateItem}>
+                <View style={styles.dateRow}>
+                  <Icon name="calendar-today" size={wp(4)} color={COLORS?.primary} style={{ marginRight: wp(1) }} />
+                  <Text style={styles.label}>{t("assigned_date")}</Text>
+                </View>
+                <Text style={styles.dateText}>{task.assigned_date}</Text>
               </View>
-              <View style={styles.audioControls}>
-                <TouchableOpacity onPress={handleBackward} style={styles.controlButton}>
-                  <Icon name="replay-5" size={wp(7)} color={COLORS.primary} />
-                </TouchableOpacity>
-                <TouchableOpacity onPress={handlePlayPause} style={[styles.controlButton, styles.playButton]}>
-                  <Icon name={isPlaying ? "pause" : "play-arrow"} size={wp(9)} color="#fff" />
-                </TouchableOpacity>
-                <TouchableOpacity onPress={handleForward} style={styles.controlButton}>
-                  <Icon name="forward-5" size={wp(7)} color={COLORS.primary} />
-                </TouchableOpacity>
-              </View>
-              <Pressable
-                ref={progressBarRef}
-                onLayout={(event) => setBarLayout({ x: event.nativeEvent.layout.x, width: event.nativeEvent.layout.width })}
-                onPress={handleSeek}
-                style={styles.progressBarBackground}
-              >
-                <View style={[styles.progressBarFill, { flex: progress }]} />
-                <View style={[styles.progressBarRemaining, { flex: 1 - progress }]} />
-              </Pressable>
-              <View style={styles.timeRow}>
-                <Text style={styles.timeText}>{formatTime(position)}</Text>
-                <Text style={styles.timeText}>{formatTime(duration)}</Text>
+              <View style={styles.dateItem}>
+                <View style={styles.dateRow}>
+                  <Icon name="event" size={wp(4)} color={COLORS?.primary} style={{ marginRight: wp(1) }} />
+                  <Text style={styles.label}>{t("due_date")}</Text>
+                </View>
+                <Text style={styles.dateText}>{task.due_date}</Text>
               </View>
             </View>
-          )}
-          {/* <Text style={{ fontSize: wp(1.2) }}>{JSON.stringify(task?.assigned_to_members, null, 2)}</Text> */}
-          {/* </ScrollView> */}
+
+            {/* Audio Section */}
+            {task?.audio && (
+              <View style={styles.audioContainer}>
+                <Video
+                  ref={videoRef}
+                  source={{ uri: task.audio }}
+                  useNativeControls={false}
+                  resizeMode="contain"
+                  shouldPlay={isPlaying}
+                  onPlaybackStatusUpdate={(status) => {
+                    if (!status.isLoaded) return;
+                    setPosition(status.positionMillis);
+                    setDuration(status.durationMillis || 0);
+                    if (status.didJustFinish) {
+                      setIsPlaying(false);
+                      setPosition(0);
+                    }
+                  }}
+                  style={{ width: 0, height: 0 }}
+                />
+                <View style={styles.audioTitleRow}>
+                  <Text style={styles.audioName}>
+                    <Icon name="audiotrack" size={wp(4)} color={COLORS.primary} /> {task?.audio_name || "Audio File"}
+                  </Text>
+                  <TouchableOpacity
+                    disabled={isDownloading}
+                    onPress={() => downloadAudio(task.audio, task.audio_name || 'audio.mp3')}
+                    style={{
+                      width: wp(10),
+                      height: wp(10),
+                      borderRadius: wp(5),
+                      backgroundColor: COLORS.primary + "20",
+                      justifyContent: "center",
+                      alignItems: "center",
+                      position: "absolute",
+                      right: wp(2),
+                      top: hp(0)
+                    }}
+                  >
+                    {isDownloading ? (
+                      <ActivityIndicator size="small" color={COLORS.primary} />
+                    ) : (
+                      <Icon name="download" size={wp(6)} color={COLORS.primary} />
+                    )}
+                  </TouchableOpacity>
+                </View>
+                <View style={styles.audioControls}>
+                  <TouchableOpacity onPress={handleBackward} style={styles.controlButton}>
+                    <Icon name="replay-5" size={wp(7)} color={COLORS.primary} />
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={handlePlayPause} style={[styles.controlButton, styles.playButton]}>
+                    <Icon name={isPlaying ? "pause" : "play-arrow"} size={wp(9)} color="#fff" />
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={handleForward} style={styles.controlButton}>
+                    <Icon name="forward-5" size={wp(7)} color={COLORS.primary} />
+                  </TouchableOpacity>
+                </View>
+                <Pressable
+                  ref={progressBarRef}
+                  onLayout={(event) => setBarLayout({ x: event.nativeEvent.layout.x, width: event.nativeEvent.layout.width })}
+                  onPress={handleSeek}
+                  style={styles.progressBarBackground}
+                >
+                  <View style={[styles.progressBarFill, { flex: progress }]} />
+                  <View style={[styles.progressBarRemaining, { flex: 1 - progress }]} />
+                </Pressable>
+                <View style={styles.timeRow}>
+                  <Text style={styles.timeText}>{formatTime(position)}</Text>
+                  <Text style={styles.timeText}>{formatTime(duration)}</Text>
+                </View>
+              </View>
+            )}
+          </ScrollView>
         </Animated.View>
       </View>
-
-      {/* Media Viewer Modal */}
       {
         selectedMedia && (
           <MediaViewerModal
@@ -350,15 +371,12 @@ const TaskDetailModal = ({ visible, task, onClose, getStatusColor }) => {
     </Modal >
   );
 };
-
 export default TaskDetailModal;
-
-// Styles (unchanged)
 const styles = StyleSheet.create({
   overlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.4)" },
   modalContainer: {
     position: "absolute", left: 0, right: 0, bottom: 0,
-    maxHeight: SCREEN_HEIGHT * 0.92, backgroundColor: "#fff",minHeight: hp(50),
+    maxHeight: SCREEN_HEIGHT * 0.92, backgroundColor: "#fff", minHeight: hp(50),
     borderTopLeftRadius: wp(8), borderTopRightRadius: wp(8),
     padding: wp(5), paddingTop: hp(6), paddingVertical: hp(6), shadowColor: "#000",
     shadowOpacity: 0.25, shadowRadius: 10, elevation: 15,
@@ -397,11 +415,14 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.3)",
     borderRadius: wp(2),
   },
-  datesRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: hp(2) },
-  dateItem: { flex: 1 },
+  datesRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: hp(2), },
+  dateItem: {
+    flex: 1,
+    borderWidth: wp(0.3), borderColor: COLORS.primary, borderRadius: wp(3), padding: wp(3), marginRight: wp(2)
+  },
   dateRow: { flexDirection: "row", alignItems: "center" },
   label: { fontSize: wp(3.2), fontFamily: "Poppins_400Regular", color: COLORS?.primary },
-  dateText: { fontSize: wp(3.8), fontFamily: "Poppins_500Medium", marginTop: hp(0.3), color: "#333" },
+  dateText: { fontSize: wp(3), fontFamily: "Poppins_500Medium", marginTop: hp(0.3), color: "#333" },
   audioContainer: { marginTop: hp(2), alignItems: "center", padding: wp(4), borderRadius: wp(5), backgroundColor: "#eef6ff", justifyContent: "center", width: "100%" },
   audioName: { fontSize: wp(4), fontFamily: "Poppins_500Medium", marginBottom: hp(1), flexDirection: "row" },
   audioTitleRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: hp(2), width: "100%", padding: wp(2) },

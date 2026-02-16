@@ -25,6 +25,7 @@ import CustomDropdown from "./CustomDropDown";
 import ImageViewerModal from "./ImageViewver";
 import CustomSingleDatePickerModal from "./SingleDateSelect";
 import SpeechToTextModal from "./SpeechToTextMOdal";
+import TaskPriority from "./TaskPriority";
 import TeamMembersView from "./TeamMemView";
 import UserCustomDropdown from "./UserSelect";
 export default function CreateTask({ route }) {
@@ -81,12 +82,17 @@ export default function CreateTask({ route }) {
     Audio.requestPermissionsAsync();
   }, []);
   useEffect(() => {
-    fetchDropDownData();
-  }, [selectedTeam, assignType, assignedBy, priority]);
+      fetchDropDownData();
+  }, [selectedTeam, assignedBy, priority, assignType]);
+  useEffect(() => {
+    // Alert.alert('Assign Type Changed', `Selected assign type: ${assignType}`); // Debug alert
+    setSelectedTeam(null);
+  }, [assignType]);
 
   useEffect(() => {
     setErrors({});
   }, [title, description]);
+
   useEffect(() => {
     let interval;
     if (isRecording) {
@@ -130,14 +136,7 @@ export default function CreateTask({ route }) {
           priority: priority ? priority?.value : null
         }
       );
-      // Alert.alert("API Response", JSON.stringify(  {
-      //   user_id: profileDetails.id,
-      //   lang: lang ?? "en",
-      //   team_id: selectedTeam ? selectedTeam?.value : null,
-      //   assignType: assignType == 'group' ? 'team' : assignType == 'department' ? 'department' : 'individual',
-      //   assignedBy: assignedBy ? assignedBy?.value : null,
-      //   priority: priority ? priority?.value : null
-      // }, null, 2));
+
 
       if (response?.data) {
         setdropDownData(response.data);
@@ -179,12 +178,7 @@ export default function CreateTask({ route }) {
       if (!hasPermission) return;
       setRecordingFor(forField);
       setIsRecording(true);
-      // await Audio.setAudioModeAsync({ 
-      //   allowsRecordingIOS: true, 
-      //   playsInSilentModeIOS: true, 
-      //   staysActiveInBackground: false, 
-      //   interruptionModeIOS: Audio.INTERRUPTION_MODE_IOS_DO_NOT_MIX, 
-      // }); 
+
       await Audio.setAudioModeAsync({
         allowsRecordingIOS: true,
         playsInSilentModeIOS: true,
@@ -370,6 +364,7 @@ export default function CreateTask({ route }) {
   const [viewerVisible, setViewerVisible] = useState(false);
   const [viewerUri, setViewerUri] = useState(null);
   const [lang, setLang] = useState(null);
+
 
 
   const handleSubmit = async () => {
@@ -757,7 +752,7 @@ export default function CreateTask({ route }) {
             <View style={styles.radioContainer}>
               <Pressable
                 style={styles.radioButton}
-                onPress={() => {setAssignType("individual"),setSelectedTeam(null)}}
+                onPress={() => { setAssignType("individual"), setSelectedTeam(null) }}
               >
                 <Icon
                   name={assignType === "individual" ? "check-circle" : "circle"}
@@ -770,7 +765,7 @@ export default function CreateTask({ route }) {
               </Pressable>
               <Pressable
                 style={styles.radioButton}
-                onPress={() => {setAssignType("group"),setSelectedTeam(null)}}
+                onPress={() => { setAssignType("group"), setSelectedTeam(null) }}
               >
                 <Icon
                   name={assignType === "group" ? "check-circle" : "circle"}
@@ -783,7 +778,7 @@ export default function CreateTask({ route }) {
               </Pressable>
               <Pressable
                 style={styles.radioButton}
-                onPress={() => {setAssignType("department"), setSelectedTeam(null)}}
+                onPress={() => { setAssignType("department"), setSelectedTeam(null) }}
               >
                 <Icon
                   name={assignType === "department" ? "check-circle" : "circle"}
@@ -795,6 +790,7 @@ export default function CreateTask({ route }) {
                 <Text style={styles.radioLabel}>{`${t('department')}`}</Text>
               </Pressable>
             </View>
+            {/* <Text>{JSON.stringify(selectedTeam?.value)}</Text> */}
             {
               assignType && (
                 <UserCustomDropdown
@@ -830,11 +826,14 @@ export default function CreateTask({ route }) {
               </Text>
             )}
             {
-            assignType === "group" || assignType === "department" && selectedTeam?.value &&
+              // assignType == "group"
+              // || assignType == "department"
+              // &&
+              selectedTeam?.value &&
               <View>
                 <TeamMembersView teamMembers={dropDownData} />
               </View>}
-            <CustomDropdown
+            <TaskPriority
               title={`${t('task_priority')} *`}
               data={siteDetails?.prioritiesList || []}
               placeholder={`${t('choose_priority')}`}
