@@ -1,8 +1,9 @@
 import React, { useEffect, useRef } from "react";
 import {
     Animated, Easing, Image, Modal, StyleSheet,
-    Text, TouchableOpacity, TouchableWithoutFeedback,
-    View,
+    Text,
+    TouchableWithoutFeedback,
+    View
 } from "react-native";
 import { COLORS } from "../../app/resources/colors";
 import { hp, wp } from "../../app/resources/dimensions";
@@ -84,20 +85,6 @@ export default function InAppNotificationModal({
                             <Text style={styles.message}>
                                 {message || "You have received a new notification."}
                             </Text>
-
-                            {/* Actions */}
-                            <View style={styles.buttonRow}>
-                                <TouchableOpacity
-                                    style={styles.primaryBtn}
-                                    activeOpacity={0.85}
-                                    onPress={() => {
-                                        onClose();
-                                        onPress && onPress();
-                                    }}
-                                >
-                                    <Text style={styles.primaryText}>View</Text>
-                                </TouchableOpacity>
-                            </View>
                         </Animated.View>
                     </TouchableWithoutFeedback>
                 </Animated.View>
@@ -105,7 +92,6 @@ export default function InAppNotificationModal({
         </Modal>
     );
 }
-
 const styles = StyleSheet.create({
     overlay: {
         flex: 1,
@@ -113,47 +99,28 @@ const styles = StyleSheet.create({
         justifyContent: "flex-end",
     },
     modalContainer: {
-        width: "100%",
-        backgroundColor: COLORS.primary,
+        width: "100%", backgroundColor: COLORS.primary,
         borderTopLeftRadius: 22,
-        borderTopRightRadius: 22,
-        padding: 20,
-        minHeight: hp(50),
+        borderTopRightRadius: 22, padding: 20, minHeight: hp(40),
     },
     header: {
-        alignItems: "center",
-        marginBottom: 12,
-    },
-    icon: {
-        width: wp(50),
-        height: wp(40),
-        resizeMode: "contain",
-        marginBottom: 6,
+        alignItems: "center", marginBottom: 12,
+    }, icon: {
+        width: wp(50), height: wp(40),
+        resizeMode: "contain", marginBottom: 6,
     },
     title: {
-        fontSize: 18,
-        fontWeight: "700",
-        color: COLORS.white,
-        textAlign: "center",
-        fontFamily: "Poppins_700Bold",
-    },
-    message: {
-        fontSize: 14,
-        color: "#fff",
+        fontSize: 18, fontWeight: "700", color: COLORS.white,
+        textAlign: "center", fontFamily: "Poppins_700Bold",
+    }, message: {
+        fontSize: 14, color: "#fff",
         lineHeight: 22,
-        marginBottom: 20,
-        textAlign: "center",
-        fontFamily: "Poppins_400Regular",
-    },
-    buttonRow: {
-        flexDirection: "row",
-        justifyContent: "center",
-    },
-    primaryBtn: {
+        marginBottom: 20, textAlign: "center", fontFamily: "Poppins_400Regular",
+    }, buttonRow: {
+        flexDirection: "row", justifyContent: "center",
+    }, primaryBtn: {
         backgroundColor: COLORS.primary,
-        paddingVertical: 12,
-        paddingHorizontal: 28,
-        borderRadius: 12,
+        paddingVertical: 12, paddingHorizontal: 28, borderRadius: 12,
     },
     primaryText: {
         color: "#fff",

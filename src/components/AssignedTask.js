@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { Animated, Image, Pressable, StyleSheet, Text, ToastAndroid, View } from "react-native";
 import { COLORS } from "../../app/resources/colors";
 import { hp, wp } from "../../app/resources/dimensions";
+
 const TASKS_INFO = {
   open: {
     labelKey: "Open",
@@ -123,7 +124,7 @@ const AssignedTask = ({ homepageData }) => {
             },
           ]}
         >
-          {key === "over_due" ? (
+          {key === "over_due" && value != 0 ? (
             <Animated.Image
               source={taskInfo.icon}
               style={[

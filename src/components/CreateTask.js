@@ -381,7 +381,7 @@ export default function CreateTask({ route }) {
     try {
       const formData = new FormData();
       formData.append("user_id", profileDetails.id.toString());
-      formData.append("assign_to_type", assignType == "group" ? "teem" : assignType == "department" ? "department" : "individual");
+      formData.append("assign_to_type", assignType == "group" ? "team" : assignType == "department" ? "department" : "individual");
       formData.append("assign_to", selectedTeam?.value?.toString() || "");
       formData.append("title", title);
       formData.append("description", description);

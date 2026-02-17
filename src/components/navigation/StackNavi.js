@@ -1,6 +1,7 @@
 import { createStackNavigator } from '@react-navigation/stack';
 import AssignTaskListScreen from '../AssignTaskListScreen';
 import Attendance from '../Attendance';
+import AttendanceLog from '../AttendanceLog';
 import ChangeMpin from '../ChangeMpin';
 import CreateMpin from '../CreateMpin';
 import CreateTask from '../CreateTask';
@@ -51,6 +52,7 @@ export default function StackNavi() {
       <Stack.Screen name='UpdateTask' component={UpdateTask} />
       <Stack.Screen name='Attendance' component={Attendance} />
       <Stack.Screen name='PayRollScreen' component={PayRollScreen} />
+      <Stack.Screen name='AttendanceLog' component={AttendanceLog} />
     </Stack.Navigator>
   );
 }

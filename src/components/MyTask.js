@@ -137,7 +137,7 @@ const MyTask = ({ homepageData }) => {
               ],
             },
           ]}
-        >{key === "over_due" ? (
+        >{key === "over_due" && value != 0   ? (
           <Animated.Image
             source={taskInfo.icon}
             style={[

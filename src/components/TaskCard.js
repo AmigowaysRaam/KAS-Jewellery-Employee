@@ -118,31 +118,44 @@ export default function TaskCard({ task, loadData }) {
                 ]}
             >
                 <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-                    <Text style={[styles.title, { color: priorityStyle.color }]}>
-                        {task?.title || t("untitled")}
-                    </Text>
-                    {/* STATUS BUTTON */}
                     <Pressable
                         disabled={loading}
                         onPress={() => setShowStatusModal(true)}
                         style={[
                             styles.statusBtn,
-                            { backgroundColor: getStatusColor(task?.status) },
+                            {
+                                backgroundColor: getStatusColor(task?.status),
+                                width: wp(43),
+                                paddingVertical: hp(1.8),
+                            },
                         ]}
                     >
                         {
                             loading ?
-                                <ActivityIndicator size={wp(4)} color="#fff" style={{ marginLeft: wp(2) }} />
+                                <ActivityIndicator size={wp(4.5)} color="#fff" style={{ marginLeft: wp(2), }} />
                                 :
                                 <>
                                     <Text style={styles.statusText}>{task?.status}</Text>
-                                    <Icon name="edit" size={wp(4)} color="#fff" />
+                                    <Icon name="edit" size={wp(4.8)} color="#fff" />
                                 </>
                         }
                     </Pressable>
+                    <Pressable
+                        disabled={loading}
+                        onPress={() => openDetailModal()}
+                        style={[
+                            styles.statusBtn,
+                            { backgroundColor: COLORS?.primary, width: wp(43),justifyContent:"space-between" ,
+                                paddingVertical: hp(1.8),
+                            },
+                        ]}
+                    >
+                        <Text style={styles.statusText}>{t('view')}</Text>
+                        <Icon name="arrow-forward-ios" size={wp(4.8)} color="#fff" />
+                    </Pressable>
 
                 </View>
-                <View style={styles.footer}>
+                {/* <View style={styles.footer}>
                     <View style={[styles.priorityBadge, {
                         borderColor: priorityStyle.color
                     }]}>
@@ -150,22 +163,12 @@ export default function TaskCard({ task, loadData }) {
                             {task?.priority}
                         </Text>
                     </View>
-
-                    <View style={styles.viewBtn}>
-                        <Text style={styles.viewText}>{t('view')}</Text>
-                        <Icon
-                            name="arrow-forward-ios"
-                            size={wp(4)}
-                            color="#fff"
-                            style={{ marginLeft: wp(1) }}
-                        />
-                    </View>
-                </View>
+                </View> */}
             </Pressable>
             <StatusSelectModal
                 currentStatus={task?.status}
                 visible={showStatusModal}
-                statuses={siteDetails?.ticketstatusList || []}
+                statuses={siteDetails?.ticketstatusnooverdueList || []}
                 onClose={() => setShowStatusModal(false)}
                 onSelect={(status) => {
                     handleUpdateStatus(status);
@@ -183,7 +186,7 @@ export default function TaskCard({ task, loadData }) {
 }
 const styles = StyleSheet.create({
     card: {
-        width: wp(92), borderRadius: wp(3), padding: wp(3),
+        width: wp(95), borderRadius: wp(3), padding: wp(2),
         elevation: 4, shadowColor: "#000", shadowOpacity: 0.1,
         shadowRadius: 6, shadowOffset: { width: 0, height: 3 },
         marginVertical: hp(0.7), borderWidth: wp(0.5),
@@ -191,11 +194,11 @@ const styles = StyleSheet.create({
         fontSize: wp(4.2), fontWeight: "600",
         marginBottom: hp(1), textTransform: "capitalize", maxWidth: wp(44)
     }, statusBtn: {
-        flexDirection: "row", alignItems: "center",
+        flexDirection: "row", alignItems: "center",justifyContent:"space-between",
         alignSelf: "flex-start", paddingHorizontal: wp(5),
         paddingVertical: hp(1), borderRadius: wp(2),
     }, statusText: {
-        color: "#fff", fontSize: wp(3.8),
+        color: "#fff", fontSize: wp(4.5),
         marginRight: wp(2), fontWeight: "600",
     },
     footer: {

@@ -99,23 +99,20 @@ const Banner = ({ homepageData, opacity }) => {
         >
           {/* Greeting */}
           <Animated.Text
+          numberOfLines={1}
             style={[styles.greeting, { opacity: rowOpacity, transform: [{ translateY: rowTranslateY }] }]}
           >
             {employeeDetails?.welcome_text}
+            <Text numberOfLines={1} style={styles.name}>
+              {`, ${employeeDetails?.name}`}
+            </Text>
           </Animated.Text>
-
           {/* Name & Status */}
-          <Animated.View style={[styles.rowBetween, { opacity: rowOpacity, transform: [{ translateY: rowTranslateY }] }]}>
+          {/* <Animated.View style={[styles.rowBetween, { opacity: rowOpacity, transform: [{ translateY: rowTranslateY }] }]}>
             <Text numberOfLines={1} style={styles.name}>
               {employeeDetails?.name || ''}
             </Text>
-            {/* <View style={styles.row}>
-              <Text style={styles.label}>{t("emp_status")} :</Text>
-              <Text style={styles.value}>{employeeDetails?.employee_status}</Text>
-            </View> */}
-          </Animated.View>
-
-          {/* Emp ID & Date */}
+          </Animated.View> */}
           <Animated.View style={[styles.rowBetween, { opacity: rowOpacity, transform: [{ translateY: rowTranslateY }] }]}>
             <View style={styles.row}>
               <Text style={styles.label}>{t("emp_id")} :</Text>
@@ -147,21 +144,20 @@ export default Banner;
 
 const styles = StyleSheet.create({
   wrapper: {
-    marginTop: wp(1),
+    marginVertical: wp(1),
     alignItems: "center",
   }, card: {
     width: wp(95),
-    height: hp(18), padding: wp(3.4), justifyContent: "space-between",
+    height: hp(16), padding: wp(3.5), justifyContent: "space-between",
   }, cardImage: {
     borderRadius: wp(2),
   },
   greeting: {
-    fontFamily: "Poppins_700Bold", color: COLORS.white,
-    fontSize: wp(4.6), lineHeight: hp(3), marginBottom: wp(0.5),
+    fontFamily: "Poppins_600SemiBold", color: COLORS.white,
+    fontSize: wp(4.1), lineHeight: hp(3), marginBottom: wp(0),
   }, name: {
-    fontFamily: "Poppins_600SemiBold",
-    color: COLORS.white, fontSize: wp(4), textTransform: "capitalize",
-    maxWidth: wp(48),
+    fontFamily: "Poppins_700Bold",
+    color: COLORS.white, fontSize: wp(4.4), textTransform: "capitalize",
   }, label: {
     fontFamily: "Poppins_400Regular", color: COLORS.white,
     fontSize: wp(3), marginRight: wp(1),

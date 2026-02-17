@@ -47,7 +47,7 @@ const SearchContainer = ({ value, onChangeText,
             color: "#2ecc71", // Green
             icon: <Icon name="build" size={hp(3)} color="#000" />,
           };
-          case "Over Due":
+          case "Overdue":
             return {
               color: "#ff0000", // Green
               icon: <Icon name="warning" size={hp(3)} color="#000" />,

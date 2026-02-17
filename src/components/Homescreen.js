@@ -11,8 +11,10 @@ import { COLORS } from "../../app/resources/colors";
 import HomeSkeleton from "../../homeSkelton";
 import { fetchData } from "./api/Api";
 import AssignedTask from "./AssignedTask";
+import AttendanceDetails from "./AttendanceDetails";
 import Banner from "./Banner";
 import Header from "./Header";
+// import HomeMenuRow from "./HomeMenuRow";
 import InAppNotificationModal from "./InappNotification";
 import LanguageMenu from "./LanguageMenu";
 import MyTask from "./MyTask";
@@ -130,7 +132,8 @@ export default function Homescreen() {
         ) : homepageData ? (
           <>
             <Banner homepageData={homepageData} />
-             {/* <PunchCard homepageData={homepageData} onLoading={setpunchLoading} />
+            <AttendanceDetails homepageData={homepageData} />
+            {/* <PunchCard homepageData={homepageData} onLoading={setpunchLoading} />
             <HomeMenuRow homepageData={homepageData} /> */}
             <TaskRow homepageData={homepageData} />
             <MyTask homepageData={homepageData} />
