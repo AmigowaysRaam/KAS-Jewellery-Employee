@@ -381,67 +381,65 @@ export default function UpdateTask({ route }) {
   };
   // Update task
   const handleUpdateTask = async () => {
-    // if (video[0]) {
-    //   Alert.alert('', JSON.stringify(video[0]))
-    //   return
-    // }
-
     if (!validate()) {
       showToast(t("failed_to_update_task"), "error");
-      return
-    };
+      return;
+    }
     setLoading(true);
+  
     try {
       const formData = new FormData();
-      formData.append("id", ticketDetails.id);
-      formData.append("description", description);
-      formData.append("status", selectedStatus);
-      formData.append("priority", selectedPriority);
-      formData.append("user_id", profileDetails?.id);
+      formData.append("id", ticketDetails?.id || "");
+      formData.append("description", description || "");
+      formData.append("status", selectedStatus || "");
+      formData.append("priority", selectedPriority || "");
+      formData.append("user_id", profileDetails?.id || "");
+  
       // IMAGES
-      images
-        .filter(img => img.source !== "API")
-        .forEach((img, index) => {
-          const uriParts = img.uri.split(".");
-          const fileType = uriParts[uriParts.length - 1];
-          formData.append("image[]", {
-            uri: Platform.OS === "android"
-              ? img.uri
-              : img.uri.replace("file://", ""),
-            name: `photo_${index}.${fileType}`,
-            type: `image/${fileType === "jpg" ? "jpeg" : fileType}`,
+      if (Array.isArray(images)) {
+        images
+          .filter((img) => img?.source !== "API")
+          .forEach((img, index) => {
+            if (!img?.uri) return; // skip if uri is missing
+            const uriParts = img.uri.split(".");
+            const fileType = uriParts[uriParts.length - 1];
+            formData.append("image[]", {
+              uri: Platform.OS === "android" ? img.uri : img.uri.replace("file://", ""),
+              name: `photo_${index}.${fileType}`,
+              type: `image/${fileType === "jpg" ? "jpeg" : fileType}`,
+            });
           });
-        });
-      // VIDEO
-      const sourceTYpe = video[0].source;
-      if (video && video.length > 0 && sourceTYpe !== "API") {
-        const videoFile = video[0];
-        formData.append("video", {
-          uri: Platform.OS === "android"
-            ? videoFile.uri
-            : videoFile.uri.replace("file://", ""),
-          name: videoFile.fileName || "updatetask_video.mp4",
-          type: videoFile.mimeType || "video/mp4", // ✅ IMPORTANT FIX
-        });
       }
+  
+      // VIDEO
+      if (Array.isArray(video) && video.length > 0 && video[0]?.source !== "API") {
+        const videoFile = video[0];
+        if (videoFile?.uri) {
+          formData.append("video", {
+            uri: Platform.OS === "android" ? videoFile.uri : videoFile.uri.replace("file://", ""),
+            name: videoFile.fileName || "updatetask_video.mp4",
+            type: videoFile.mimeType || "video/mp4",
+          });
+        }
+      }
+  
       // AUDIO
       if (descAudio?.uri && !descAudio.uri.startsWith("http")) {
         formData.append("audio", {
-          uri: Platform.OS === "android"
-            ? descAudio.uri
-            : descAudio.uri.replace("file://", ""),
+          uri: Platform.OS === "android" ? descAudio.uri : descAudio.uri.replace("file://", ""),
           type: "audio/mpeg",
-          name: `${descAudio.name || "audio"}.mp3`,
+          name: `${descAudio?.name || "audio"}.mp3`,
         });
       }
+  
       const response = await fetch(`${BASE_URL}app-employee-update-task`, {
         method: "POST",
         headers: { Accept: "application/json" },
         body: formData,
       });
-      // Alert.alert(JSON.stringify(response))
+  
       const result = await response.json();
-      // Alert.alert(JSON.stringify(result))
+  
       if (result?.success) {
         showToast(result.message || t("task_updated_successfully"), "success");
         navigation.goBack();

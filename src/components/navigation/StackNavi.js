@@ -14,6 +14,7 @@ import MyTaskListScreen from '../MyTaskListScreen';
 import Notification from '../Notification';
 import OtpVerfication from '../otpVerfication';
 import OurStoreScreen from '../Ourstore';
+import PayrollLogScreen from '../PayrollLogScreen';
 import PayRollScreen from '../PayRollScreen';
 import PrivacyPolicyScreen from '../PrivacyPolicy';
 import ResetMpin from '../ResetMpin';
@@ -53,6 +54,7 @@ export default function StackNavi() {
       <Stack.Screen name='Attendance' component={Attendance} />
       <Stack.Screen name='PayRollScreen' component={PayRollScreen} />
       <Stack.Screen name='AttendanceLog' component={AttendanceLog} />
+      <Stack.Screen name='PayrollLogScreen' component={PayrollLogScreen} />
     </Stack.Navigator>
   );
 }

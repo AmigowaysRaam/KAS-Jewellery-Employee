@@ -397,7 +397,7 @@ export default function CreateTask({ route }) {
         });
       });
       if (video?.length > 0) {
-        console.log("Appending video to FormData:", video[0]);
+        // console.log("Appending video to FormData:", video[0]);
         formData.append("video", {
           uri: video[0].uri,
           name: video[0].fileName || `video_${Date.now()}.mp4`,
@@ -416,17 +416,13 @@ export default function CreateTask({ route }) {
         body: formData,
         headers: { Accept: "application/json" },
       });
-
       const resultJson = await response.json();
-      console.log("Parsed Result:", resultJson);
-
       if (resultJson?.success) {
         showToast(resultJson.message, 'success');
         navigation?.goBack();
       } else {
         showToast(resultJson?.message || "Failed to create task", 'error');
       }
-
     } catch (error) {
       console.error("API Error:", error);
       showToast("Something went wrong while creating task", 'error');
@@ -438,7 +434,6 @@ export default function CreateTask({ route }) {
     setViewerUri(uri);
     setViewerVisible(true);
   };
-
   const requestCameraPermission = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== "granted") {
@@ -447,7 +442,6 @@ export default function CreateTask({ route }) {
     }
     return true;
   };
-
   const requestGalleryPermission = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== "granted") {
@@ -459,7 +453,6 @@ export default function CreateTask({ route }) {
   const removeImage = (index) => {
     setImages((prev) => prev.filter((_, i) => i !== index));
   };
-
   const scrollToBottom = () => {
   };
   return (
@@ -469,9 +462,6 @@ export default function CreateTask({ route }) {
         showBackButton
         onBackPress={() => navigation.goBack()}
       />
-      {/* {loading && <ActivityIndicator color={COLORS?.primary} style={{
-        marginTop: hp(5), opacity: 3
-      }} />} */}
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : undefined}

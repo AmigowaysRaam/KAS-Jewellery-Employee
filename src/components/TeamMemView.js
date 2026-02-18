@@ -10,8 +10,7 @@ import {
     ScrollView,
     StyleSheet,
     Text,
-    TouchableWithoutFeedback,
-    View,
+    View
 } from "react-native";
 import { COLORS } from "../../app/resources/colors";
 import { hp, wp } from "../../app/resources/dimensions";
@@ -20,7 +19,7 @@ export default function TeamMembersView({ teamMembers }) {
     const [modalVisible, setModalVisible] = useState(false);
     const scaleAnim = useRef(new Animated.Value(0.8)).current;
     const opacityAnim = useRef(new Animated.Value(0)).current;
-    const {t} = useTranslation();
+    const { t } = useTranslation();
 
     const teamUsers = teamMembers?.team_users || [];
 
@@ -107,38 +106,72 @@ export default function TeamMembersView({ teamMembers }) {
                     );
                 }}
             />
-
             {/* Modal for full vertical list */}
-            <Modal transparent visible={modalVisible} animationType="none">
-                <TouchableWithoutFeedback onPress={closeModal}>
-                    <View style={styles.modalOverlay}>
-                        <TouchableWithoutFeedback>
-                            <Animated.View
-                                style={[
-                                    styles.modalContent,
-                                    {
-                                        transform: [{ scale: scaleAnim }],
-                                        opacity: opacityAnim,
-                                    },
-                                ]}
-                            >
-                                <Text style={styles.modalTitle}>{t('team_members')}</Text>
-                                <ScrollView>
-                                    {teamUsers.map((item, index) => (
-                                        <View key={item.value?.toString() || index} style={styles.modalItem}>
-                                            <Image source={{ uri: item.image }} style={styles.modalImage} />
-                                            <Text style={styles.modalText}>{item.label}</Text>
-                                        </View>
-                                    ))}
-                                </ScrollView>
-                                <Pressable onPress={closeModal} style={styles.closeButton}>
-                                    <Text style={{ color: "#fff", fontSize: wp(5) }}>{t('close')}</Text>
-                                </Pressable>
-                            </Animated.View>
-                        </TouchableWithoutFeedback>
+           
+            <Modal
+    transparent
+    visible={modalVisible}
+    animationType="none"
+    onRequestClose={closeModal}
+>
+    <View style={styles.modalOverlay}>
+        {/* Background Close Layer */}
+        <Pressable
+            style={StyleSheet.absoluteFill}
+            onPress={closeModal}
+        />
+
+        {/* Modal Content */}
+        <Animated.View
+            style={[
+                styles.modalContent,
+                {
+                    transform: [{ scale: scaleAnim }],
+                    opacity: opacityAnim,
+                },
+            ]}
+        >
+            <Text style={styles.modalTitle}>
+                {t("team_members")}
+            </Text>
+
+            <ScrollView
+                style={{ flexGrow: 0 }}
+                showsVerticalScrollIndicator={true}
+                contentContainerStyle={{ paddingBottom: hp(2) }}
+                nestedScrollEnabled={true}
+            >
+                {teamUsers.map((item, index) => (
+                    <View
+                        key={
+                            item?.id?.toString() ||
+                            item?.value?.toString() ||
+                            `member-${index}`
+                        }
+                        style={styles.modalItem}
+                    >
+                        <Image
+                            source={{ uri: item.image }}
+                            style={styles.modalImage}
+                        />
+                        <Text style={styles.modalText}>
+                            {item.label}
+                        </Text>
                     </View>
-                </TouchableWithoutFeedback>
-            </Modal>
+                ))}
+            </ScrollView>
+            <Pressable
+                onPress={closeModal}
+                style={styles.closeButton}
+            >
+                <Text style={{ color: "#fff", fontSize: wp(5) }}>
+                    {t("close")}
+                </Text>
+            </Pressable>
+        </Animated.View>
+    </View>
+</Modal>
+
         </View>
     );
 }

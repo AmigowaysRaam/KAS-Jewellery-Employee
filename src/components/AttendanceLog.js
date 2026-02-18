@@ -1,14 +1,22 @@
 import { useNavigation } from "@react-navigation/native";
 import dayjs from "dayjs";
 import React, { useEffect, useRef, useState } from "react";
-import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from "react-native";
+import {
+  FlatList,
+  Pressable,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  View
+} from "react-native";
 import { Icon } from "react-native-elements";
 import { COLORS } from "../../app/resources/colors";
 import { hp, wp } from "../../app/resources/dimensions";
 import AttendanceDetailsLog from "./AttendanceDetailsLog";
 import AttendanceRow from "./AttendanceRow";
+import AttendTableHeader from "./AttendanceTblHead";
 import CommonHeader from "./CommonHeader";
-import MonthYearDatePickerModal from "./CurentYearDayList";
+import CustomDropdownData from "./CustomDropDownwihtUI";
 
 export default function AttendanceLog({ route }) {
   const navigation = useNavigation();
@@ -16,20 +24,28 @@ export default function AttendanceLog({ route }) {
 
   const [refreshing, setRefreshing] = useState(false);
   const [loginData, setLoginData] = useState([]);
-  const [isPickerVisible, setIsPickerVisible] = useState(false);
-  const [selectedDate, setSelectedDate] = useState(dayjs());
   const [scrollY, setScrollY] = useState(0);
   const [expandedItem, setExpandedItem] = useState(null);
 
-  useEffect(() => loadAttendance(), []);
+  const [yearDropdownVisible, setYearDropdownVisible] = useState(false);
+  const [monthDropdownVisible, setMonthDropdownVisible] = useState(false);
 
+  const [selectedYear, setSelectedYear] = useState(dayjs().year());
+  const [selectedMonth, setSelectedMonth] = useState(dayjs().month() + 1); // 1-12
+
+  const flatListRef = useRef();
+
+  useEffect(() => loadAttendance(), [selectedYear, selectedMonth]);
+
+  // Generate dummy attendance based on selected month/year
   const loadAttendance = () => {
     const dummyData = [];
-    const today = new Date();
-    for (let i = 0; i < 31; i++) {
-      const date = new Date();
-      date.setDate(today.getDate() - i);
-      const formattedDate = date.toISOString().split("T")[0];
+    const daysInMonth = dayjs(`${selectedYear}-${selectedMonth}-01`).daysInMonth();
+
+    for (let i = 0; i < daysInMonth; i++) {
+      const date = dayjs(`${selectedYear}-${selectedMonth}-01`).date(i + 1);
+      const formattedDate = date.format("YYYY-MM-DD");
+
       const statuses = ["Present", "Late", "Absent"];
       const randomStatus = statuses[Math.floor(Math.random() * statuses.length)];
 
@@ -41,6 +57,7 @@ export default function AttendanceLog({ route }) {
         evening_tea_break: "00:00",
         today_working_hour: "08:00",
       };
+
       if (randomStatus === "Late") {
         details.login_time = "09:45 AM";
         details.logout_time = "06:05 PM";
@@ -48,7 +65,14 @@ export default function AttendanceLog({ route }) {
         Object.keys(details).forEach((k) => (details[k] = "--"));
       }
 
-      dummyData.push({ id: i + 1, date: formattedDate, login: details.login_time, logout: details.logout_time, status: randomStatus, details });
+      dummyData.push({
+        id: i + 1,
+        date: formattedDate,
+        login: details.login_time,
+        logout: details.logout_time,
+        status: randomStatus,
+        details,
+      });
     }
     setLoginData(dummyData);
     setRefreshing(false);
@@ -59,99 +83,162 @@ export default function AttendanceLog({ route }) {
     loadAttendance();
   };
 
-  const handleScroll = (event) => {
-    setScrollY(event.nativeEvent.contentOffset.y);
-  };
-
-  const TableHeader = () => (
-    <View style={styles.tableHeader}>
-      <Text style={styles.headerCell}>Date</Text>
-      <Text style={styles.headerCell}>Day</Text>
-      <Text style={styles.headerCell}>Login</Text>
-      <Text style={styles.headerCell}>Logout</Text>
-      <Text style={styles.headerCell}>Status</Text>
-    </View>
-  );
-
-  const showFixedHeader = scrollY > hp(56);
-  const flatListRef = useRef();
+  const handleScroll = (event) => setScrollY(event.nativeEvent.contentOffset.y);
+  const showFixedHeader = scrollY > hp(60);
 
   const handleRowPress = (itemDate) => {
-    const index = loginData.findIndex(i => i.date === itemDate);
+    const index = loginData.findIndex((i) => i.date === itemDate);
     if (index !== -1 && flatListRef.current) {
-      // Scroll so that row is slightly below top
       flatListRef.current.scrollToIndex({
         index,
         animated: true,
-        viewPosition: 0.5, // 0 = top, 0.1 = slightly below top
+        viewPosition: 0.5,
       });
     }
   };
+  // Dropdown options
+  const yearOptions = Array.from({ length: 10 }, (_, i) => {
+    const y = dayjs().year() - i;
+    return { label: y.toString(), value: y };
+  });
+
+  const monthOptions = Array.from({ length: 12 }, (_, i) => ({
+    label: dayjs().month(i).format("MMMM"),
+    value: i + 1,
+  }));
+
   return (
     <View style={styles.container}>
       <CommonHeader title="Attendance Log" onBackPress={() => navigation.goBack()} />
-      {showFixedHeader && <TableHeader style={styles.fixedHeader} />}
+
+      {showFixedHeader && <AttendTableHeader style={styles.fixedHeader} />}
+
       <FlatList
         ref={flatListRef}
-
         data={loginData}
         keyExtractor={(item) => item.id.toString()}
-        renderItem={({ item }) => <AttendanceRow item={item}
-          expandedItem={expandedItem}   // pass from parent
-          onRowPress={handleRowPress}  // send row press to parent
-          setExpandedItem={setExpandedItem} // pass from parent
-        />}
+        renderItem={({ item }) => (
+          <AttendanceRow
+            item={item}
+            expandedItem={expandedItem}
+            onRowPress={handleRowPress}
+            setExpandedItem={setExpandedItem}
+          />
+        )}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         onScroll={handleScroll}
         scrollEventThrottle={16}
         contentContainerStyle={{ paddingBottom: hp(3), paddingTop: hp(1) }}
         ListHeaderComponent={
           <>
-            <View style={{ flexDirection: "row", paddingHorizontal: wp(2) }}>
-              <View style={styles.header}>
-                <Pressable style={styles.dateToggle} onPress={() => setIsPickerVisible(true)}>
-                  <Text style={styles.dateToggleText}>{selectedDate.format("YYYY")}</Text>
-                  <Icon name="calendar" type="font-awesome" color={COLORS.white} size={wp(4)} />
+            {/* Year & Month Buttons */}
+            <View style={{ flexDirection: "row", paddingHorizontal: wp(3), justifyContent: "space-between", marginBottom: hp(2) }}>
+              <View style={{ flex: 1, marginRight: wp(1) }}>
+                <Pressable
+                  style={[styles.dateToggle, {
+                    borderWidth: wp(0.4), borderColor:
+                      COLORS?.primary
+                  }]}
+                  onPress={() => setYearDropdownVisible(!yearDropdownVisible)}
+                >
+                  <Text style={styles.dateToggleText}>{selectedYear}</Text>
+                  <Icon type="feather"
+                    name={yearDropdownVisible ? "calendar" : "calendar"}
+                    size={wp(5)}
+                    color="#fff"
+                  />
                 </Pressable>
+                <CustomDropdownData
+                  onClose={() => setYearDropdownVisible(false)}
+                  title={'Choose Year'}
+                  isVisible={yearDropdownVisible}
+                  data={yearOptions}
+                  selectedItem={{ value: selectedYear }}
+                  onSelect={(item) => {
+                    setSelectedYear(item.value);
+                    setYearDropdownVisible(false);
+                  }}
+                />
               </View>
-              <View style={styles.header}>
-                <Pressable style={[styles.dateToggle, { backgroundColor: COLORS.white, borderWidth: 1, borderColor: COLORS.primary }]}>
-                  <Text style={[styles.dateToggleText, { color: COLORS.primary }]}>Download</Text>
-                  <Icon name="download" type="font-awesome" color={COLORS.primary} size={wp(4)} />
+
+              <View style={{ flex: 1, marginLeft: wp(1) }}>
+                <Pressable
+                  style={[styles.dateToggle, {
+                    backgroundColor: COLORS?.white,
+                    borderWidth: wp(0.4), borderColor:
+                      COLORS?.primary
+                  }]}
+                  onPress={() => setMonthDropdownVisible(!monthDropdownVisible)}
+                >
+                  <Text style={[styles.dateToggleText, {
+                    color: COLORS?.primary
+                  }]}>
+                    {'Download'}
+                  </Text>
+                  <Icon
+                    name={'download'}
+                    size={wp(5)}
+                    color={COLORS?.primary}
+                  />
                 </Pressable>
               </View>
             </View>
-
-            <MonthYearDatePickerModal
-              isVisible={isPickerVisible}
-              onClose={() => setIsPickerVisible(false)}
-              onSelect={({ month, year, date }) => setSelectedDate(dayjs().year(year).month(month).date(date))}
-            />
             <AttendanceDetailsLog homepageData={hData} />
-            {!showFixedHeader && <TableHeader />}
+            <View style={{ marginLeft: wp(4) }}>
+              <Pressable
+                style={[styles.dateToggle, {
+                  width: "45%",
+                }]}
+                onPress={() => setMonthDropdownVisible(!monthDropdownVisible)}
+              >
+                <Text style={styles.dateToggleText}>
+                  {monthOptions.find(m => m.value === selectedMonth)?.label || "Month"}
+                </Text>
+                <Icon
+                  type="feather"
+                  name={monthDropdownVisible ? "arrow-drop-up" : "calendar"}
+                  size={wp(5)}
+                  color="#fff"
+                />
+              </Pressable>
+              <CustomDropdownData
+                title={'Choose Month'}
+                isVisible={monthDropdownVisible}       // <- Control visibility
+                onClose={() => setMonthDropdownVisible(false)}
+                data={monthOptions}
+                selectedItem={{ value: selectedMonth }}
+                onSelect={(item) => {
+                  setSelectedMonth(item.value);
+                  setMonthDropdownVisible(false);
+                }}
+              />
+              
+            </View>
+            {/* Table Header */}
+            {!showFixedHeader && <AttendTableHeader style={styles.fixedHeader} />}
           </>
         }
       />
     </View>
   );
 }
-
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#FFF" },
-  header: { flexDirection: "row", alignItems: "center", paddingHorizontal: wp(2) },
+  fixedHeader: { position: "absolute", top: hp(12), left: 0, right: 0, zIndex: 999, elevation: 4 },
   dateToggle: {
     paddingVertical: wp(2),
-    marginBottom: wp(4),
+    marginBottom: wp(2),
     backgroundColor: COLORS.primary,
     borderRadius: wp(20),
-    width: wp(45),
+    width: "100%",
     alignItems: "center",
     flexDirection: "row",
     justifyContent: "space-around",
-    paddingHorizontal: wp(6),
+    paddingHorizontal: wp(4),
   },
-  dateToggleText: { fontSize: wp(3.5), color: COLORS.white, fontFamily: "Poppins_600SemiBold" },
-  tableHeader: { flexDirection: "row", alignItems: "center", backgroundColor: COLORS.primary, paddingVertical: hp(1.2), paddingHorizontal: wp(2), borderBottomWidth: 1, borderBottomColor: "#ddd", elevation: 4, zIndex: 10 },
-  fixedHeader: { position: "absolute", top: hp(12), left: 0, right: 0, zIndex: 999, elevation: 4 },
-  headerCell: { flex: 1, textAlign: "center", color: "#FFF", fontSize: wp(3.5), fontFamily: "Poppins_600SemiBold" },
+  dateToggleText: {
+    fontSize: wp(3.8),
+    color: "#fff",
+    fontFamily: "Poppins_600SemiBold", lineHeight: hp(3)
+  },
 });

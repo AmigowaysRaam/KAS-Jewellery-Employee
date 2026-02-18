@@ -11,15 +11,16 @@ import { COLORS } from "../../app/resources/colors";
 import HomeSkeleton from "../../homeSkelton";
 import { fetchData } from "./api/Api";
 import AssignedTask from "./AssignedTask";
-import AttendanceDetails from "./AttendanceDetails";
 import Banner from "./Banner";
 import Header from "./Header";
 // import HomeMenuRow from "./HomeMenuRow";
+import AttendanceDetails from "./AttendanceDetails";
 import InAppNotificationModal from "./InappNotification";
 import LanguageMenu from "./LanguageMenu";
 import MyTask from "./MyTask";
 import SideMenu from "./Sidemenu";
 import TaskRow from "./TaskRow";
+
 export default function Homescreen() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [langMenuMOdal, setOpenLangMenu] = useState(false);
@@ -132,7 +133,10 @@ export default function Homescreen() {
         ) : homepageData ? (
           <>
             <Banner homepageData={homepageData} />
-            <AttendanceDetails homepageData={homepageData} />
+            {
+              __DEV__ &&
+              <AttendanceDetails homepageData={homepageData} />
+            }
             {/* <PunchCard homepageData={homepageData} onLoading={setpunchLoading} />
             <HomeMenuRow homepageData={homepageData} /> */}
             <TaskRow homepageData={homepageData} />

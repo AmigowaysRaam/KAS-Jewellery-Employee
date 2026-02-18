@@ -139,7 +139,7 @@ const ProfileCard = ({ onClose, loadingMenu, onEditProfile }) => {
                 <Text numberOfLines={1} style={styles.name}>
                   {profileDetails?.admin_name || t("")}
                 </Text>
-                <Text style={styles.value}>{t("Manager")}</Text>
+                {/* <Text style={styles.value}>{profileDetails?.admin_type}</Text> */}
                 <Text style={styles.value}>{profileDetails?.employee_id || '-'}</Text>
               </View>
             </View>
@@ -192,7 +192,7 @@ const styles = StyleSheet.create({
     fontFamily: "Poppins_600SemiBold",
     color: COLORS.primary, fontSize: wp(3.5), flexShrink: 1, textTransform: "capitalize",
   }, value: {
-    fontFamily: "Poppins_500Medium", color: COLORS.primary, fontSize: wp(3), marginTop: wp(0.5),
+    fontFamily: "Poppins_500Medium", color: COLORS.primary, fontSize: wp(3.5), marginTop: wp(0.5),
   }, profileIconWrapper: {
     width: wp(17), height: wp(17), borderRadius: wp(8.5),
     justifyContent: "center", alignItems: "center", marginRight: wp(2),

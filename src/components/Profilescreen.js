@@ -150,7 +150,7 @@ const ProfileScreen = () => {
               </View>
               <View style={{ marginLeft: wp(3), justifyContent: "center", flex: 1 }}>
                 <Text style={styles.name}>{profileDetails?.admin_name || t("N/A")}</Text>
-                <Text style={styles.type}>{t(profileDetails?.admin_type || "Manager")}</Text>
+                {/* <Text style={styles.type}>{t(profileDetails?.admin_type || "Manager")}</Text> */}
                 <Text style={styles.value}>{profileDetails?.employee_id || t("N/A")}</Text>
               </View>
             </View>
