@@ -14,7 +14,7 @@ export default function CommentList({
   comments,
   loading, ticketDetails, task, flatListRef,
   openImageViewer,
-  loadData, openVideoViewer
+  loadData, openVideoViewer,statusList
 }) {
   const { t } = useTranslation();
   const soundRef = useRef(null);
@@ -163,7 +163,7 @@ export default function CommentList({
           <View style={styles.skeletonSubTitle} />
         </View>
       ) : task ? (
-        <TaskCard task={ticketDetails} loadData={loadData} />
+        <TaskCard task={ticketDetails} loadData={loadData} statusList={statusList}/>
       ) : null}
     </View>
   );

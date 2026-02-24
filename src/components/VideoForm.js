@@ -127,13 +127,13 @@ const VideoFormSection = ({
 };
 const styles = StyleSheet.create({
   fieldContainer: {
-    marginVertical: hp(1),
+    marginBottom: hp(1),
   },
   label: {
-    fontSize: wp(4),
-    fontWeight: "600",
+    fontSize: wp(4.5),
     marginBottom: hp(1),
     color: "#333",
+    fontFamily: "Poppins_400Regular"
   },
   videoRow: {
     flexDirection: "row",
@@ -148,105 +148,59 @@ const styles = StyleSheet.create({
     borderWidth: wp(0.4),
     borderColor: COLORS.gray,
     borderRadius: wp(2),
-  },
-  existingVideo: {
-    width: "95%",
-    height: "90%",
-    borderRadius: wp(2),
-    alignSelf: "center",
+  }, existingVideo: {
+    width: "95%", height: "90%", borderRadius: wp(2), alignSelf: "center",
     marginTop: hp(1),
-  },
-  newVideoContainer: {
-    position: "relative",
-    width: wp(26),
-    height: hp(14),
-    marginRight: wp(2),
+  }, newVideoContainer: {
+    position: "relative", width: wp(26), height: hp(14), marginRight: wp(2),
     marginBottom: hp(1),
-  },
-  newVideo: {
-    width: "100%",
-    height: "100%",
-    borderRadius: wp(2),
-  },
+  }, newVideo: { width: "100%", height: "100%", borderRadius: wp(2), },
   deleteButton: {
-    position: "absolute",
-    top: 0,
-    right: 0,
-    backgroundColor: "rgba(0,0,0,0.6)",
-    borderRadius: 16,
-    padding: 4,
+    position: "absolute", top: 0, right: 0, backgroundColor: "rgba(0,0,0,0.6)", borderRadius: 16, padding: 4,
     zIndex: 10,
-  },
-  deleteButtonNew: {
-    position: "absolute",
-    top: 5,
-    right: 5,
-    backgroundColor: "#ddd",
-    borderRadius: wp(5),
-    padding: wp(1.5),
+  }, deleteButtonNew: {
+    position: "absolute", top: 5, right: 5, backgroundColor: "#ccc",
+    borderRadius: wp(5), padding: wp(1.5),
   },
   addVideoButton: {
-    width: "100%",
-    height: hp(14),
+    width: "100%", height: hp(14),
     backgroundColor: "#eee",
-    justifyContent: "center",
-    alignItems: "center",
-    borderRadius: wp(2),
-    marginRight: wp(2),
-    marginBottom: hp(1),
-    borderStyle: "dashed",
-    borderWidth: wp(0.3),
-    borderColor: "#ccc",
+    justifyContent: "center", alignItems: "center",
+    borderRadius: wp(2), marginRight: wp(2), marginBottom: hp(1), borderStyle: "dashed",
+    borderWidth: wp(0.3), borderColor: "#ccc",
   },
   addVideoText: {
-    marginTop: 5,
-    color: COLORS.primary,
-    fontSize: wp(3.5),
+    marginTop: 5, color: COLORS.primary, fontSize: wp(3.5),
   },
   modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    justifyContent: "center",
-    alignItems: "center",
+    flex: 1, backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center", alignItems: "center",
   },
   modalContainer: {
-    width: "80%",
-    backgroundColor: "#fff",
-    borderRadius: wp(3),
-    padding: wp(5),
+    width: "80%", backgroundColor: "#fff",
+    borderRadius: wp(3), padding: wp(5),
     alignItems: "center", paddingVertical: hp(4),
-  },
-  modalTitle: {
+  }, modalTitle: {
     fontSize: wp(5),
-    fontWeight: "700",
-    marginBottom: hp(1),
+    fontWeight: "700", marginBottom: hp(1),
     color: "#333",
-  },
-  modalMessage: {
+  }, modalMessage: {
     fontSize: wp(4),
-    color: "#666",
-    marginBottom: hp(2),
-    textAlign: "center",
+    color: "#666", marginBottom: hp(2), textAlign: "center",
   },
   modalButtons: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+    flexDirection: "row", justifyContent: "space-between",
     width: "100%",
-  },
-  modalButton: {
-    flex: 1,
-    paddingVertical: hp(1.5),
-    marginHorizontal: wp(1),
-    borderRadius: wp(2),
+  }, modalButton: {
+    flex: 1, paddingVertical: hp(1.5),
+    marginHorizontal: wp(1), borderRadius: wp(2),
     alignItems: "center",
   },
   cancelButton: {
     backgroundColor: "#eee",
-  },
-  confirmButton: {
+  }, confirmButton: {
     backgroundColor: COLORS.primary
-  },
-  cancelText: {
+  }, cancelText: {
     color: "#333",
     fontWeight: "600",
   },

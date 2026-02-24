@@ -27,22 +27,22 @@ const AssignedTaskCard = ({
   }, [isCritical]);
   const getProgressData = (status) => {
     switch (status?.toLowerCase()) {
-        case "open":
-            return { progress: 0.25, color: "#3498db" }; // Blue
-        case "inprogress":
-            return { progress: 0.6, color: "#f39c12" }; // Orange
-        case "waiting for qc":
-            return { progress: 0.85, color: "#9b59b6" }; // Purple
-        case "rework":
-            return { progress: 0.5, color: "#e74c3c" }; // Red
-        case "completed":
-            return { progress: 1, color: "#2ecc71" }; // Green
-        case "overdue":
-            return { progress: 0, color: "#D32F2F" }; // Deep Red for Overdue
-        default:
-            return { progress: 0.1, color: COLORS.primary };
+      case "open":
+        return { progress: 0.25, color: "#3498db" }; // Blue
+      case "inprogress":
+        return { progress: 0.6, color: "#f39c12" }; // Orange
+      case "waiting for qc":
+        return { progress: 0.85, color: "#9b59b6" }; // Purple
+      case "rework":
+        return { progress: 0.5, color: "#e74c3c" }; // Red
+      case "completed":
+        return { progress: 1, color: "#2ecc71" }; // Green
+      case "overdue":
+        return { progress: 0, color: "#D32F2F" }; // Deep Red for Overdue
+      default:
+        return { progress: 0.1, color: COLORS.primary };
     }
-};
+  };
 
   const progressAnim = useRef(new Animated.Value(0)).current;
 
@@ -155,7 +155,6 @@ const AssignedTaskCard = ({
               {item.assigned_date?.split(" ")[0]}
             </Text>
           </View>
-
           <View style={styles.dateBox}>
             <Text style={styles.dateLabel}>
               {t("due_date")}
@@ -165,6 +164,20 @@ const AssignedTaskCard = ({
             </Text>
           </View>
         </View>
+        {
+          item?.extend_date != '' &&
+          <View style={[styles.dateBox, {
+            marginTop: wp(2), backgroundColor: COLORS?.primary + "12"
+          }]}>
+            <Text style={styles.dateLabel}>
+              {t("extend_date")}
+            </Text>
+            <Text numberOfLines={1} style={styles.dateText}>
+              {item?.extend_date}
+            </Text>
+          </View>
+        }
+
         <View style={{ marginTop: hp(0.5) }}>
           <ViewButton
             status={taskCompStatus}
@@ -206,7 +219,7 @@ const styles = StyleSheet.create({
   progressLabel: {
     fontSize: wp(3.2),
     fontFamily: "Poppins_500Medium",
-    color: "#666",textTransform: "capitalize"
+    color: "#666", textTransform: "capitalize"
   },
   progressPercent: {
     fontSize: wp(3.2),
@@ -220,12 +233,12 @@ const styles = StyleSheet.create({
     borderRadius: wp(3),
     overflow: "hidden",
   },
-  
+
   progressFill: {
     height: "100%",
     borderRadius: wp(3),
   },
-  
+
 
   card: {
     backgroundColor: "#fff",
@@ -260,7 +273,6 @@ const styles = StyleSheet.create({
     color: "#1e1e1e",
     marginRight: wp(2),
   },
-
   statusBadge: {
     paddingHorizontal: wp(3),
     paddingVertical: hp(0.6),
@@ -272,7 +284,7 @@ const styles = StyleSheet.create({
   statusText: {
     color: "#fff",
     fontSize: wp(3),
-    fontFamily: "Poppins_500Medium",
+    fontFamily: "Poppins_500Medium", lineHeight: wp(5)
   },
 
   assignedRow: {
@@ -288,6 +300,7 @@ const styles = StyleSheet.create({
   assignedText: {
     fontSize: wp(3.2),
     color: "#555", fontFamily: "Poppins_400Regular",
+    textTransform: "capitalize"
   },
   phoneText: {
     fontSize: wp(2.9),

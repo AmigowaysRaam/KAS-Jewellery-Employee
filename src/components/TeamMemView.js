@@ -24,7 +24,7 @@ export default function TeamMembersView({ teamMembers }) {
     const teamUsers = teamMembers?.team_users || [];
 
     useEffect(() => {
-        console.log("Team Members:", JSON.stringify(teamMembers, null, 2));
+        // console.log("Team Members:", JSON.stringify(teamMembers, null, 2));
     }, [teamUsers]);
 
     if (!teamUsers) return null;
@@ -107,70 +107,70 @@ export default function TeamMembersView({ teamMembers }) {
                 }}
             />
             {/* Modal for full vertical list */}
-           
+
             <Modal
-    transparent
-    visible={modalVisible}
-    animationType="none"
-    onRequestClose={closeModal}
->
-    <View style={styles.modalOverlay}>
-        {/* Background Close Layer */}
-        <Pressable
-            style={StyleSheet.absoluteFill}
-            onPress={closeModal}
-        />
-
-        {/* Modal Content */}
-        <Animated.View
-            style={[
-                styles.modalContent,
-                {
-                    transform: [{ scale: scaleAnim }],
-                    opacity: opacityAnim,
-                },
-            ]}
-        >
-            <Text style={styles.modalTitle}>
-                {t("team_members")}
-            </Text>
-
-            <ScrollView
-                style={{ flexGrow: 0 }}
-                showsVerticalScrollIndicator={true}
-                contentContainerStyle={{ paddingBottom: hp(2) }}
-                nestedScrollEnabled={true}
+                transparent
+                visible={modalVisible}
+                animationType="none"
+                onRequestClose={closeModal}
             >
-                {teamUsers.map((item, index) => (
-                    <View
-                        key={
-                            item?.id?.toString() ||
-                            item?.value?.toString() ||
-                            `member-${index}`
-                        }
-                        style={styles.modalItem}
+                <View style={styles.modalOverlay}>
+                    {/* Background Close Layer */}
+                    <Pressable
+                        style={StyleSheet.absoluteFill}
+                        onPress={closeModal}
+                    />
+
+                    {/* Modal Content */}
+                    <Animated.View
+                        style={[
+                            styles.modalContent,
+                            {
+                                transform: [{ scale: scaleAnim }],
+                                opacity: opacityAnim,
+                            },
+                        ]}
                     >
-                        <Image
-                            source={{ uri: item.image }}
-                            style={styles.modalImage}
-                        />
-                        <Text style={styles.modalText}>
-                            {item.label}
+                        <Text style={styles.modalTitle}>
+                            {t("team_members")}
                         </Text>
-                    </View>
-                ))}
-            </ScrollView>
-            <Pressable
-                onPress={closeModal}
-                style={styles.closeButton}
-            >
-                <Text style={{ color: "#fff", fontSize: wp(5) }}>
-                    {t("close")}
-                </Text>
-            </Pressable>
-        </Animated.View>
-    </View>
-</Modal>
+
+                        <ScrollView
+                            style={{ flexGrow: 0 }}
+                            showsVerticalScrollIndicator={true}
+                            contentContainerStyle={{ paddingBottom: hp(2) }}
+                            nestedScrollEnabled={true}
+                        >
+                            {teamUsers.map((item, index) => (
+                                <View
+                                    key={
+                                        item?.id?.toString() ||
+                                        item?.value?.toString() ||
+                                        `member-${index}`
+                                    }
+                                    style={styles.modalItem}
+                                >
+                                    <Image
+                                        source={{ uri: item.image }}
+                                        style={styles.modalImage}
+                                    />
+                                    <Text style={styles.modalText}>
+                                        {item.label}
+                                    </Text>
+                                </View>
+                            ))}
+                        </ScrollView>
+                        <Pressable
+                            onPress={closeModal}
+                            style={styles.closeButton}
+                        >
+                            <Text style={{ color: "#fff", fontSize: wp(5) }}>
+                                {t("close")}
+                            </Text>
+                        </Pressable>
+                    </Animated.View>
+                </View>
+            </Modal>
 
         </View>
     );

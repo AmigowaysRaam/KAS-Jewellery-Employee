@@ -1,5 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import DateTimePicker from "@react-native-community/datetimepicker";
 import { useNavigation } from "@react-navigation/native";
+import dayjs from "dayjs";
 import { Audio } from "expo-av";
 import * as FileSystem from 'expo-file-system/legacy';
 import * as ImagePicker from "expo-image-picker";
@@ -13,6 +15,7 @@ import {
   TouchableOpacity,
   View
 } from "react-native";
+import { Video as VideoCompress } from "react-native-compressor";
 import { Icon } from "react-native-elements";
 import { useSelector } from "react-redux";
 import { getStoredLanguage } from "../../app/i18ns";
@@ -26,6 +29,7 @@ import CustomDropdown from "./CustomDropDown";
 import DescriptionFormSection from "./DescriptionFormSection";
 import ImagesFormSection from "./ImagesFormSection";
 import ImageViewerModal from "./ImageViewver";
+import CustomSingleDatePickerModal from "./SingleDateSelect";
 import SpeechToTextModal from "./SpeechToTextMOdal";
 import TaskPriority from "./TaskPriority";
 import VideoFormSection from "./VideoForm";
@@ -36,12 +40,13 @@ export default function UpdateTask({ route }) {
   const { id } = route?.params;
   const [currentLanguage, setcurrentLanguage] = useState(null);
   const [videos, setVideos] = useState([]);
+  const [dueTime, setDueTime] = useState(null); // dayjs object for time
+
 
 
   const saveAudioToDownloads = async (audioUri, fileName = 'audio.mp3') => {
     try {
       setIsDownloading(true);
-
       // Step 1: Ensure local file
       let localUri = audioUri;
       if (audioUri.startsWith('http')) {
@@ -49,7 +54,6 @@ export default function UpdateTask({ route }) {
         const download = await FileSystem.downloadAsync(audioUri, downloadPath);
         localUri = download.uri;
       }
-
       // Step 2: Get Downloads folder URI
       let directoryUri = await AsyncStorage.getItem('DOWNLOADS_URI');
       if (!directoryUri) {
@@ -88,6 +92,42 @@ export default function UpdateTask({ route }) {
     }
   };
 
+  const [dueDate, setDueDate] = useState(null); // dayjs object
+  const [dueDateText, setDueDateText] = useState(""); // "DD/MM/YYYY HH:mm"
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showTimePicker, setShowTimePicker] = useState(false);
+  const today = dayjs();
+  const onChangeTime = (event, selectedTime) => {
+    setShowTimePicker(false); // hide picker
+    if (!selectedTime) return; // user canceled
+
+    const parsedTime = dayjs(selectedTime); // selected time
+    const referenceDate = dueDate ? dayjs(dueDate) : dayjs(); // reference date
+    // Merge selected time into the reference date
+    const combinedDateTime = referenceDate
+      .hour(parsedTime.hour())
+      .minute(parsedTime.minute())
+      .second(0)
+      .millisecond(0);
+
+    const now = dayjs();
+
+    // Prevent selecting past datetime
+    if (combinedDateTime.isBefore(now)) {
+      // Set inline error instead of toast
+      setErrors(prev => ({
+        ...prev,
+        dueTime: t("cannot_select_past_time")
+      }));
+      setDueTime(null); // optional: clear previous invalid time
+      return;
+    }
+
+    // Valid time: clear error and save
+    setErrors(prev => ({ ...prev, dueTime: undefined }));
+    setDueTime(parsedTime); // store time separately if needed
+    setDueDate(combinedDateTime); // save combined datetime
+  };
   useEffect(() => {
     let timer;
     if (isRecording) {
@@ -257,6 +297,7 @@ export default function UpdateTask({ route }) {
   const [viewerVisible, setViewerVisible] = useState(false);
   const [viewerUri, setViewerUri] = useState(null);
   const [fileModal, setfileModal] = useState(false);
+  const [dateLoader, setdateLoader] = useState(false);
   const openImageViewer = (uri) => {
     setViewerUri(uri);
     setViewerVisible(true);
@@ -271,10 +312,9 @@ export default function UpdateTask({ route }) {
     };
   }, []);
   // Load ticket details
+
   const loadTicket = async () => {
     setLoading(true);
-    const lang = await getStoredLanguage();
-    setcurrentLanguage(lang)
     try {
       const lang = await getStoredLanguage();
       const response = await fetchData("app-employee-task-detail", "POST", {
@@ -282,33 +322,63 @@ export default function UpdateTask({ route }) {
         lang,
         user_id: profileDetails?.id,
       });
+
       const ticket = response?.data?.ticket_detail;
       setTicketDetails(ticket);
+
+      // DUE DATE/TIME
+      const initialDueDate = ticket?.due_date
+        ? dayjs(ticket.due_date, "DD-MM-YYYY hh:mm A")
+        : null;
+      setDueDate(initialDueDate);
+      setDueDateText(initialDueDate ? initialDueDate.format("DD/MM/YYYY") : "");
+      setDueTime(initialDueDate ? initialDueDate : null);
+
+      // EXTENDED DATE/TIME (use ticket, not ticketDetails)
+      if (ticket?.extend_date && ticket?.extend_time) {
+        const parsedDate = dayjs(ticket.extend_date, "DD-MM-YYYY hh:mm A");
+        const parsedTime = dayjs(ticket.extend_time, "hh:mm A");
+        setExtendedDueDate(parsedDate);
+        setExtendedDueTime(parsedTime);
+        setExtendedDueDateText(parsedDate.format("DD/MM/YYYY hh:mm A"));
+      }
+
+      // DESCRIPTION
       const plainText = ticket?.description?.replace(/<[^>]+>/g, "") || "";
       setDescription(plainText);
+
+      // STATUS & PRIORITY
       setSelectedStatus(ticket?.statusv);
       setSelectedPriority(ticket?.priorityv);
+
+      // AUDIO
       if (ticket?.audio) {
-        setDescAudio({ uri: ticket?.audio, source: "API", name: ticket?.audio_name || "description_audio.mp3" });
+        setDescAudio({
+          uri: ticket.audio,
+          source: "API",
+          name: ticket?.audio_name || "description_audio.mp3",
+        });
       }
-      // setvideo({ uri: ticket?.video });
+
       // VIDEO
       if (ticket?.video) {
         setvideo([
           {
-            uri: ticket.video,       // string from API
-            source: "API",           // mark as already on server
+            uri: ticket.video,
+            source: "API",
             fileName: ticket.video_name || ticket.video.split("/").pop(),
-            mimeType: "video/mp4",   // assuming backend only returns mp4
-          }
+            mimeType: "video/mp4",
+          },
         ]);
       }
+      // IMAGES
       const formattedImages = ticket?.image.map((img) => ({
         id: img.id,
         uri: img.image,
-        source: "API", // optional to distinguish API vs newly uploaded
+        source: "API",
       }));
       setImages(formattedImages);
+
     } catch (err) {
       console.log(err);
       showToast(t("failed_to_load_task_details"), "error");
@@ -379,14 +449,57 @@ export default function UpdateTask({ route }) {
 
     return Object.keys(errors).length === 0;
   };
-  // Update task
+
+  const [compressionProgress, setCompressionProgress] = useState(0);
+  const [isCompressing, setIsCompressing] = useState(false);
+  const compressVideoFast = async (videoUri) => {
+    try {
+      setIsCompressing(true);
+      setCompressionProgress(0);
+      const compressedVideoUri = await VideoCompress.compress(
+        videoUri,
+        {
+          compressionMethod: "manual", // manual allows setting quality
+          bitrate: 500_000,          // very low bitrate for small file
+          maxSize: 480,                // max resolution 360p for fast upload
+        },
+        (progress) => {
+          setCompressionProgress(progress); // progress 0 -> 1
+        }
+      );
+      console.log("✅ Compressed video URI:", compressedVideoUri);
+      return compressedVideoUri;
+    } catch (error) {
+      console.log("❌ Compression error:", error);
+      return videoUri; // fallback to original if compression fails
+    } finally {
+      setIsCompressing(false);
+      setCompressionProgress(0);
+    }
+  };
   const handleUpdateTask = async () => {
     if (!validate()) {
       showToast(t("failed_to_update_task"), "error");
       return;
     }
+
     setLoading(true);
-  
+    showToast(t("uploading_please_wait"), "info");
+
+    // Combine due date/time
+    const dueDateObj = dueDate ? dayjs(dueDate) : null;
+    const dueTimeObj = dueTime ? dayjs(dueTime, "HH:mm") : dayjs("00:00", "HH:mm");
+    const combinedDueDateTime = dueDateObj
+      ? dueDateObj.hour(dueTimeObj.hour()).minute(dueTimeObj.minute()).second(0)
+      : null;
+
+    // Combine extended/assign date/time
+    const extendedDateObj = extendedDueDate ? dayjs(extendedDueDate) : null;
+    const extendedTimeObj = extendedDueTime ? dayjs(extendedDueTime, "HH:mm") : dayjs("00:00", "HH:mm");
+    const combinedExtendedDateTime = extendedDateObj
+      ? extendedDateObj.hour(extendedTimeObj.hour()).minute(extendedTimeObj.minute()).second(0)
+      : null;
+
     try {
       const formData = new FormData();
       formData.append("id", ticketDetails?.id || "");
@@ -394,13 +507,31 @@ export default function UpdateTask({ route }) {
       formData.append("status", selectedStatus || "");
       formData.append("priority", selectedPriority || "");
       formData.append("user_id", profileDetails?.id || "");
-  
-      // IMAGES
+
+      // Append extended/assign date & time
+      if (combinedExtendedDateTime) {
+        formData.append("extend_date", combinedExtendedDateTime.format("YYYY-MM-DD"));
+        formData.append("extend_time", combinedExtendedDateTime.format("HH:mm"));
+      } else {
+        formData.append("extend_date", "");
+        formData.append("extend_time", "");
+      }
+
+      // Append original due date & time
+      if (combinedDueDateTime) {
+        formData.append("due_date", combinedDueDateTime.format("YYYY-MM-DD"));
+        formData.append("due_time", combinedDueDateTime.format("HH:mm"));
+      } else {
+        formData.append("due_date", "");
+        formData.append("due_time", "");
+      }
+
+      // Append images (same as before)
       if (Array.isArray(images)) {
         images
           .filter((img) => img?.source !== "API")
           .forEach((img, index) => {
-            if (!img?.uri) return; // skip if uri is missing
+            if (!img?.uri) return;
             const uriParts = img.uri.split(".");
             const fileType = uriParts[uriParts.length - 1];
             formData.append("image[]", {
@@ -410,20 +541,21 @@ export default function UpdateTask({ route }) {
             });
           });
       }
-  
-      // VIDEO
       if (Array.isArray(video) && video.length > 0 && video[0]?.source !== "API") {
         const videoFile = video[0];
         if (videoFile?.uri) {
+          // Compress video before upload with progress
+          const compressedVideoUri = await compressVideoFast(videoFile.uri);
+
           formData.append("video", {
-            uri: Platform.OS === "android" ? videoFile.uri : videoFile.uri.replace("file://", ""),
+            uri: Platform.OS === "android" ? compressedVideoUri : compressedVideoUri.replace("file://", ""),
             name: videoFile.fileName || "updatetask_video.mp4",
             type: videoFile.mimeType || "video/mp4",
           });
         }
       }
-  
-      // AUDIO
+
+      // Append audio (same as before)
       if (descAudio?.uri && !descAudio.uri.startsWith("http")) {
         formData.append("audio", {
           uri: Platform.OS === "android" ? descAudio.uri : descAudio.uri.replace("file://", ""),
@@ -431,15 +563,18 @@ export default function UpdateTask({ route }) {
           name: `${descAudio?.name || "audio"}.mp3`,
         });
       }
-  
+
+      // -------------------------
+      // Send request
+      // -------------------------
       const response = await fetch(`${BASE_URL}app-employee-update-task`, {
         method: "POST",
         headers: { Accept: "application/json" },
         body: formData,
       });
-  
+
       const result = await response.json();
-  
+
       if (result?.success) {
         showToast(result.message || t("task_updated_successfully"), "success");
         navigation.goBack();
@@ -474,21 +609,26 @@ export default function UpdateTask({ route }) {
 
   // Pick from gallery
   const pickFile = async () => {
+    console.log('Picker initiated');  // Debugging: Log to confirm the function is called
     setModalVisible(false);
     setfileModal(false);
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.All,
+      mediaTypes: [ImagePicker.MediaType.photo, ImagePicker.MediaType.video],  // Updated for deprecated warning
       quality: 0.7,
       allowsMultipleSelection: true,
       selectionLimit: 3 - images.length,
     });
 
+    console.log('ImagePicker result:', result);  // Log the result object to see the full structure
+
     if (!result.canceled && result.assets?.length > 0) {
       result.assets.forEach((file) => {
-        if (file.type?.includes("video")) {
-          setVideos([{ ...file, source: "Gallery" }]);
+        console.log('Picked file:', file);  // Log each file for debugging
+
+        if (file.type?.includes('video')) {
+          setVideos([{ ...file, source: 'Gallery' }]);
         } else {
-          setImages((prev) => [...prev, { ...file, source: "Gallery" }]);
+          setImages((prev) => [...prev, { ...file, source: 'Gallery' }]);
         }
       });
     }
@@ -553,8 +693,8 @@ export default function UpdateTask({ route }) {
     }
   };
   const [isDownloading, setIsDownloading] = useState(false);
-  const listData = ["title", "status", "priority", "description", "images", "video", "button"];
-
+  const listData = ["title", "status", "priority", "due_date", ...(ticketDetails?.canExtend ? ["extended_date_time"] : []),
+    "description", "images", "video", "button"];
   const handleRemoveVideo = async () => {
     setLoading(true);
     // Alert.alert("jk");
@@ -566,7 +706,6 @@ export default function UpdateTask({ route }) {
       });
       // Alert.alert("Success", JSON.stringify(response));
       if (response) {
-        // Alert.alert("Success", JSON.stringify(response));
         setVideos([]); // Clear video from UI
         setvideo(null);
         setLoading(false);
@@ -578,7 +717,64 @@ export default function UpdateTask({ route }) {
       showToast(t("failed_to_delete_video"), "error");
     }
   }
+  const fetchDropDownData = async (pId) => {
 
+    if (!profileDetails?.id) return;
+    setdateLoader(true)
+    try {
+      const lang = await getStoredLanguage();
+      setcurrentLanguage(lang)
+      const response = await fetchData(
+        "app-employee-team-members",
+        "POST",
+        {
+          user_id: profileDetails.id,
+          lang: lang ?? "en",
+          priority: pId || null,
+          task_id: id
+        }
+      );
+      if (response?.data) {
+        setDueDate(response.data?.max_date ? dayjs(response.data.max_date).toDate() : null)
+      }
+    } catch (error) {
+      console.error("API Error:", error);
+    } finally {
+      // setloading(false);
+      setdateLoader(false)
+    }
+  };
+  const [extendedDueDate, setExtendedDueDate] = useState(null);
+  const [extendedDueDateText, setExtendedDueDateText] = useState("");
+  const [extendedDueTime, setExtendedDueTime] = useState(null);
+  const [showExtendedDatePicker, setShowExtendedDatePicker] = useState(false);
+  const [showExtendedTimePicker, setShowExtendedTimePicker] = useState(false);
+  const [extendedDateLoader, setExtendedDateLoader] = useState(false);
+  const [extendedTimeError, setExtendedTimeError] = useState(null);
+
+  const onChangeExtendedTime = (event, selectedTime) => {
+    if (event.type === "set") {
+      const parsedTime = dayjs(selectedTime);
+
+      // Combine with extended date if available, otherwise today
+      const referenceDate = extendedDueDate ? dayjs(extendedDueDate) : dayjs();
+      const combinedSelected = referenceDate
+        .hour(parsedTime.hour())
+        .minute(parsedTime.minute())
+        .second(0);
+
+      // Compare with current time
+      if (combinedSelected.isBefore(dayjs())) {
+        setExtendedTimeError(t("cannot_select_past_time"));
+        setExtendedDueTime(null); // optional: reset invalid selection
+      } else {
+        setExtendedDueTime(combinedSelected);
+        setExtendedTimeError(null);
+      }
+    }
+
+    setShowExtendedTimePicker(false);
+  };
   const renderItem = ({ item }) => {
     switch (item) {
       case "title":
@@ -587,6 +783,97 @@ export default function UpdateTask({ route }) {
             <Text style={styles.label}>{t("title")} *</Text>
             <Text style={styles.readOnlyText}>{ticketDetails?.title || "..."}</Text>
             {newErrors.title && <Text style={styles.errorText}>{newErrors.title}</Text>}
+          </View>
+        );
+      case "extended_date_time":
+        return (
+          <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+            {/* Extended Date */}
+            <View style={{ marginBottom: hp(2) }}>
+              <Text style={styles.label}>{`${t("extended_date")} *`}</Text>
+              <TouchableOpacity
+                style={{
+                  backgroundColor: "#fff",
+                  borderWidth: 1,
+                  borderColor: "#ccc",
+                  width: wp(44),
+                  padding: wp(3),
+                  borderRadius: wp(1),
+                  height: wp(12),
+                }}
+                onPress={() => setShowExtendedDatePicker(true)}
+              >
+                {extendedDateLoader ? (
+                  <ActivityIndicator color={COLORS?.primary} />
+                ) : (
+                  <Text
+                    style={{
+                      color: extendedDueDate ? "#000" : "#111",
+                      fontFamily: "Poppins_400Regular",
+                    }}
+                  >
+                    {extendedDueDate
+                      ? dayjs(extendedDueDate).format("DD/MM/YYYY")
+                      : t("select_date")}
+                  </Text>
+                )}
+              </TouchableOpacity>
+
+              {showExtendedDatePicker && (
+                <CustomSingleDatePickerModal
+                  disablePastDates={true}
+                  restrictFeatureDate={false}
+                  maxExtendDate={ticketDetails?.maxExtendDate}
+                  visible={showExtendedDatePicker}
+                  initialDate={extendedDueDate ? dayjs(extendedDueDate) : new Date()}
+                  onClose={() => setShowExtendedDatePicker(false)}
+                  onConfirm={(selectedDate) => {
+                    const parsed = dayjs(selectedDate);
+                    setExtendedDueDate(selectedDate);
+                    setExtendedDueDateText(parsed.format("DD/MM/YYYY HH:mm"));
+                    setShowExtendedDatePicker(false);
+                  }}
+                />
+              )}
+            </View>
+
+            {/* Extended Time */}
+            <View>
+              <Text style={styles.label}>{`${t("extended_time")} *`}</Text>
+              <Pressable
+                onPress={() => setShowExtendedTimePicker(true)}
+                style={{
+                  backgroundColor: "#fff",
+                  borderWidth: 1,
+                  borderColor: "#ccc",
+                  width: wp(44),
+                  padding: wp(3),
+                  borderRadius: wp(1),
+                  height: wp(12),
+                  fontFamily: "Poppins_400Regular",
+                }}
+              >
+                <Text style={[styles.dateText, { fontFamily: "Poppins_400Regular" }]}>
+                  {extendedDueTime
+                    ? dayjs(extendedDueTime).format("hh:mm A")
+                    : t("select_time")}
+                </Text>
+              </Pressable>
+              {extendedTimeError && (
+                <Text style={[styles.errorText, { marginTop: wp(4) }]}>
+                  {extendedTimeError}
+                </Text>
+              )}
+              {showExtendedTimePicker && (
+                <DateTimePicker
+                  value={extendedDueTime ? extendedDueTime.toDate() : new Date()}
+                  mode="time"
+                  is24Hour={false}
+                  display="spinner"
+                  onChange={onChangeExtendedTime} // handle separately
+                />
+              )}
+            </View>
           </View>
         );
       case "video":
@@ -604,6 +891,83 @@ export default function UpdateTask({ route }) {
             styles={styles}
           />
         )
+      case "due_date":
+        return (
+          <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+            <View style={{ marginBottom: hp(2) }}>
+              <Text style={styles.label}>{`${t("due_date")} *`}</Text>
+              <TouchableOpacity
+                style={[{
+                  backgroundColor: "#fff", borderWidth: 1, borderColor: "#ccc",
+                  width: wp(44), padding: wp(3), borderRadius: wp(1), height: wp(12)
+                }]}
+                onPress={() => setShowDatePicker(true)}
+              >
+                {
+                  dateLoader ?
+                    <ActivityIndicator color={COLORS?.primary} />
+                    :
+                    <Text
+                      style={{
+                        color: dueDate ? "#000" : "#111",
+                        fontFamily: "Poppins_400Regular"
+                      }}
+                    >
+                      {dueDate ? dayjs(dueDate).format("DD/MM/YYYY") : t('select_date')}
+                    </Text>
+                }
+              </TouchableOpacity>
+              {showDatePicker && (
+                <CustomSingleDatePickerModal
+                  disablePastDates={true}
+                  restrictFeatureDate={false}
+                  visible={showDatePicker}
+                  initialDate={dueDate ? dayjs(dueDate) : new Date()}
+                  onClose={() => setShowDatePicker(false)}
+                  onConfirm={(selectedDate) => {
+                    const parsed = dayjs(selectedDate);
+                    setDueDate(selectedDate);
+                    setDueDateText(parsed.format("DD/MM/YYYY HH:mm"));
+                    setShowDatePicker(false);
+                  }}
+                />
+              )}
+            </View>
+            <View>
+              <Text style={styles.label}>{`${t('due_time')} *`}</Text>
+              <Pressable
+                onPress={() => setShowTimePicker(true)}
+                style={{
+                  backgroundColor: "#fff", borderWidth: 1, borderColor: "#ccc",
+                  width: wp(44), padding: wp(3), borderRadius: wp(1), height: wp(12),
+                  fontFamily: "Poppins_400Regular"
+                }}
+              >
+                <Text style={[styles.dateText, {
+                  fontFamily: "Poppins_400Regular"
+                }]}>
+                  {dueTime ? dayjs(dueTime).format("hh:mm A") : t("select_time")}
+                </Text>
+              </Pressable>
+              {errors.dueTime && (
+                <Text style={[styles.errorText, { marginTop: wp(4) }]}>
+                  {errors.dueTime}
+                </Text>
+              )}
+
+              {showTimePicker && (
+                <DateTimePicker
+                  value={dueTime ? dueTime.toDate() : new Date()} // ✅ convert dayjs to Date
+                  mode="time"
+                  is24Hour={false}
+                  display="spinner"
+                  onChange={onChangeTime} // or inline handler
+                />
+              )}
+            </View>
+          </View>
+
+        );
       case "status":
         return (
           <>
@@ -626,7 +990,10 @@ export default function UpdateTask({ route }) {
               data={siteDetails?.prioritiesList || []}
               placeholder={t("choose_priority")}
               selected={selectedPriority}
-              onSelect={(item) => setSelectedPriority(item?.value)}
+              onSelect={(item) => {
+                setSelectedPriority(item?.value),
+                  fetchDropDownData(item?.value)
+              }}
             />
             {newErrors.priority && <Text style={styles.errorText}>{newErrors.priority}</Text>}
           </>
@@ -676,18 +1043,63 @@ export default function UpdateTask({ route }) {
     }
   };
 
+  const shimmerAnim = useRef(new Animated.Value(0.3)).current;
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(shimmerAnim, {
+          toValue: 1,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+        Animated.timing(shimmerAnim, {
+          toValue: 0.3,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+      ])
+    );
+
+    loop.start();
+
+    return () => loop.stop(); // cleanup
+  }, []);
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <CommonHeader title={t("update_task")} showBackButton onBackPress={() => navigation.goBack()} />
       {loading ? (
-        <FlatList
-          style={styles.container}
-          data={[1, 2, 3, 4, 5]}
-          renderItem={() => <View style={[styles.skeletonBox, { width: "100%", height: hp(7), marginBottom: hp(1.5) }]} />}
-          keyExtractor={(item, index) => `skeleton-${index}`}
-          ListFooterComponent={<ActivityIndicator size={wp(8)} color={COLORS?.primary} />}
-          contentContainerStyle={{ padding: wp(5), flexGrow: 1 }}
-        />
+        <>
+          <FlatList
+            style={styles.container}
+            data={[1, 2, 3, 4, 5, 6, 7]}
+            renderItem={() => (
+              <Animated.View
+                style={[
+
+                  styles.skeletonBox,
+                  {
+                    width: "100%",
+                    height: hp(8),
+                    marginBottom: hp(1.5),
+                    opacity: shimmerAnim, // 👈 THIS is required
+                  },
+                ]}
+              />
+            )}
+
+            keyExtractor={(item, index) => `skeleton-${index}`}
+            ListFooterComponent={<ActivityIndicator size={wp(8)} color={COLORS?.primary} />}
+            contentContainerStyle={{ padding: wp(5), flexGrow: 1 }}
+          />
+          {isCompressing && (
+            <View style={{ marginVertical: 10 }}>
+              <Text>Compressing video: {(compressionProgress * 100).toFixed(0)}%</Text>
+              <View style={{ width: "100%", height: 10, backgroundColor: "#eee", borderRadius: 5, overflow: "hidden", marginTop: 5 }}>
+                <View style={{ height: "100%", width: `${compressionProgress * 100}%`, backgroundColor: "#4caf50" }} />
+              </View>
+            </View>
+          )}
+        </>
       ) : (
         <FlatList
           ref={flatListRef}

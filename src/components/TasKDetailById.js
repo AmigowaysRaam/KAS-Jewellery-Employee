@@ -17,7 +17,6 @@ import AttachmentModal from "./AttacthcModal";
 import CommentList from "./Commentlist";
 import CommonHeader from "./CommonHeader";
 import MediaViewerModal from "./MediaView";
-
 export default function TaskMessages({ route }) {
   const navigation = useNavigation();
   const { showToast } = useToast();
@@ -37,10 +36,10 @@ export default function TaskMessages({ route }) {
   const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
   const [viewerVisible, setViewerVisible] = useState(false);
   const [ticketDetails, setTicketDetails] = useState(null);
+  const [statusList, setstatusList] = useState(null);
+
   const [mediaType, setMediaType] = useState(null);
-
   const flatListRef = useRef(null);
-
   // Keyboard handling
   useEffect(() => {
     const showSub = Keyboard.addListener("keyboardDidShow", () => {
@@ -75,6 +74,7 @@ export default function TaskMessages({ route }) {
       });
       setTicketDetails(response?.data?.ticket_detail);
       setComments(response?.data?.ticket_comments || []);
+      setstatusList(response?.data?.ticketStatus);
     } catch (err) {
       console.log(err);
     } finally {
@@ -241,6 +241,7 @@ export default function TaskMessages({ route }) {
         onBackPress={() => navigation.goBack()}
       />
       <CommentList
+        statusList={statusList}
         comments={comments}
         loading={loading}
         ticketDetails={ticketDetails}

@@ -3,15 +3,8 @@ import customParseFormat from "dayjs/plugin/customParseFormat";
 import React, { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
-    Alert,
-    Modal,
-    Pressable,
-    StyleSheet,
-    Text,
-    TextInput,
-    View
+    Alert, Modal, Pressable, StyleSheet, Text, TextInput, View
 } from "react-native";
-
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { COLORS } from "../../app/resources/colors";
 import { hp, wp } from "../../app/resources/dimensions";
@@ -28,9 +21,22 @@ const CustomDateRangePickerModal = ({
     initialFrom,
     initialTo,
     title,
+    restrictFeatureDate
 }) => {
     const today = dayjs();
     dayjs.extend(customParseFormat);
+
+    const isDisabled = (day) => {
+        if (restrictFeatureDate && day.isAfter(today, "day")) {
+            // Disable future dates
+            return true;
+        }
+        if (fromDate && !toDate && day.isBefore(fromDate, "day")) {
+            // Disable past dates before 'fromDate' when selecting 'toDate'
+            return true;
+        }
+        return false;
+    };
 
     const [fromDate, setFromDate] = useState(initialFrom ? dayjs(initialFrom) : null);
     const [toDate, setToDate] = useState(initialTo ? dayjs(initialTo) : null);
@@ -127,54 +133,49 @@ const CustomDateRangePickerModal = ({
             return digits;
         }
     };
-
     const handleFromChange = (text) => {
         const formatted = formatDateInput(text);
-        setFromText(formatted);
 
+        // Parse date only if fully entered
         if (formatted.length === 10) {
             const parsed = dayjs(formatted, "DD/MM/YYYY", true);
             if (parsed.isValid()) {
-                const parsedStart = parsed.startOf("day");
-                setFromDate(parsedStart);
-                setCurrentMonth(parsedStart.month());
-                setCurrentYear(parsedStart.year());
-                scrollToYear(parsedStart.year());
-
-                if (toDate && parsedStart.isAfter(toDate, "day")) {
-                    setToDate(null);
-                    setToText("");
+                // If restrictFeatureDate is true, don't allow future dates
+                if (restrictFeatureDate && parsed.isAfter(today, "day")) {
+                    return; // Ignore the input
                 }
+                setFromDate(parsed.startOf("day"));
+                setCurrentMonth(parsed.month());
+                setCurrentYear(parsed.year());
+                scrollToYear(parsed.year());
             } else {
-                setFromDate(null);
+                return; // Ignore invalid dates
             }
-        } else {
-            setFromDate(null);
         }
+
+        setFromText(formatted); // Update text only if allowed
     };
 
     const handleToChange = (text) => {
         const formatted = formatDateInput(text);
-        setToText(formatted);
-
         if (formatted.length === 10) {
             const parsed = dayjs(formatted, "DD/MM/YYYY", true);
             if (parsed.isValid()) {
-                const parsedStart = parsed.startOf("day");
-                if (fromDate && parsedStart.isBefore(fromDate, "day")) {
-                    setToDate(null);
-                    return;
-                }
-                setToDate(parsedStart);
-                setCurrentMonth(parsedStart.month());
-                setCurrentYear(parsedStart.year());
-                scrollToYear(parsedStart.year());
+                // Block future dates
+                if (restrictFeatureDate && parsed.isAfter(today, "day")) return;
+                // Block dates before fromDate
+                if (fromDate && parsed.isBefore(fromDate, "day")) return;
+
+                setToDate(parsed.startOf("day"));
+                setCurrentMonth(parsed.month());
+                setCurrentYear(parsed.year());
+                scrollToYear(parsed.year());
             } else {
-                setToDate(null);
+                return;
             }
-        } else {
-            setToDate(null);
         }
+
+        setToText(formatted); // Update text only if allowed
     };
 
     const confirm = () => {
@@ -243,7 +244,6 @@ const CustomDateRangePickerModal = ({
                             </Pressable>
                         )}
                     </View>
-
                     {/* <FlatList
                         horizontal
                         ref={monthListRef}
@@ -311,13 +311,12 @@ const CustomDateRangePickerModal = ({
 
                         {daysInMonth.map((day, index) => {
                             if (!day) return <View key={`empty-${index}`} style={styles.dayItem} />;
-
                             const isSelected =
                                 (fromDate && day.isSame(fromDate, "day")) ||
                                 (toDate && day.isSame(toDate, "day"));
                             const isToday = day.isSame(today, "day");
                             const inRange = isInRange(day);
-                            const disabled = fromDate && !toDate && day.isBefore(fromDate, "day");
+                            const disabled = isDisabled(day);  // ✅ Use the combined logic
 
                             return (
                                 <Pressable
@@ -336,6 +335,7 @@ const CustomDateRangePickerModal = ({
                                             styles.dayText,
                                             isToday && !isSelected && styles.todayDayText,
                                             (isSelected || inRange) && styles.activeDayText,
+                                            disabled && { color: "#999" }, // grey out disabled days
                                         ]}
                                     >
                                         {day.date()}

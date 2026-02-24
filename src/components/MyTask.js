@@ -5,6 +5,8 @@ import { Animated, Image, Pressable, StyleSheet, Text, ToastAndroid, View } from
 import { COLORS } from "../../app/resources/colors";
 import { hp, wp } from "../../app/resources/dimensions";
 // Merge all info into a single object
+import { Icon } from "react-native-elements";
+
 const TASKS_INFO = {
   open: {
     labelKey: "Open",
@@ -137,7 +139,7 @@ const MyTask = ({ homepageData }) => {
               ],
             },
           ]}
-        >{key === "over_due" && value != 0   ? (
+        >{key === "over_due" && value != 0 ? (
           <Animated.Image
             source={taskInfo.icon}
             style={[
@@ -167,8 +169,22 @@ const MyTask = ({ homepageData }) => {
       backgroundColor: "#FFF0F0", width: wp(100), alignItems: "center", paddingVertical: hp(2), marginTop: hp(1)
     }}>
       <View style={styles.wrapper}>
+        <Pressable onPress={() => navigation.navigate("MyTaskListScreen", { status: null, })} style={styles.headerRow}>
+          <Text numberOfLines={1} style={[styles.title, {
+            lineHeight: hp(3)
+          }]}>
+            {`${t("my_task")}`}
+          </Text>
+          <Pressable onPress={() => navigation?.navigate('MyTaskListScreen', 
+             { status: null, }
+          )} style={styles.viewButton}>
+            <Text style={styles.viewButtonText}>
+              <Icon name="arrow-right" type="feather" color={COLORS.primary} size={wp(5)} />
+            </Text>
+          </Pressable>
+        </Pressable>
         <Pressable onPress={() => navigation.navigate("MyTaskListScreen", { status: null, })}>
-          <Text style={styles.greeting}>{t("my_task")}</Text>
+          {/* <Text style={styles.greeting}>{t("my_task")}</Text> */}
           <View
             style={{
               flexDirection: "row",
@@ -199,11 +215,12 @@ const MyTask = ({ homepageData }) => {
             renderTaskCard(key, todayTasks[key], todayAnimations[index], "today")
           )}
         </View>
-
-        {/* Total Tasks Header */}
-        <Text style={[styles.taskCountText, { color: COLORS.primary, marginTop: hp(0) }]}>
-          {`${t("total_tasks")} : ${totalTasks.count || 0}`}
-        </Text>
+        <Pressable onPress={() => navigation.navigate("MyTaskListScreen", { status: null, })}>
+          {/* Total Tasks Header */}
+          <Text style={[styles.taskCountText, { color: COLORS.primary, marginTop: hp(0) }]}>
+            {`${t("total_tasks")} : ${totalTasks.count || 0}`}
+          </Text>
+        </Pressable>
         {/* Total Task Cards */}
         <View
           style={{
@@ -223,12 +240,16 @@ const MyTask = ({ homepageData }) => {
 
   );
 };
-
 export default MyTask;
-
 const styles = StyleSheet.create({
   wrapper: {
     marginHorizontal: wp(2),
+  },
+  headerRow: {
+    flexDirection: "row", justifyContent: "space-between", alignItems: "center",
+    marginBottom: wp(2)
+  }, title: {
+    fontFamily: "Poppins_600SemiBold", fontSize: wp(4.8), color: COLORS.primary, maxWidth: wp(50)
   },
   greeting: {
     fontFamily: "Poppins_500Medium",

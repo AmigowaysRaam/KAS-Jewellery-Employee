@@ -22,11 +22,11 @@ const TaskCard = ({ item, t, navigation, openTaskModal, getStatusColor, }) => {
                 return { progress: 1, color: "#2ecc71" }; // Green
             case "overdue":
                 return { progress: 0, color: "#D32F2F" }; // Deep Red for Overdue
-                default:
+            default:
                 return { progress: 0.1, color: COLORS.primary };
         }
     };
-    
+
     const progressAnim = useRef(new Animated.Value(0)).current;
 
     useEffect(() => {
@@ -145,6 +145,19 @@ const TaskCard = ({ item, t, navigation, openTaskModal, getStatusColor, }) => {
                         </Text>
                     </View>
                 </View>
+                {
+                    item?.extend_date != '' &&
+                    <View style={[styles.dateBox, {
+                        marginTop: wp(2), backgroundColor: COLORS?.primary + "12"
+                    }]}>
+                        <Text style={styles.dateLabel}>
+                            {t("extend_date")}
+                        </Text>
+                        <Text numberOfLines={1} style={styles.dateText}>
+                            {item?.extend_date}
+                        </Text>
+                    </View>
+                }
                 {/* Button */}
                 <View style={{ marginTop: hp(0.5) }}>
                     <ViewButton
@@ -210,12 +223,12 @@ const styles = StyleSheet.create({
         paddingHorizontal: wp(3), paddingVertical: hp(0.6), borderRadius: wp(5),
         minWidth: wp(18), alignItems: "center",
     }, statusText: {
-        color: "#fff", fontSize: wp(3), fontFamily: "Poppins_500Medium", lineHeight: wp(4)
+        color: "#fff", fontSize: wp(3), fontFamily: "Poppins_500Medium", lineHeight: wp(4.5)
     }, assignedRow: { flexDirection: "row", alignItems: "center", marginTop: hp(1.2), },
     avatar: {
         width: wp(10), height: wp(10), borderRadius: wp(5),
         marginRight: wp(2), backgroundColor: "#ccc", borderColor: COLORS?.primary, borderWidth: wp(0.3)
-    }, assignedText: { fontSize: wp(3.2), color: "#555", fontFamily: "Poppins_400Regular", },
+    }, assignedText: { fontSize: wp(3.2), color: "#555", fontFamily: "Poppins_400Regular", textTransform: "capitalize" },
     dateRow: {
         flexDirection: "row", justifyContent: "space-between",
     }, dateBox: {

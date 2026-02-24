@@ -84,13 +84,11 @@ export default function UserCustomDropdown({
     useEffect(() => {
         const show = Keyboard.addListener("keyboardDidShow", () => setIsKeyboardVisible(true));
         const hide = Keyboard.addListener("keyboardDidHide", () => setIsKeyboardVisible(false));
-
         return () => {
             show.remove();
             hide.remove();
         };
     }, []);
-
     /* ===========================
        Reset Dropdown
     =========================== */
@@ -100,7 +98,6 @@ export default function UserCustomDropdown({
         setCurrentPage(1);
         setHasMore(true);
     };
-
     /* ===========================
        Local Data Mode
     =========================== */
@@ -205,25 +202,15 @@ export default function UserCustomDropdown({
         }
     }, [searchText, modalVisible, assignType, data, fetchDropDownData]);
 
-    /* ===========================
-       Pagination (FIXED)
-    =========================== */
     const handleLoadMore = useCallback(() => {
         if (loading || !hasMore || assignType !== "individual") return;
         fetchDropDownData(currentPage + 1, searchText);
     }, [loading, hasMore, assignType, currentPage, searchText, fetchDropDownData]);
-
-    /* ===========================
-       Pull to Refresh
-    =========================== */
     const handleRefresh = () => {
+        if (assignType !== "individual") return
         setRefreshing(true);
         fetchDropDownData(1, searchText, true);
     };
-
-    /* ===========================
-       Selection
-    =========================== */
     const handleSelect = useCallback((item) => {
         if (multiSelect) {
             const exists = selectedItems.some(i => i.value === item.value);
@@ -257,7 +244,6 @@ export default function UserCustomDropdown({
             <Text style={{ marginBottom: hp(1), fontSize: wp(4), fontFamily: "Poppins_400Regular" }}>
                 {title || ""}
             </Text>
-
             <Pressable style={styles.input} onPress={() => setModalVisible(true)}>
                 <Text style={styles.inputText}>
                     {selectedItems?.length
@@ -272,7 +258,6 @@ export default function UserCustomDropdown({
                     color="#555"
                 />
             </Pressable>
-
             <Modal transparent visible={modalVisible} animationType="fade">
                 <TouchableOpacity
                     style={styles.modalOverlay}
@@ -286,7 +271,7 @@ export default function UserCustomDropdown({
                     <View style={styles.modalContent}>
                         <View style={styles.modalHeader}>
                             <Pressable onPress={() => setModalVisible(false)}>
-                                <Icon name="arrow-back" size={wp(6)} color="#000" />
+                                <Icon name="close" size={wp(6.5)} color="#000" />
                             </Pressable>
 
                             <TextInput
@@ -314,8 +299,8 @@ export default function UserCustomDropdown({
                                     item?.id
                                         ? item.id.toString()
                                         : item?.value
-                                        ? item.value.toString()
-                                        : `${index}-${item?.label}`
+                                            ? item.value.toString()
+                                            : `${index}-${item?.label}`
                                 }
                                 renderItem={renderItem}
                                 refreshControl={

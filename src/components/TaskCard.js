@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
     Animated, Dimensions, Pressable,
@@ -14,20 +14,17 @@ import { BASE_URL } from "./api/Api";
 import StatusSelectModal from "./statusSelectModal";
 import TaskDetailModal from "./TaskDetailModal";
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
-export default function TaskCard({ task, loadData }) {
+export default function TaskCard({ task, loadData, statusList }) {
     const { t } = useTranslation();
-    const siteDetails = useSelector(
-        (state) => state.auth?.siteDetails?.data[0]
-    );
     const profileDetails = useSelector(
         (state) => state?.auth?.profileDetails?.data
     );
     const { showToast } = useToast();
-
     const [showDetailModal, setShowDetailModal] = useState(false);
     const [showStatusModal, setShowStatusModal] = useState(false);
     const translateY = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
-    /** STATUS COLOR */
+    useEffect(() => {
+    }, [])
     const getStatusColor = (status) => {
         switch (status) {
             case "Open":
@@ -42,7 +39,6 @@ export default function TaskCard({ task, loadData }) {
                 return COLORS.primary;   // Fallback
         }
     };
-    /** PRIORITY STYLE */
     const getPriorityStyle = (priority) => {
         switch (priority) {
             case "Critical":
@@ -145,7 +141,8 @@ export default function TaskCard({ task, loadData }) {
                         onPress={() => openDetailModal()}
                         style={[
                             styles.statusBtn,
-                            { backgroundColor: COLORS?.primary, width: wp(43),justifyContent:"space-between" ,
+                            {
+                                backgroundColor: COLORS?.primary, width: wp(43), justifyContent: "space-between",
                                 paddingVertical: hp(1.8),
                             },
                         ]}
@@ -168,7 +165,7 @@ export default function TaskCard({ task, loadData }) {
             <StatusSelectModal
                 currentStatus={task?.status}
                 visible={showStatusModal}
-                statuses={siteDetails?.ticketstatusnooverdueList || []}
+                statuses={statusList || []}
                 onClose={() => setShowStatusModal(false)}
                 onSelect={(status) => {
                     handleUpdateStatus(status);
@@ -194,7 +191,7 @@ const styles = StyleSheet.create({
         fontSize: wp(4.2), fontWeight: "600",
         marginBottom: hp(1), textTransform: "capitalize", maxWidth: wp(44)
     }, statusBtn: {
-        flexDirection: "row", alignItems: "center",justifyContent:"space-between",
+        flexDirection: "row", alignItems: "center", justifyContent: "space-between",
         alignSelf: "flex-start", paddingHorizontal: wp(5),
         paddingVertical: hp(1), borderRadius: wp(2),
     }, statusText: {

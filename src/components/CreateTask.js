@@ -11,6 +11,7 @@ import {
   StyleSheet, Text, TextInput, TouchableOpacity,
   TouchableWithoutFeedback, View
 } from "react-native";
+import { Video as VideoCompress } from "react-native-compressor";
 import { Icon } from "react-native-elements";
 import { ActivityIndicator } from "react-native-paper";
 import { useSelector } from "react-redux";
@@ -82,7 +83,7 @@ export default function CreateTask({ route }) {
     Audio.requestPermissionsAsync();
   }, []);
   useEffect(() => {
-      fetchDropDownData();
+    fetchDropDownData();
   }, [selectedTeam, assignedBy, priority, assignType]);
   useEffect(() => {
     // Alert.alert('Assign Type Changed', `Selected assign type: ${assignType}`); // Debug alert
@@ -136,8 +137,6 @@ export default function CreateTask({ route }) {
           priority: priority ? priority?.value : null
         }
       );
-
-
       if (response?.data) {
         setdropDownData(response.data);
         // Alert.alert("Dropdown Data", JSON.stringify(response.data,null,2));
@@ -194,53 +193,31 @@ export default function CreateTask({ route }) {
     }
   };
 
-  const pickMedia = async (source) => {
-    setmediaModal(false);
-    // Request permission based on source
-    let hasPermission = false;
-    if (source === "camera") {
-      hasPermission = await requestCameraPermission();
-    } else if (source === "gallery") {
-      hasPermission = await requestGalleryPermission();
-    }
-
-    if (!hasPermission) return;
-
-    // Picker options based on media type
-    const options = {
-      mediaTypes:
-        mediaTypes === "video"
-          ? ImagePicker.MediaTypeOptions.Videos
-          : ImagePicker.MediaTypeOptions.Images,
-      quality: 0.7,
-    };
-
-    // Allow multiple selection for images from gallery
-    if (mediaTypes === "image" && source === "gallery") {
-      options.allowsMultipleSelection = true;
-      options.selectionLimit = 3 - images.length;
-    }
-
-    // Launch camera or gallery
-    let result;
-    if (source === "camera") {
-      result = await ImagePicker.launchCameraAsync(options);
-    } else if (source === "gallery") {
-      result = await ImagePicker.launchImageLibraryAsync(options);
-    }
-
-    if (!result.canceled && result.assets?.length > 0) {
-      if (mediaTypes === "video") {
-        // Single video: replace previous
-        setvideo([{ ...result.assets[0], source: source === "camera" ? "Camera" : "Gallery" }]);
-      } else {
-        // Images: append selected images
-        const selectedImages = result.assets.map(a => ({
-          ...a,
-          source: source === "camera" ? "Camera" : "Gallery",
-        }));
-        setImages(prev => [...prev, ...selectedImages]);
-      }
+  const [compressionProgress, setCompressionProgress] = useState(0);
+  const [isCompressing, setIsCompressing] = useState(false);
+  const compressVideoFast = async (videoUri) => {
+    try {
+      setIsCompressing(true);
+      setCompressionProgress(0);
+      const compressedVideoUri = await VideoCompress.compress(
+        videoUri,
+        {
+          compressionMethod: "manual", // manual allows setting quality
+          bitrate: 500_000,          // very low bitrate for small file
+          maxSize: 480,
+        },
+        (progress) => {
+          setCompressionProgress(progress); // progress 0 -> 1
+        }
+      );
+      console.log("✅ Compressed video URI:", compressedVideoUri);
+      return compressedVideoUri;
+    } catch (error) {
+      console.log("❌ Compression error:", error);
+      return videoUri; // fallback to original if compression fails
+    } finally {
+      setIsCompressing(false);
+      setCompressionProgress(0);
     }
   };
 
@@ -364,8 +341,67 @@ export default function CreateTask({ route }) {
   const [viewerVisible, setViewerVisible] = useState(false);
   const [viewerUri, setViewerUri] = useState(null);
   const [lang, setLang] = useState(null);
+  const pickMedia = async (source) => {
+    setmediaModal(false);
+    // Request permission based on source
+    let hasPermission = false;
+    if (source === "camera") {
+      hasPermission = await requestCameraPermission();
+    } else if (source === "gallery") {
+      hasPermission = await requestGalleryPermission();
+    }
+    if (!hasPermission) return;
+    // Picker options based on media type
+    const options = {
+      mediaTypes:
+        mediaTypes === "video"
+          ? ImagePicker.MediaTypeOptions.Videos
+          : ImagePicker.MediaTypeOptions.Images,
+      quality: 0.7,
+    };
 
+    // Allow multiple selection for images from gallery
+    if (mediaTypes === "image" && source === "gallery") {
+      options.allowsMultipleSelection = true;
+      options.selectionLimit = 3 - images.length;
+    }
 
+    // Launch camera or gallery
+    let result;
+    if (source === "camera") {
+      result = await ImagePicker.launchCameraAsync(options);
+    } else if (source === "gallery") {
+      result = await ImagePicker.launchImageLibraryAsync(options);
+    }
+
+    if (!result.canceled && result.assets?.length > 0) {
+      if (mediaTypes === "video") {
+        // Picked video
+        const originalVideo = result.assets[0];
+        // Compress video
+        setIsCompressing(true);
+        const compressedUri = await compressVideoFast(originalVideo.uri);
+        // Ensure proper URI format for preview/upload
+        const videoForPreview = {
+          ...originalVideo,
+          uri: compressedUri.startsWith("file://") ? compressedUri : `file://${compressedUri}`,
+          source: source === "camera" ? "Camera" : "Gallery",
+          type: originalVideo.type || "video/mp4",
+          name: originalVideo.fileName || `video_${Date.now()}.mp4`,
+        };
+
+        // Set state with compressed video
+        setvideo([videoForPreview]);
+      } else {
+        // Images: append selected images
+        const selectedImages = result.assets.map((a) => ({
+          ...a,
+          source: source === "camera" ? "Camera" : "Gallery",
+        }));
+        setImages((prev) => [...prev, ...selectedImages]);
+      }
+    }
+  };
 
   const handleSubmit = async () => {
 
@@ -375,9 +411,9 @@ export default function CreateTask({ route }) {
       .hour(dueTime.getHours())
       .minute(dueTime.getMinutes())
       .second(0);
-
     if (!profileDetails?.id) return;
     setloading(true);
+    showToast(t("uploading_please_wait"), "info");
     try {
       const formData = new FormData();
       formData.append("user_id", profileDetails.id.toString());
@@ -462,6 +498,14 @@ export default function CreateTask({ route }) {
         showBackButton
         onBackPress={() => navigation.goBack()}
       />
+      {isCompressing && (
+        <View style={{ marginVertical: 10 }}>
+          <Text>Compressing video: {(compressionProgress * 100).toFixed(0)}%</Text>
+          <View style={{ width: "100%", height: 10, backgroundColor: "#eee", borderRadius: 5, overflow: "hidden", marginTop: 5 }}>
+            <View style={{ height: "100%", width: `${compressionProgress * 100}%`, backgroundColor: "#4caf50" }} />
+          </View>
+        </View>
+      )}
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -547,7 +591,7 @@ export default function CreateTask({ route }) {
                     size={wp(7)}
                     color={"#777"}
                   />
-                  <Text numberOfLines={1} style={{ fontFamily: "Poppins_400Regular", color: "#777", fontSize: wp(4) }} ellipsizeMode="tail">
+                  <Text numberOfLines={1} style={{ fontFamily: "Poppins_400Regular", color: "#777", fontSize: wp(3.2), lineHeight: hp(3) }} ellipsizeMode="tail">
                     {t("add_description_audio")}
                   </Text>
                 </Pressable>
@@ -644,11 +688,9 @@ export default function CreateTask({ route }) {
                 )}
               </View>
             </View>
-
             <View style={{ marginBottom: wp(4) }}>
               <Text style={styles.label}>{t("video")}</Text>
               <View style={{ flexDirection: "column", gap: wp(2) }}>
-
                 {/* Add new video button (only show if no video) */}
                 {!video && (
                   <Pressable
@@ -777,7 +819,7 @@ export default function CreateTask({ route }) {
                   color={COLORS.primary}
                   style={{ marginRight: hp(1) }}
                 />
-                <Text style={styles.radioLabel}>{`${t('department')}`}</Text>
+                <Text style={styles.radioLabel}>{`${t('department')}  `}</Text>
               </Pressable>
             </View>
             {/* <Text>{JSON.stringify(selectedTeam?.value)}</Text> */}
@@ -879,8 +921,23 @@ export default function CreateTask({ route }) {
                 is24Hour={false}
                 display="spinner"
                 onChange={(_, selectedTime) => {
-                  setShowTimePicker(false);
-                  if (selectedTime) setDueTime(selectedTime);
+                  setShowTimePicker(false); // hide picker immediately
+                  if (!selectedTime) return; // user canceled
+                  // Combine dueDate with selected time
+                  const dueDateTime = new Date(dueDate);
+                  dueDateTime.setHours(selectedTime.getHours(), selectedTime.getMinutes(), 0, 0);
+                  const now = new Date();
+                  if (dueDateTime < now) {
+                    setErrors(prev => ({
+                      ...prev,
+                      dueTime: `${t('cannot_select_past_time')}`
+                    }));
+                    setDueTime(null); // optional: clear previous invalid time
+                    return;
+                  }
+                  // Valid time, clear error if exists
+                  setErrors(prev => ({ ...prev, dueTime: undefined }));
+                  setDueTime(selectedTime);
                 }}
               />
             )}
@@ -943,7 +1000,7 @@ const styles = StyleSheet.create({
   radioCircle: {
     width: wp(4), height: wp(4), borderRadius: wp(2), borderWidth: 1, borderColor: COLORS.gray, marginRight: wp(1.5),
   },
-  radioLabel: { fontSize: wp(3.8), fontFamily: "Poppins_400Regular", lineHeight: hp(4) },
+  radioLabel: { fontSize: wp(3.8), fontFamily: "Poppins_400Regular", lineHeight: hp(4), textTransform: "capitalize" },
   dateButton: { borderWidth: 1, borderRadius: wp(1), padding: wp(3), },
   micIconContainer: {
     position: "absolute", right: wp(3), top: hp(5.2), margin: wp(1),

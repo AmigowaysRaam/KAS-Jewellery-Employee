@@ -137,7 +137,7 @@ const ProfileCard = ({ onClose, loadingMenu, onEditProfile }) => {
                 style={{ marginLeft: wp(3), justifyContent: "center", flex: 1 }}
               >
                 <Text numberOfLines={1} style={styles.name}>
-                  {profileDetails?.admin_name || t("")}
+                  {profileDetails?.admin_name || profileDetails?.full_name || t("")}
                 </Text>
                 {/* <Text style={styles.value}>{profileDetails?.admin_type}</Text> */}
                 <Text style={styles.value}>{profileDetails?.employee_id || '-'}</Text>

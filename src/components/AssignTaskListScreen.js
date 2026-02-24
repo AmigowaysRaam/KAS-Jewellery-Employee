@@ -1,5 +1,4 @@
 import { useFocusEffect, useNavigation, useRoute } from "@react-navigation/native";
-import dayjs from "dayjs";
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -23,6 +22,8 @@ export default function AssignedTasklistScreen() {
   const navigation = useNavigation();
   const { t } = useTranslation();
   const route = useRoute();
+  const flatListRef = React.useRef(null);
+
   const { todayKey } = route?.params || {};
   const siteDetails = useSelector((state) => state.auth?.siteDetails?.data[0]);
   const profileDetails = useSelector((state) => state?.auth?.profileDetails?.data);
@@ -32,7 +33,6 @@ export default function AssignedTasklistScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [searchText, setSearchText] = useState("");
-  const [selectedStatus, setSelectedStatus] = useState(route?.params?.status);
   const [selectedDateRange, setSelectedDateRange] = useState(initialDateRange);
   const [selectedTask, setSelectedTask] = useState(null);
   const [allowCreateTask, setallowCreateTask] = useState(null);
@@ -40,19 +40,41 @@ export default function AssignedTasklistScreen() {
   const [canAssign, setCanAssign] = useState(false);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
+  const validateStatus = (status) => {
+    if (!status || !siteDetails?.ticketstatusList) return null;
+
+    const exists = siteDetails.ticketstatusList.find(
+      (item) => item.label.toLowerCase() === status.toLowerCase()
+    );
+
+    return exists ? status : null;
+  };
+
+  const [selectedStatus, setSelectedStatus] = useState(() =>
+    validateStatus(route?.params?.status)
+  );
   /** Fetch tasks from API */
-  const fetchTasks = async (pageNo = 1, isRefresh = false, initialStatus) => {
-    // Alert.alert('',JSON.stringify(todayKey))
+  const fetchTasks = async (
+    pageNo = 1,
+    isRefresh = false,
+    statusParam = selectedStatus,
+    dateRange = selectedDateRange
+  ) => {
     if (!hasMore && !isRefresh) return;
+    if (!profileDetails?.id) return;
+
     const lang = await getStoredLanguage();
     setLoading(pageNo === 1);
+
     try {
-      // Map initialStatus label to value
-      const statusObj = siteDetails?.ticketstatusList.find(
-        (item) => item.label.toLowerCase() === (initialStatus || '').toLowerCase()
+      // ✅ Validate status safely
+      const statusObj = siteDetails?.ticketstatusList?.find(
+        (item) =>
+          item.label.toLowerCase() === (statusParam || "").toLowerCase()
       );
-      // Alert.alert(initialStatus)
-      const statusValue = statusObj ? statusObj.value : undefined;
+
+      const statusValue = statusObj?.value;
+
       const response = await fetchData(
         "app-employee-list-my-assigned-tasks",
         "POST",
@@ -61,52 +83,47 @@ export default function AssignedTasklistScreen() {
           per_page: 10,
           current_page: pageNo,
           lang: lang,
-          from: selectedDateRange.from,
-          to: selectedDateRange.to,
-          todayKey: todayKey,
-          ...(statusValue && { status: statusValue }), // Only send if value exists
+          from: dateRange?.from || null,
+          to: dateRange?.to || null,
+          todayKey: todayKey || null,
+          ...(statusValue && { status: statusValue }),
         }
       );
-      // Alert.alert('',JSON.stringify(response,null,2))
+
       if (response?.text === "Success") {
         let data = response?.data?.tasks || [];
-        setallowCreateTask(response?.data?.allowCreateTask)
-        setCanAssign(response?.data?.canAssign)
+
+        // Preserve your existing logic
+        setallowCreateTask(response?.data?.allowCreateTask);
+        setCanAssign(response?.data?.canAssign);
+
+        // ✅ Search filter (unchanged logic)
         if (searchText) {
           data = data.filter((task) =>
-            (task.title || "").toLowerCase().includes(searchText.toLowerCase())
+            (task.title || "")
+              .toLowerCase()
+              .includes(searchText.toLowerCase())
           );
         }
-        if (initialStatus) {
+
+        // ✅ Status filter (safe + validated)
+        if (statusParam) {
           data = data.filter(
-            (task) => task.status?.toLowerCase() === initialStatus.toLowerCase()
+            (task) =>
+              task.status?.toLowerCase() ===
+              statusParam.toLowerCase()
           );
         }
-        if (selectedDateRange.from || selectedDateRange.to) {
-          data = data.filter((task) => {
-            const assigned = dayjs(task.assigned_date, "DD-MM-YYYY hh:mm a");
-            if (selectedDateRange.from && selectedDateRange.to) {
-              return (
-                assigned.isAfter(dayjs(selectedDateRange.from).startOf("day")) &&
-                assigned.isBefore(dayjs(selectedDateRange.to).endOf("day"))
-              );
-            }
-            if (selectedDateRange.from) {
-              return assigned.isAfter(dayjs(selectedDateRange.from).startOf("day"));
-            }
-            if (selectedDateRange.to) {
-              return assigned.isBefore(dayjs(selectedDateRange.to).endOf("day"));
-            }
-            return true;
-          });
-        }
-        // Alert.alert(JSON.stringify(response?.data?.tasks?.length))
+
+        // ✅ Pagination control
         setHasMore(response?.data?.tasks?.length === 10);
-        // setTasks((prev) => (pageNo === 1 ? data : [...prev, ...data]));
+
         setTasks((prev) => {
           if (pageNo === 1) return data;
+       
           const newData = data.filter(
-            (newItem) => !prev.some((prevItem) => prevItem.id === newItem.id)
+            (newItem) =>
+              !prev.some((prevItem) => prevItem.id === newItem.id)
           );
 
           return [...prev, ...newData];
@@ -114,7 +131,10 @@ export default function AssignedTasklistScreen() {
 
         setPage(pageNo);
       } else {
-        showToast(response?.message || "Failed to fetch tasks", "error");
+        showToast(
+          response?.message || "Failed to fetch tasks",
+          "error"
+        );
       }
     } catch (err) {
       console.error("Task API Error:", err);
@@ -127,15 +147,16 @@ export default function AssignedTasklistScreen() {
   useFocusEffect(
     React.useCallback(() => {
       setHasMore(true);
-      fetchTasks(1, true, selectedStatus);
-    }, [profileDetails?.id, searchText, selectedStatus])
+      fetchTasks(1, true, selectedStatus, selectedDateRange);
+    }, [profileDetails?.id, searchText, selectedStatus, selectedDateRange])
   );
-  /** Pull to refresh */
+
   const onRefresh = () => {
     setRefreshing(true);
     setHasMore(true);
-    fetchTasks(1, true, selectedStatus);
+    fetchTasks(1, true, selectedStatus, selectedDateRange);
   };
+
   /** Load more tasks */
   const loadMore = () => {
     if (!loading && hasMore) {
@@ -187,16 +208,21 @@ export default function AssignedTasklistScreen() {
   );
 
   const handleStatusSelect = (status) => {
-    if (!status && route?.params?.status) {
-      setSelectedStatus(route?.params?.status)
-      setHasMore(true);
-      fetchTasks(1, true, status);
+    setHasMore(true);
+
+    if (!status) {
+      // CLEAR COMPLETELY
+      setSelectedStatus(null);
+      fetchTasks(1, true, null, selectedDateRange);
+      return;
     }
-    else {
-      setSelectedStatus(status);
-      setHasMore(true);
-      fetchTasks(1, true, status);
+    const validStatus = validateStatus(status);
+    if (!validStatus) {
+      showToast("Invalid status selected", "error");
+      return;
     }
+    setSelectedStatus(validStatus);
+    fetchTasks(1, true, validStatus, selectedDateRange);
   };
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : "height"}>
@@ -205,7 +231,7 @@ export default function AssignedTasklistScreen() {
         <SearchContainer
           value={searchText}
           onChangeText={setSearchText}
-          placeholder="Search tasks..."
+          placeholder={`${t("search_task")}...`}
           selectedStatus={selectedStatus}
           onStatusSelect={handleStatusSelect}
           modalVisible={modalVisible}
@@ -223,8 +249,9 @@ export default function AssignedTasklistScreen() {
         ) : (
           // Actual task list
           <FlatList
+            ref={flatListRef}
             ListHeaderComponent={
-              tasks?.length > 0 && (
+              (
                 <>
                   <DateandDownloadTask
                     // taskLength={tasks?.length}
@@ -234,7 +261,7 @@ export default function AssignedTasklistScreen() {
                     onDateSelect={(range) => {
                       setSelectedDateRange(range);
                       setHasMore(true);
-                      fetchTasks(1, true, selectedStatus);
+                      fetchTasks(1, true, selectedStatus, range); // pass range explicitly
                     }}
                     onDownload={() => showToast('Task list download is in progress...', 'info')}
                   />

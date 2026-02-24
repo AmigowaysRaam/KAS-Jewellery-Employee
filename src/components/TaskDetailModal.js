@@ -197,16 +197,10 @@ const TaskDetailModal = ({ visible, task, onClose, getStatusColor }) => {
           <Pressable style={styles.closeButton} onPress={() => !isDownloading && onClose()}>
             <Icon name="close" size={wp(8)} color="#fff" />
           </Pressable>
-
-
-
           <ScrollView
             showsVerticalScrollIndicator={false}
             contentContainerStyle={{ paddingBottom: hp(5) }}
           >
-
-
-
             <Text style={styles.modalTitle}>{task?.title}</Text>
             {task?.description && (
               <View style={styles.descriptionContainer}>
@@ -235,8 +229,9 @@ const TaskDetailModal = ({ visible, task, onClose, getStatusColor }) => {
               )
             }
             {/* Media Section */}
+            {/* <Text>{JSON.stringify(mediaList, null, 2)}</Text> */}
             {mediaList.length > 0 && (
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: hp(1) }}>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: hp(1.5) }}>
                 {mediaList.map((item, idx) => (
                   <Pressable
                     key={idx}
@@ -244,6 +239,7 @@ const TaskDetailModal = ({ visible, task, onClose, getStatusColor }) => {
                     style={{ marginRight: wp(3) }}
                   >
                     <View style={styles.mediaItem}>
+
                       {item.type === "image" ? (
                         <Image source={{ uri: item.uri }} style={StyleSheet.absoluteFill} resizeMode="cover" />
                       ) : (
@@ -265,7 +261,7 @@ const TaskDetailModal = ({ visible, task, onClose, getStatusColor }) => {
                 ))}
               </ScrollView>
             )}
-          
+
             <View style={styles.datesRow}>
               <View style={styles.dateItem}>
                 <View style={styles.dateRow}>
@@ -282,7 +278,21 @@ const TaskDetailModal = ({ visible, task, onClose, getStatusColor }) => {
                 <Text style={styles.dateText}>{task.due_date}</Text>
               </View>
             </View>
-
+            {
+              task?.extend_date != '' &&
+              <View style={[styles.dateItem, {
+              }]}>
+                <View style={styles.dateRow}>
+                  <Icon name="calendar-today" size={wp(4)} color={COLORS?.primary} style={{ marginRight: wp(1) }} />
+                  <Text style={[styles.label, {
+                    fontSize: wp(4)
+                  }]}>{t("extended_date")}</Text>
+                </View>
+                <Text style={[styles.dateText, {
+                  fontSize: wp(4.5)
+                }]}>{task?.extend_date}</Text>
+              </View>
+            }
             {/* Audio Section */}
             {task?.audio && (
               <View style={styles.audioContainer}>

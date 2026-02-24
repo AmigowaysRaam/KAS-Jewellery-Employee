@@ -11,30 +11,20 @@ import {
   useFonts,
 } from "@expo-google-fonts/poppins";
 import NetInfo from "@react-native-community/netinfo";
+import { createNavigationContainerRef, NavigationContainer } from "@react-navigation/native";
 import Constants from "expo-constants";
 import * as Device from "expo-device";
 import * as Notifications from "expo-notifications";
 import React, { useEffect, useRef, useState } from "react";
-import {
-  Alert,
-  Linking,
-  Platform, StatusBar, StyleSheet,
-  Text,
-  TextInput,
-  useColorScheme, View
-} from 'react-native';
+import { Alert, Linking, Platform, StatusBar, StyleSheet, Text, TextInput, useColorScheme, View } from 'react-native';
 import { SafeAreaView } from "react-native-safe-area-context";
-
-import { createNavigationContainerRef, NavigationContainer } from "@react-navigation/native";
 import { Provider } from "react-redux";
 import { COLORS } from "./app/resources/colors";
 import { hp } from "./app/resources/dimensions";
 import { ToastProvider } from "./constants/ToastContext";
 import StackNavi from "./src/components/navigation/StackNavi";
 import { store } from "./src/components/store/store";
-
 export const navigationRef = createNavigationContainerRef();
-
 export function navigate(name, params) {
   if (navigationRef.isReady()) {
     navigationRef.navigate(name, params);
@@ -107,11 +97,13 @@ export default function App() {
   TextInput.defaultProps.allowFontScaling = false;
   return (
     <Provider store={store}>
+
       <SafeAreaView style={{ flex: 1, backgroundColor: colorScheme === 'dark' ? '#000' : '#fff' }}>
         <StatusBar
           barStyle={colorScheme === 'dark' ? 'light-content' : 'dark-content'}
           backgroundColor={colorScheme === 'dark' ? '#000' : '#fff'}
         />
+
         {!isConnected ? (
           <View style={styles.centerContainer}>
             <View style={styles.box}>
@@ -176,7 +168,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor:COLORS?.primary,
+    backgroundColor: COLORS?.primary,
     padding: 20,
   },
   box: {

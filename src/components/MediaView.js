@@ -1,41 +1,34 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Video } from "expo-av";
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
-    Animated,
-    Image,
-    Modal,
-    PanResponder,
-    SafeAreaView,
-    StyleSheet,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Animated,
+  Image,
+  Modal,
+  PanResponder,
+  StyleSheet,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { COLORS } from "../../app/resources/colors";
 import { hp, wp } from "../../app/resources/dimensions";
 
-export default function MediaViewerModal({
-  visible,
-  uri,
-  type, // "image" or "video"
-  onClose,
-}) {
+export default function MediaViewerModal({ visible, uri, type, onClose }) {
   const scale = useRef(new Animated.Value(1)).current;
   const translateX = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(0)).current;
-
   const lastScale = useRef(1);
   const lastTranslate = useRef({ x: 0, y: 0 });
   const initialDistance = useRef(0);
-
   const videoRef = useRef(null);
+  const [loading, setLoading] = useState(true); // loader state
 
   useEffect(() => {
     if (!visible) {
       reset();
-      if (videoRef.current) {
-        videoRef.current.pauseAsync();
-      }
+      if (videoRef.current) videoRef.current.pauseAsync();
+      setLoading(true);
     }
   }, [visible]);
 
@@ -45,6 +38,7 @@ export default function MediaViewerModal({
     scale.setValue(1);
     translateX.setValue(0);
     translateY.setValue(0);
+    setLoading(true);
   };
 
   const closeWithAnimation = () => {
@@ -68,37 +62,29 @@ export default function MediaViewerModal({
     PanResponder.create({
       onStartShouldSetPanResponder: () => type === "image",
       onMoveShouldSetPanResponder: () => type === "image",
-
       onPanResponderGrant: (e) => {
-        if (e.nativeEvent.touches.length === 2) {
+        if (e.nativeEvent.touches.length === 2)
           initialDistance.current = getDistance(e.nativeEvent.touches);
-        }
       },
-
       onPanResponderMove: (e, g) => {
         if (type !== "image") return;
 
-        // PINCH
         if (e.nativeEvent.touches.length === 2) {
           const distance = getDistance(e.nativeEvent.touches);
-          let newScale =
-            (distance / initialDistance.current) * lastScale.current;
+          let newScale = (distance / initialDistance.current) * lastScale.current;
           newScale = Math.max(1, Math.min(newScale, 4));
           scale.setValue(newScale);
         }
 
-        // PAN (only if zoomed)
         if (e.nativeEvent.touches.length === 1 && lastScale.current > 1) {
           translateX.setValue(lastTranslate.current.x + g.dx);
           translateY.setValue(lastTranslate.current.y + g.dy);
         }
 
-        // SWIPE DOWN TO CLOSE
         if (lastScale.current === 1 && g.dy > 0) {
           translateY.setValue(g.dy);
         }
       },
-
       onPanResponderRelease: (e, g) => {
         if (type !== "image") return;
 
@@ -127,61 +113,66 @@ export default function MediaViewerModal({
 
   return (
     <Modal visible={visible} transparent animationType="none">
-      <SafeAreaView style={styles.safeArea}>
-        <View style={styles.overlay}>
-          {/* Background tap */}
-          <TouchableOpacity
-            style={StyleSheet.absoluteFill}
-            activeOpacity={1}
-            onPress={onClose}
-          />
+      <View style={styles.overlay}>
+        {/* Background tap */}
+        <TouchableOpacity
+          style={StyleSheet.absoluteFill}
+          activeOpacity={1}
+          onPress={onClose}
+        />
 
-          <Animated.View
-            style={[
-              styles.container,
-              {
-                transform:
-                  type === "image"
-                    ? [{ translateX }, { translateY }, { scale }]
-                    : [{ translateY }],
-              },
-            ]}
-            {...(type === "image" ? panResponder.panHandlers : {})}
-          >
-            {/* Close Button */}
-            <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
-              <Ionicons name="close" size={30} color={COLORS?.primary} />
-            </TouchableOpacity>
+        <Animated.View
+          style={[
+            styles.container,
+            {
+              transform:
+                type === "image"
+                  ? [{ translateX }, { translateY }, { scale }]
+                  : [{ translateY }],
+            },
+          ]}
+          {...(type === "image" ? panResponder.panHandlers : {})}
+        >
+          {/* Close Button */}
+          <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
+            <Ionicons name="close" size={wp(8)} color={COLORS?.primary} />
+          </TouchableOpacity>
 
-            {type === "image" ? (
-              <Image
-                source={{ uri }}
-                style={styles.media}
-                resizeMode="contain"
-              />
-            ) : (
-              <Video
-                ref={videoRef}
-                source={{ uri }}
-                style={styles.media}
-                resizeMode="contain"
-                useNativeControls
-                shouldPlay
-                isLooping
-              />
-            )}
-          </Animated.View>
-        </View>
-      </SafeAreaView>
+          {loading && (
+            <ActivityIndicator
+              size="large"
+              color={COLORS.primary}
+              style={StyleSheet.absoluteFillObject}
+            />
+          )}
+
+          {type === "image" ? (
+            <Image
+              source={{ uri }}
+              style={styles.media}
+              resizeMode="contain"
+              onLoadEnd={() => setLoading(false)}
+            />
+          ) : (
+            <Video
+              ref={videoRef}
+              source={{ uri }}
+              style={styles.media}
+              resizeMode="contain"
+              useNativeControls
+              shouldPlay={visible}
+              isLooping
+              onLoadStart={() => setLoading(true)}
+              onLoad={() => setLoading(false)}
+            />
+          )}
+        </Animated.View>
+      </View>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,1)",
-  },
   overlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,1)",

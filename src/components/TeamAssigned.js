@@ -21,7 +21,7 @@ export default function TeamAssigned({ teamMembers }) {
     const { t } = useTranslation();
     const teamUsers = teamMembers || [];
     useEffect(() => {
-        console.log("Team Members:", JSON.stringify(teamMembers, null, 2));
+        // console.log("Team Members:", JSON.stringify(teamMembers, null, 2));
     }, [teamUsers]);
     if (!teamUsers) return null;
     const openModal = () => {
@@ -64,9 +64,9 @@ export default function TeamAssigned({ teamMembers }) {
             ? [...teamUsers.slice(0, maxVisible - 1), { isExtra: true, extraCount: teamUsers.length - (maxVisible - 1) }]
             : teamUsers;
     return (
-        <View style={{ marginHorizontal: hp(0.1) }}>
+        <View style={{ marginHorizontal: hp(0.1),marginBottom:wp(1) }}>
             {/* Horizontal Scroll of team members */}
-            <Text style={styles.modalTitle}>{t('team_members')}</Text>
+            <Text style={styles.modalTitle}>{t('members')}</Text>
             <FlatList
                 data={horizontalData}
                 horizontal
@@ -116,7 +116,7 @@ export default function TeamAssigned({ teamMembers }) {
                                     },
                                 ]}
                             >
-                                <Text style={styles.modalTitle}>{t('team_members')}</Text>
+                                <Text style={styles.modalTitle}>{t('members')}</Text>
                                 <ScrollView>
                                     {teamUsers.map((item, index) => (
                                         <View key={item.value?.toString() || index} style={styles.modalItem}>

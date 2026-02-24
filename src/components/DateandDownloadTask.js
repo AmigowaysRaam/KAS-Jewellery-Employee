@@ -118,6 +118,7 @@ const DateandDownloadTask = ({ onDateSelect, fromDate, toDate, taskFlag,
   // Handle date selection
   // ===============================
   const handleDateSelect = ({ from, to }) => {
+    // Alert.alert('',JSON.stringify({ from, to }))
     onDateSelect && onDateSelect({ from, to });
   };
 
@@ -125,17 +126,24 @@ const DateandDownloadTask = ({ onDateSelect, fromDate, toDate, taskFlag,
     onDateSelect && onDateSelect({ from: null, to: null });
   };
 
-  const formatRange = () => {
-    if (!fromDate) return t('select_date_range');
-    if (!toDate) return `From: ${new Date(fromDate).toLocaleDateString()} - ?`;
-    return `${new Date(fromDate).toLocaleDateString()} - ${new Date(toDate).toLocaleDateString()}`;
+  const formatDate = (date) => {
+    return new Date(date).toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    });
   };
 
+  const formatRange = () => {
+    if (!fromDate) return t('select_date_range');
+    if (!toDate) return `From: ${formatDate(fromDate)} - ?`;
+    return `${formatDate(fromDate)} - ${formatDate(toDate)}`;
+  };
   return (
     <View style={styles.wrapper}>
       <View style={styles.card}>
         <Pressable style={styles.dateButton} onPress={() => setShowPicker(true)}>
-          <Icon name="calendar-today" size={wp(5)} color="#fff" />
+          <Icon name="calendar-today" size={wp(4)} color="#fff" />
           <Text numberOfLines={1} style={[styles.buttonText]}>{formatRange()}</Text>
           {(fromDate || toDate) && (
             <Pressable onPress={clearRange} style={styles.clearIcon}>
@@ -156,8 +164,8 @@ const DateandDownloadTask = ({ onDateSelect, fromDate, toDate, taskFlag,
           )}
         </Pressable>
       </View>
-
       <CustomDateRangePickerModal
+        restrictFeatureDate={true}
         disablePastDates={true}
         visible={showPicker}
         onClose={() => setShowPicker(false)}
@@ -200,7 +208,7 @@ const styles = StyleSheet.create({
     marginLeft: wp(2),
     flex: 1,
     lineHeight: hp(2.5),
-    fontSize: wp(3),
+    fontSize: wp(3.2),
   },
   clearIcon: {
     position: "absolute",
