@@ -27,9 +27,6 @@ const Banner = ({ homepageData, opacity }) => {
     const interval = setInterval(updateTime, 1000); // 🔥 every second
     return () => clearInterval(interval);
   }, []);
-
-
-
   // Animate on screen focus
   useFocusEffect(
     useCallback(() => {
@@ -139,9 +136,7 @@ const Banner = ({ homepageData, opacity }) => {
     </View>
   );
 };
-
 export default Banner;
-
 const styles = StyleSheet.create({
   wrapper: {
     marginVertical: wp(1),

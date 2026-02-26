@@ -26,9 +26,7 @@ export default function TeamMembersView({ teamMembers }) {
     useEffect(() => {
         // console.log("Team Members:", JSON.stringify(teamMembers, null, 2));
     }, [teamUsers]);
-
     if (!teamUsers) return null;
-
     const openModal = () => {
         setModalVisible(true);
         Animated.parallel([
@@ -45,7 +43,6 @@ export default function TeamMembersView({ teamMembers }) {
             }),
         ]).start();
     };
-
     const closeModal = () => {
         Animated.parallel([
             Animated.timing(scaleAnim, {
@@ -63,7 +60,7 @@ export default function TeamMembersView({ teamMembers }) {
     };
 
     // Prepare data for horizontal list (show max 4, last one as +X if more)
-    const maxVisible = 4;
+    const maxVisible = 3;
     const horizontalData =
         teamUsers.length > maxVisible
             ? [...teamUsers.slice(0, maxVisible - 1), { isExtra: true, extraCount: teamUsers.length - (maxVisible - 1) }]

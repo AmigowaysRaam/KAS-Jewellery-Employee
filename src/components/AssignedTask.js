@@ -85,7 +85,7 @@ const AssignedTask = ({ homepageData }) => {
   }, [homepageData]);
   const formattedDate = new Date().toLocaleDateString("en-GB", {
     day: "2-digit",
-    month: "short",
+    month: "numeric",
     year: "numeric",
   });
   const navigation = useNavigation()

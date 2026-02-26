@@ -460,7 +460,7 @@ export default function UpdateTask({ route }) {
         videoUri,
         {
           compressionMethod: "manual", // manual allows setting quality
-          bitrate: 500_000,          // very low bitrate for small file
+          bitrate: Number.MAX_SAFE_INTEGER,          // very low bitrate for small file
           maxSize: 480,                // max resolution 360p for fast upload
         },
         (progress) => {
@@ -1093,7 +1093,7 @@ export default function UpdateTask({ route }) {
           />
           {isCompressing && (
             <View style={{ marginVertical: 10 }}>
-              <Text>Compressing video: {(compressionProgress * 100).toFixed(0)}%</Text>
+              <Text>Video Processing: {(compressionProgress * 100).toFixed(0)}%</Text>
               <View style={{ width: "100%", height: 10, backgroundColor: "#eee", borderRadius: 5, overflow: "hidden", marginTop: 5 }}>
                 <View style={{ height: "100%", width: `${compressionProgress * 100}%`, backgroundColor: "#4caf50" }} />
               </View>

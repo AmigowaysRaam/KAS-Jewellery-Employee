@@ -7,6 +7,7 @@ import {
   ActivityIndicator, Image, Keyboard, KeyboardAvoidingView, Platform,
   StyleSheet, Text, TextInput, TouchableOpacity, View
 } from "react-native";
+import { Video as VideoCompress } from "react-native-compressor";
 import { useSelector } from "react-redux";
 import { getStoredLanguage } from "../../app/i18ns";
 import { COLORS } from "../../app/resources/colors";
@@ -17,6 +18,7 @@ import AttachmentModal from "./AttacthcModal";
 import CommentList from "./Commentlist";
 import CommonHeader from "./CommonHeader";
 import MediaViewerModal from "./MediaView";
+
 export default function TaskMessages({ route }) {
   const navigation = useNavigation();
   const { showToast } = useToast();
@@ -30,7 +32,7 @@ export default function TaskMessages({ route }) {
   const [sending, setSending] = useState(false);
   const [text, setText] = useState("");
   const [images, setImages] = useState([]);
-  const [vidoe, setVideo] = useState([]);
+  const [video, setVideo] = useState([]);
   const [audioAttachment, setAudioAttachment] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
@@ -152,8 +154,35 @@ export default function TaskMessages({ route }) {
   const handleAudioRecorded = (audio) => setAudioAttachment(audio);
   const removeAudioAttachment = () => setAudioAttachment(null);
 
+  const [compressionProgress, setCompressionProgress] = useState(0);
+  const [isCompressing, setIsCompressing] = useState(false);
+  const compressVideoFast = async (videoUri) => {
+    try {
+      setIsCompressing(true);
+      setCompressionProgress(0);
+      const compressedVideoUri = await VideoCompress.compress(
+        videoUri,
+        {
+          compressionMethod: "manual", // manual allows setting quality
+          bitrate: Number.MAX_SAFE_INTEGER,
+          maxSize: 480,
+        },
+        (progress) => {
+          setCompressionProgress(progress); // progress 0 -> 1
+        }
+      );
+      console.log("✅ Compressed video URI:", compressedVideoUri);
+      return compressedVideoUri;
+    } catch (error) {
+      console.log("❌ Compression error:", error);
+      return videoUri; // fallback to original if compression fails
+    } finally {
+      setIsCompressing(false);
+      setCompressionProgress(0);
+    }
+  };
   const handleSend = async () => {
-    if (!text.trim() && images.length === 0 && !audioAttachment && !vidoe.length) {
+    if (!text.trim() && images.length === 0 && !audioAttachment && !video.length) {
       showToast(
         "Please write a comment, select an image, or record audio",
         "error"
@@ -161,13 +190,16 @@ export default function TaskMessages({ route }) {
       return;
     }
     if (!profileDetails?.id || !task?.id) return;
+
     setSending(true);
+
     try {
       const formData = new FormData();
       formData.append("user_id", profileDetails.id.toString());
       formData.append("task_id", task.id.toString());
       formData.append("description", text.trim());
 
+      // Add images
       images.forEach((img, index) => {
         formData.append("image[]", {
           uri: img.uri,
@@ -175,13 +207,20 @@ export default function TaskMessages({ route }) {
           type: img.mimeType || "image/jpeg",
         });
       });
-      vidoe.forEach((img, index) => {
+
+      // Compress and add videos
+      for (let i = 0; i < video.length; i++) {
+        const originalVideo = video[i];
+        const compressedUri = await compressVideoFast(originalVideo.uri);
+
         formData.append("video", {
-          uri: img.uri,
-          name: `comment_${Date.now()}_${index}`,
-          type: img.mimeType || "mp4",
+          uri: compressedUri,
+          name: `comment_${Date.now()}_${i}.mp4`,
+          type: originalVideo.mimeType || "video/mp4",
         });
-      });
+      }
+
+      // Add audio
       if (audioAttachment) {
         formData.append("audio", {
           uri: audioAttachment.uri,
@@ -190,15 +229,18 @@ export default function TaskMessages({ route }) {
         });
       }
 
+      // Send API request
       const response = await fetch(`${BASE_URL}app-employee-add-task-comment`, {
         method: "POST",
         body: formData,
         headers: { Accept: "application/json" },
       });
+
       const resultJson = await response.json();
 
       if (resultJson?.success || resultJson?.text === "Success") {
         showToast(resultJson?.message || "Comment sent", "success");
+
         setComments((prev) => [
           ...prev,
           {
@@ -207,8 +249,10 @@ export default function TaskMessages({ route }) {
             comment: text.trim(),
             images: images.map((i) => i.uri),
             audio: audioAttachment?.uri,
+            video: video.map((v) => v.uri), // You can also store compressed URIs if needed
           },
         ]);
+
         setText("");
         setImages([]);
         setAudioAttachment(null);
@@ -225,7 +269,7 @@ export default function TaskMessages({ route }) {
       setSending(false);
     }
   };
-  const mediaList = [...images, ...vidoe];
+  const mediaList = [...images, ...video];
 
   return (
     <KeyboardAvoidingView
@@ -236,10 +280,22 @@ export default function TaskMessages({ route }) {
       }}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
+      {isCompressing && (
+        <View style={{
+          margin: wp(2),
+          // backgroundColor: "rgba(255, 0, 0, 0.5)" // red with 50% opacity
+        }}>
+          <Text>Video Processing: {(compressionProgress * 100).toFixed(0)}%</Text>
+          <View style={{ width: "100%", height: 10, backgroundColor: "#eee", borderRadius: 5, overflow: "hidden", marginTop: 5 }}>
+            <View style={{ height: "100%", width: `${compressionProgress * 100}%`, backgroundColor: "#4caf50" }} />
+          </View>
+        </View>
+      )}
       <CommonHeader
         title={task?.title}
         onBackPress={() => navigation.goBack()}
       />
+
       <CommentList
         statusList={statusList}
         comments={comments}

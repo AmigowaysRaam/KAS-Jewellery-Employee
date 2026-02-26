@@ -16,12 +16,13 @@ import Constants from "expo-constants";
 import * as Device from "expo-device";
 import * as Notifications from "expo-notifications";
 import React, { useEffect, useRef, useState } from "react";
-import { Alert, Linking, Platform, StatusBar, StyleSheet, Text, TextInput, useColorScheme, View } from 'react-native';
+import { Alert, Linking, Platform, StatusBar, StyleSheet, Text, TextInput, useColorScheme } from 'react-native';
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Provider } from "react-redux";
 import { COLORS } from "./app/resources/colors";
 import { hp } from "./app/resources/dimensions";
 import { ToastProvider } from "./constants/ToastContext";
+import NoInternetScreen from "./NoInternetScreen";
 import StackNavi from "./src/components/navigation/StackNavi";
 import { store } from "./src/components/store/store";
 export const navigationRef = createNavigationContainerRef();
@@ -105,14 +106,13 @@ export default function App() {
         />
 
         {!isConnected ? (
-          <View style={styles.centerContainer}>
-            <View style={styles.box}>
-              <Text style={styles.title}>No Internet Connection</Text>
-              <Text style={styles.subtitle}>
-                Please check your network settings
-              </Text>
-            </View>
-          </View>
+         <NoInternetScreen
+         onRetry={() => {
+           NetInfo.fetch().then(state => {
+             setIsConnected(state.isConnected);
+           });
+         }}
+       />
         ) : (
           <ToastProvider>
             <NavigationContainer ref={navigationRef}>

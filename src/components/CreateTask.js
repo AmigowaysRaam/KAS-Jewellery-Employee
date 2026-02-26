@@ -22,12 +22,13 @@ import { useToast } from "../../constants/ToastContext";
 import { BASE_URL, fetchData } from "./api/Api";
 import AttachmentModal from "./AttacthcModal";
 import CommonHeader from "./CommonHeader";
+import ConfirmTaskModal from "./ConfirmModal";
 import CustomDropdown from "./CustomDropDown";
 import ImageViewerModal from "./ImageViewver";
+import SelectTeamMembers from "./SelectTeamMembers";
 import CustomSingleDatePickerModal from "./SingleDateSelect";
 import SpeechToTextModal from "./SpeechToTextMOdal";
 import TaskPriority from "./TaskPriority";
-import TeamMembersView from "./TeamMemView";
 import UserCustomDropdown from "./UserSelect";
 export default function CreateTask({ route }) {
   const navigation = useNavigation();
@@ -52,12 +53,26 @@ export default function CreateTask({ route }) {
   const [playPositionDesc, setPlayPositionDesc] = useState(0);
   const [playDurationTitle, setPlayDurationTitle] = useState(0);
   const [playDurationDesc, setPlayDurationDesc] = useState(0);
+
+  const [selectedParticularUser, setselectedParticularUser] = useState([]);
+  const [showParticluarUserModal, setshowParticluarUserModal] = useState(true);
+
   const siteDetails = useSelector(
     (state) => state.auth?.siteDetails?.data[0]
   );
   const profileDetails = useSelector(
     (state) => state?.auth?.profileDetails?.data
   );
+
+  // Automatically open modal on first render
+  useEffect(() => {
+    setErrors({});
+    setshowParticluarUserModal(true);
+    // if (selectedParticularUser?.length === 0) {
+    //   setshowParticluarUserModal(true);
+    // }
+  }, [selectedTeam]);
+
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
   const [dropDownData, setdropDownData] = useState({ teams: [], users: [] });
   const [mediaModal, setmediaModal] = useState(false);
@@ -84,12 +99,12 @@ export default function CreateTask({ route }) {
   }, []);
   useEffect(() => {
     fetchDropDownData();
+    setErrors({});
   }, [selectedTeam, assignedBy, priority, assignType]);
   useEffect(() => {
-    // Alert.alert('Assign Type Changed', `Selected assign type: ${assignType}`); // Debug alert
     setSelectedTeam(null);
+    setselectedParticularUser([])
   }, [assignType]);
-
   useEffect(() => {
     setErrors({});
   }, [title, description]);
@@ -148,6 +163,7 @@ export default function CreateTask({ route }) {
       setloading(false);
     }
   };
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
 
   const ensureAudioPermission = async () => {
     try {
@@ -203,7 +219,7 @@ export default function CreateTask({ route }) {
         videoUri,
         {
           compressionMethod: "manual", // manual allows setting quality
-          bitrate: 500_000,          // very low bitrate for small file
+          bitrate: Number.MAX_SAFE_INTEGER,
           maxSize: 480,
         },
         (progress) => {
@@ -221,6 +237,11 @@ export default function CreateTask({ route }) {
     }
   };
 
+  // ✅ Handler called when user presses "Done" in child modal
+  const handleTeamSelection = (users) => {
+    setselectedParticularUser(users);
+    setshowParticluarUserModal(false); // close modal
+  };
 
   const stopRecording = async () => {
     try {
@@ -402,11 +423,8 @@ export default function CreateTask({ route }) {
       }
     }
   };
-
   const handleSubmit = async () => {
-
     if (!validate()) return;
-
     const combinedDateTime = dayjs(dueDate)
       .hour(dueTime.getHours())
       .minute(dueTime.getMinutes())
@@ -425,6 +443,7 @@ export default function CreateTask({ route }) {
       formData.append("priority", priority?.value?.toString() || "1");
       formData.append("due_date", combinedDateTime.format("YYYY-MM-DD"));
       formData.append("due_time", combinedDateTime.format("HH:mm")); // 24-hour format
+      formData.append("selectedUsers", selectedParticularUser ? selectedParticularUser : []); // 24-hour format
       images.forEach((img, index) => {
         formData.append("image[]", {
           uri: img.uri,
@@ -447,6 +466,7 @@ export default function CreateTask({ route }) {
           name: `${descAudio.name}.mp3` || "DummyAudio.mp3",
         });
       }
+      console?.log(JSON.stringify(formData), 'resp')
       const response = await fetch(`${BASE_URL}app-employee-create-task`, {
         method: "POST",
         body: formData,
@@ -500,7 +520,7 @@ export default function CreateTask({ route }) {
       />
       {isCompressing && (
         <View style={{ marginVertical: 10 }}>
-          <Text>Compressing video: {(compressionProgress * 100).toFixed(0)}%</Text>
+          <Text>Video Processing: {(compressionProgress * 100).toFixed(0)}%</Text>
           <View style={{ width: "100%", height: 10, backgroundColor: "#eee", borderRadius: 5, overflow: "hidden", marginTop: 5 }}>
             <View style={{ height: "100%", width: `${compressionProgress * 100}%`, backgroundColor: "#4caf50" }} />
           </View>
@@ -520,11 +540,9 @@ export default function CreateTask({ route }) {
             }}
             keyboardShouldPersistTaps="handled"
           >
-            {/* -------- TITLE -------- */}
             <View style={styles.inputContainer}>
               <View style={{ flexDirection: "row", justifyContent: "space-between", width: "100%", alignItems: "center", marginBottom: wp(0.5) }}>
                 <Text style={styles.label}>{`${t("title")} *`}</Text>
-
               </View>
               <TextInput
                 ref={titleRef}
@@ -552,7 +570,6 @@ export default function CreateTask({ route }) {
             {errors.title && (
               <Text style={styles.errorText}>{errors.title}</Text>
             )}
-            {/* -------- DESCRIPTION -------- */}
             <View style={styles.inputContainer}>
               <View style={{ flexDirection: "row", justifyContent: "space-between", width: "100%", alignItems: "center", marginBottom: wp(0.5) }}>
                 <Text style={styles.label}>{`${t("description")} *`}</Text>
@@ -576,10 +593,6 @@ export default function CreateTask({ route }) {
                 !descAudio &&
                 <Pressable
                   onPress={() => startRecording("desc")}
-                  // onPress={() => {
-                  //   setspeechTextModal(true),
-                  //     setSpeechFlag('description')
-                  // }}
                   style={{
                     flexDirection: "row",
                     alignItems: "center",
@@ -844,7 +857,12 @@ export default function CreateTask({ route }) {
                         'select_user'
                   )}`}
                   selected={selectedTeam?.value} // pass selected item
-                  onSelect={(item) => setSelectedTeam(item)} // update selected item
+                  onSelect={(item) => {
+                    setSelectedTeam(item), setselectedParticularUser([]),
+                      setTimeout(() => {
+                        setshowParticluarUserModal(true)
+                      }, 20);
+                  }} // update selected item
                 />
               )
             }
@@ -857,14 +875,150 @@ export default function CreateTask({ route }) {
                 )}
               </Text>
             )}
-            {
-              // assignType == "group"
-              // || assignType == "department"
-              // &&
+            {/* {
               selectedTeam?.value &&
               <View>
                 <TeamMembersView teamMembers={dropDownData} />
-              </View>}
+              </View>
+            } */}
+            <SelectTeamMembers
+              preSelected={selectedParticularUser}
+              teamMembers={dropDownData}
+              visible={showParticluarUserModal && !loading}
+              onClose={() => setshowParticluarUserModal(false)}
+              onDone={handleTeamSelection}
+            />
+            <ConfirmTaskModal
+              visible={showConfirmModal}
+              onClose={() => setShowConfirmModal(false)}
+              taskDetails={{
+                title,
+                description,
+                priority: priority?.label || "1",
+                due_date: dayjs(dueDate).format("YYYY-MM-DD"),
+                due_time: dayjs(dueTime).format("HH:mm"),
+                assignType: assignType
+              }}
+              selectedUsers={
+                assignType === "individual"
+                  ? selectedTeam
+                    ? [selectedTeam]  // wrap single user in array
+                    : []
+                  : selectedParticularUser || [] // array of users for group/department
+              }
+              // selectedTeam={}
+              loading={loading}
+              onConfirm={handleSubmit} // call your API function here
+            />
+            {
+              selectedTeam?.value && assignType != 'individual' &&
+              dropDownData?.team_users?.length &&
+              <Pressable
+                onPress={() => setshowParticluarUserModal(true)}
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  backgroundColor: "#fff",
+                  padding: wp(2),
+                  borderRadius: wp(1),
+                  borderWidth: 1,
+                  borderColor: "#ddd",
+                  minHeight: wp(12),
+                  marginBottom: wp(5),
+                  justifyContent: "space-between", // <-- make content spread out
+                }}
+              >
+                {/* Avatar Stack */}
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    position: "relative",
+                    width: wp(8) * 3 - 10 * 2,
+                    height: wp(8),
+                  }}
+                >
+                  {selectedParticularUser?.slice(0, 3).map((user, index) => (
+                    <View
+                      key={index}
+                      style={{
+                        position: "absolute",
+                        left: index * (wp(8) - 10),
+                        width: wp(8),
+                        height: wp(8),
+                        borderRadius: wp(4),
+                        borderWidth: 1,
+                        borderColor: COLORS?.primary,
+                        overflow: "hidden",
+                        backgroundColor: COLORS?.primary + "20",
+                        zIndex: 10 - index,
+                      }}
+                    >
+                      <Image
+                        source={{ uri: user.image }}
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                        }}
+                        resizeMode="cover"
+                      />
+                    </View>
+                  ))}
+
+                  {selectedParticularUser.length > 3 && (
+                    <View
+                      style={{
+                        position: "absolute",
+                        left: 2 * (wp(8) - 10),
+                        width: wp(8),
+                        height: wp(8),
+                        borderRadius: wp(4),
+                        backgroundColor: COLORS.primary,
+                        justifyContent: "center",
+                        alignItems: "center",
+                        zIndex: 1000,
+                      }}
+                    >
+                      <Text
+                        style={{
+                          color: "#fff",
+                          fontSize: wp(3.2),
+                          fontWeight: "600",
+                        }}
+                      >
+                        +{selectedParticularUser.length - 2}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+
+                {/* Text and Arrow */}
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: wp(4),
+                      fontWeight: "500",
+                      color: "#333",
+                    }}
+                  >
+                    {selectedParticularUser.length === 0
+                      ? t("select")
+                      : `${selectedParticularUser.length} user(s) selected`}
+                  </Text>
+                  <Icon
+                    name="arrow-drop-down"
+                    size={wp(7)}
+                    color={"#000"}
+                    style={{ marginLeft: wp(2) }} // spacing between text and arrow
+                  />
+                </View>
+              </Pressable>
+            }
             <TaskPriority
               title={`${t('task_priority')} *`}
               data={siteDetails?.prioritiesList || []}
@@ -909,7 +1063,6 @@ export default function CreateTask({ route }) {
               initialDate={dueDate}
               onClose={() => setShowDatePicker(false)}
               onConfirm={(date) => {
-                // Alert.alert('',JSON.stringify(date))
                 setDueDate(date);
                 setShowDatePicker(false);
               }}
@@ -941,10 +1094,19 @@ export default function CreateTask({ route }) {
                 }}
               />
             )}
-            <TouchableOpacity disabled={loading} style={styles.submitButton} onPress={handleSubmit}>
-              {loading ?
-                <ActivityIndicator color="#fff" /> : <Text style={styles.submitButtonText}>{`${t('create_task')}`}</Text>
-              }
+            <TouchableOpacity
+              disabled={loading}
+              style={styles.submitButton}
+              onPress={() => {
+                if (!validate()) return; // optional validation
+                setShowConfirmModal(true); // ✅ open confirm modal instead of calling API
+              }}
+            >
+              {loading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.submitButtonText}>{t("create_task")}</Text>
+              )}
             </TouchableOpacity>
           </ScrollView>
         </TouchableWithoutFeedback>

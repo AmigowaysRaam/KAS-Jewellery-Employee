@@ -11,13 +11,18 @@ import {
 } from "react-native";
 import { ActivityIndicator } from "react-native-paper";
 import Icon from "react-native-vector-icons/MaterialIcons";
+import { useSelector } from "react-redux";
 import { COLORS } from "../../app/resources/colors";
 import { hp, wp } from "../../app/resources/dimensions";
 import { useToast } from "../../constants/ToastContext";
+import CommanConfirmModal from "./CommanConfirm";
 import MediaViewerModal from "./MediaView";
 import TeamAssigned from "./TeamAssigned";
+import { BASE_URL } from "./api/Api";
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
+
 const TaskDetailModal = ({ visible, task, onClose, getStatusColor }) => {
+
   const translateY = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
   const [showModal, setShowModal] = useState(visible);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -27,15 +32,44 @@ const TaskDetailModal = ({ visible, task, onClose, getStatusColor }) => {
   const { t } = useTranslation();
   const navigation = useNavigation();
   const { showToast } = useToast();
-  // Media viewer state
   const [selectedMedia, setSelectedMedia] = useState(null);
+  const [showDelCOnfirm, setshowDelCOnfirm] = useState(false);
   const videoRef = useRef(null);
   const progressBarRef = useRef(null);
   const [barLayout, setBarLayout] = useState({ x: 0, width: 0 });
   const openMediaViewer = (media) => {
     setSelectedMedia(media);
   };
-  // Animate modal in/out
+  const profileDetails = useSelector(
+    (state) => state?.auth?.profileDetails?.data
+  );
+  const [loading, setLoading] = useState(false);
+  const handleDelete = async () => {
+    setLoading(true);
+    try {
+      const formData = new FormData();
+      formData.append("id", task?.id);
+      formData.append("delete", '1');
+      formData.append("user_id", profileDetails?.id);
+      const response = await fetch(`${BASE_URL}app-employee-update-task`, {
+        method: "POST",
+        headers: { Accept: "application/json" },
+        body: formData,
+      });
+      const result = await response.json();
+      if (result?.success) {
+        onClose()
+        showToast(result.message || t("task_deleted"), "success");
+      } else {
+        showToast(result?.message || t("failed_to_delet_task"), "error");
+      }
+    } catch (err) {
+      console.log(err);
+      showToast(t("something_went_wrong"), "error");
+    } finally {
+      setLoading(false);
+    }
+  };
   useEffect(() => {
     if (visible) {
       setShowModal(true);
@@ -55,7 +89,6 @@ const TaskDetailModal = ({ visible, task, onClose, getStatusColor }) => {
     }
   }, [showModal]);
 
-  // Playback controls
   const handlePlayPause = async () => {
     if (!videoRef.current) return;
     const status = await videoRef.current.getStatusAsync();
@@ -72,7 +105,6 @@ const TaskDetailModal = ({ visible, task, onClose, getStatusColor }) => {
       setIsPlaying(true);
     }
   };
-
   const handleForward = async () => {
     if (!videoRef.current) return;
     const status = await videoRef.current.getStatusAsync();
@@ -81,7 +113,6 @@ const TaskDetailModal = ({ visible, task, onClose, getStatusColor }) => {
     await videoRef.current.setPositionAsync(newPos);
     setPosition(newPos);
   };
-
   const handleBackward = async () => {
     if (!videoRef.current) return;
     const status = await videoRef.current.getStatusAsync();
@@ -90,12 +121,10 @@ const TaskDetailModal = ({ visible, task, onClose, getStatusColor }) => {
     await videoRef.current.setPositionAsync(newPos);
     setPosition(newPos);
   };
-
   const handleEdit = () => {
     onClose();
     navigation?.navigate("UpdateTask", task);
   };
-
   const parseHTML = (htmlString) => {
     if (!htmlString) return null;
     const paragraphs = htmlString.split(/<\/?p>/).filter(Boolean);
@@ -220,6 +249,17 @@ const TaskDetailModal = ({ visible, task, onClose, getStatusColor }) => {
                   <Text style={styles.editText}>{t("edit")}</Text>
                 </TouchableOpacity>
               )}
+              {task?.allowEdit && (
+                loading ?
+                  <ActivityIndicator size={wp(7)} color={'#FF0000'} />
+                  :
+                  <TouchableOpacity style={[styles.editButon, {
+                    borderWidth: wp(0.6), borderColor: "#FF0000", borderRadius: wp(2),
+                    backgroundColor: "#fff", padding: 0
+                  }]} onPress={() => setshowDelCOnfirm(true)}>
+                    <Icon name="delete" size={wp(9)} color={'#FF0000'} />
+                  </TouchableOpacity>
+              )}
             </View>
             {
               task?.assigned_to_members?.length > 0 && (
@@ -228,8 +268,6 @@ const TaskDetailModal = ({ visible, task, onClose, getStatusColor }) => {
                 </View>
               )
             }
-            {/* Media Section */}
-            {/* <Text>{JSON.stringify(mediaList, null, 2)}</Text> */}
             {mediaList.length > 0 && (
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: hp(1.5) }}>
                 {mediaList.map((item, idx) => (
@@ -367,6 +405,14 @@ const TaskDetailModal = ({ visible, task, onClose, getStatusColor }) => {
             )}
           </ScrollView>
         </Animated.View>
+        <CommanConfirmModal
+          visible={showDelCOnfirm}
+          title={t('r_u_want_to_del_task')}
+          onClose={() => setshowDelCOnfirm(false)}
+          onConfirm={handleDelete}
+          confirmText={t('yes')}
+          cancelText={t('cancel')}
+        />
       </View>
       {
         selectedMedia && (
@@ -400,37 +446,23 @@ const styles = StyleSheet.create({
   descriptionContainer: { marginBottom: hp(2), maxHeight: SCREEN_HEIGHT * 0.25, borderRadius: wp(3), backgroundColor: "#f5f5f5", padding: wp(3) },
   descriptionScroll: { paddingRight: wp(2) },
   modalDescriptionText: { fontSize: wp(4), fontFamily: "Poppins_400Regular", color: "#444", lineHeight: hp(3), marginBottom: hp(1) },
-  statusEditRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: hp(2) },
-  statusBadge: { flexDirection: "row", alignItems: "center", paddingHorizontal: wp(4), paddingVertical: hp(0.7), borderRadius: wp(3) },
+  statusEditRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-around", marginBottom: hp(2) },
+  statusBadge: { flexDirection: "row", alignItems: "center", paddingHorizontal: wp(5), borderRadius: wp(1), paddingVertical: wp(2.5) },
   statusText: { color: "#fff", fontSize: wp(4), fontFamily: "Poppins_500Medium" },
-  editButton: { flexDirection: "row", alignItems: "center", backgroundColor: COLORS.primary, paddingHorizontal: wp(4), paddingVertical: hp(0.8), borderRadius: wp(3) },
+  editButton: { flexDirection: "row", alignItems: "center", backgroundColor: COLORS.primary, paddingHorizontal: wp(5), paddingVertical: hp(1), borderRadius: wp(1) },
   editText: { color: "#fff", fontSize: wp(4), fontFamily: "Poppins_500Medium", marginLeft: wp(1) },
   mediaItem: {
-    width: wp(30),
-    height: wp(30),
-    borderRadius: wp(2),
+    width: wp(30), height: wp(30), borderRadius: wp(2),
     borderWidth: wp(0.5),
-    borderColor: COLORS.primary,
-    marginRight: wp(2),
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#000",
+    borderColor: COLORS.primary, marginRight: wp(2),
+    justifyContent: "center", alignItems: "center", backgroundColor: "#000",
     overflow: "hidden",
-  },
-  playButtonOverlay: {
-    position: "absolute",
-    top: 0, left: 0, right: 0, bottom: 0,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.3)",
-    borderRadius: wp(2),
-  },
-  datesRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: hp(2), },
-  dateItem: {
-    flex: 1,
-    borderWidth: wp(0.3), borderColor: COLORS.primary, borderRadius: wp(3), padding: wp(3), marginRight: wp(2)
-  },
-  dateRow: { flexDirection: "row", alignItems: "center" },
+  }, playButtonOverlay: {
+    position: "absolute", top: 0, left: 0, right: 0, bottom: 0,
+    justifyContent: "center", alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.3)", borderRadius: wp(2),
+  }, datesRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: hp(2), },
+  dateItem: { flex: 1, borderWidth: wp(0.3), borderColor: COLORS.primary, borderRadius: wp(3), padding: wp(3), marginRight: wp(2) }, dateRow: { flexDirection: "row", alignItems: "center" },
   label: { fontSize: wp(3.2), fontFamily: "Poppins_400Regular", color: COLORS?.primary },
   dateText: { fontSize: wp(3), fontFamily: "Poppins_500Medium", marginTop: hp(0.3), color: "#333" },
   audioContainer: { marginTop: hp(2), alignItems: "center", padding: wp(4), borderRadius: wp(5), backgroundColor: "#eef6ff", justifyContent: "center", width: "100%" },

@@ -137,7 +137,6 @@ const ProfileScreen = () => {
             <Animated.View style={[styles.skeletonLineShort, { opacity: skeletonAnim, height: hp(5), width: wp(80), marginTop: wp(4) }]} />
             <Animated.View style={[styles.skeletonLineShort, { opacity: skeletonAnim, height: hp(5), width: wp(80), marginTop: wp(4) }]} />
           </View>
-
         ) : (
           <View>
             {/* Top Row */}

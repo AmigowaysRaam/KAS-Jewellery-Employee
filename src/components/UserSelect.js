@@ -383,7 +383,7 @@ const styles = StyleSheet.create({
         borderRadius: wp(4),
         fontSize: wp(3.5),
         padding: wp(4),
-        lineHeight: wp(4),
+        lineHeight: wp(4.9),
     },
     item: {
         paddingVertical: hp(1.5),
