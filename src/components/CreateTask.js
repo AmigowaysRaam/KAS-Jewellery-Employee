@@ -425,6 +425,7 @@ export default function CreateTask({ route }) {
   };
   const handleSubmit = async () => {
     if (!validate()) return;
+    setShowConfirmModal(false)
     const combinedDateTime = dayjs(dueDate)
       .hour(dueTime.getHours())
       .minute(dueTime.getMinutes())
@@ -443,7 +444,12 @@ export default function CreateTask({ route }) {
       formData.append("priority", priority?.value?.toString() || "1");
       formData.append("due_date", combinedDateTime.format("YYYY-MM-DD"));
       formData.append("due_time", combinedDateTime.format("HH:mm")); // 24-hour format
-      formData.append("selectedUsers", selectedParticularUser ? selectedParticularUser : []); // 24-hour format
+      formData.append(
+        "selectedUsers",
+        selectedParticularUser && selectedParticularUser.length > 0
+          ? JSON.stringify(selectedParticularUser.map(user => user?.value))
+          : "[]"
+      );
       images.forEach((img, index) => {
         formData.append("image[]", {
           uri: img.uri,
@@ -474,6 +480,7 @@ export default function CreateTask({ route }) {
       });
       const resultJson = await response.json();
       if (resultJson?.success) {
+        setShowConfirmModal(false)
         showToast(resultJson.message, 'success');
         navigation?.goBack();
       } else {
@@ -484,6 +491,7 @@ export default function CreateTask({ route }) {
       showToast("Something went wrong while creating task", 'error');
     } finally {
       setloading(false);
+      setShowConfirmModal(false)
     }
   };
   const openImageViewer = (uri) => {
@@ -920,103 +928,134 @@ export default function CreateTask({ route }) {
                   alignItems: "center",
                   backgroundColor: "#fff",
                   padding: wp(2),
-                  borderRadius: wp(1),
+                  borderRadius: wp(1.5),
                   borderWidth: 1,
-                  borderColor: "#ddd",
+                  borderColor: selectedParticularUser.length === 0 ? "red" : "#ddd", // red border if no user
                   minHeight: wp(12),
                   marginBottom: wp(5),
-                  justifyContent: "space-between", // <-- make content spread out
+                  justifyContent: "space-between",
                 }}
               >
-                {/* Avatar Stack */}
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    position: "relative",
-                    width: wp(8) * 3 - 10 * 2,
-                    height: wp(8),
-                  }}
-                >
-                  {selectedParticularUser?.slice(0, 3).map((user, index) => (
-                    <View
-                      key={index}
-                      style={{
-                        position: "absolute",
-                        left: index * (wp(8) - 10),
-                        width: wp(8),
-                        height: wp(8),
-                        borderRadius: wp(4),
-                        borderWidth: 1,
-                        borderColor: COLORS?.primary,
-                        overflow: "hidden",
-                        backgroundColor: COLORS?.primary + "20",
-                        zIndex: 10 - index,
-                      }}
-                    >
-                      <Image
-                        source={{ uri: user.image }}
-                        style={{
-                          width: "100%",
-                          height: "100%",
-                        }}
-                        resizeMode="cover"
-                      />
-                    </View>
-                  ))}
-
-                  {selectedParticularUser.length > 3 && (
-                    <View
-                      style={{
-                        position: "absolute",
-                        left: 2 * (wp(8) - 10),
-                        width: wp(8),
-                        height: wp(8),
-                        borderRadius: wp(4),
-                        backgroundColor: COLORS.primary,
-                        justifyContent: "center",
-                        alignItems: "center",
-                        zIndex: 1000,
-                      }}
-                    >
-                      <Text
-                        style={{
-                          color: "#fff",
-                          fontSize: wp(3.2),
-                          fontWeight: "600",
-                        }}
-                      >
-                        +{selectedParticularUser.length - 2}
-                      </Text>
-                    </View>
-                  )}
-                </View>
-
-                {/* Text and Arrow */}
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                  }}
-                >
-                  <Text
+                {/* Avatar Stack: render only if there are selected users */}
+                {selectedParticularUser.length > 0 ? (
+                  <View
                     style={{
-                      fontSize: wp(4),
-                      fontWeight: "500",
-                      color: "#333",
+                      flexDirection: "row",
+                      alignItems: "center",
+                      position: "relative",
+                      width: wp(8) * 3 - 10 * 2,
+                      height: wp(8),
                     }}
                   >
-                    {selectedParticularUser.length === 0
-                      ? t("select")
-                      : `${selectedParticularUser.length} user(s) selected`}
-                  </Text>
-                  <Icon
-                    name="arrow-drop-down"
-                    size={wp(7)}
-                    color={"#000"}
-                    style={{ marginLeft: wp(2) }} // spacing between text and arrow
-                  />
-                </View>
+                    {selectedParticularUser?.slice(0, 3).map((user, index) => (
+                      <View
+                        key={index}
+                        style={{
+                          position: "absolute",
+                          left: index * (wp(8) - 10),
+                          width: wp(8),
+                          height: wp(8),
+                          borderRadius: wp(4),
+                          borderWidth: 1,
+                          borderColor: COLORS?.primary,
+                          overflow: "hidden",
+                          backgroundColor: COLORS?.primary + "20",
+                          zIndex: 10 - index,
+                        }}
+                      >
+                        <Image
+                          source={{ uri: user.image }}
+                          style={{ width: "100%", height: "100%" }}
+                          resizeMode="cover"
+                        />
+                      </View>
+                    ))}
+                    {selectedParticularUser.length > 3 && (
+                      <View
+                        style={{
+                          position: "absolute",
+                          left: 2 * (wp(8) - 10),
+                          width: wp(8),
+                          height: wp(8),
+                          borderRadius: wp(4),
+                          backgroundColor: COLORS.primary,
+                          justifyContent: "center",
+                          alignItems: "center",
+                          zIndex: 1000,
+                        }}
+                      >
+                        <Text
+                          style={{
+                            color: "#fff",
+                            fontSize: wp(3.2),
+                            fontWeight: "600",
+                          }}
+                        >
+                          {`+${selectedParticularUser.length - 2}`}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                ) : (
+                  <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+                    {/* Main alert */}
+                    <Text
+                      style={{
+                        fontSize: wp(4),
+                        fontWeight: "500",
+                        color: "red",
+                        textAlign: "center",
+                      }}
+                    >
+                      {t("no_user_selected")}
+                    </Text>
+
+                    {/* Smaller hint with inline add icon */}
+                    <View style={{ flexDirection: "row", alignItems: "center", marginTop: hp(0.5) }}>
+                      <Icon
+                        name="add"
+                        size={wp(4.5)}
+                        color="#000"
+                        style={{ marginRight: wp(1) }}
+                      />
+                      <Text
+                        style={{
+                          fontSize: wp(3.2),
+                          color: "#888",
+                          textAlign: "center",
+                        }}
+                      >
+                        {t("click_to_add")}
+                      </Text>
+                    </View>
+                  </View>
+                )}
+
+                {/* Text and arrow */}
+                {selectedParticularUser.length > 0 && (
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontSize: wp(4),
+                        fontWeight: "500",
+                        color: "#333",
+                      }}
+                    >
+                      {`${selectedParticularUser.length} user(s) selected`}
+                    </Text>
+                    <Icon
+                      name="arrow-drop-down"
+                      size={wp(7)}
+                      color={"#000"}
+                      style={{ marginLeft: wp(2) }}
+                    />
+                  </View>
+                )}
               </Pressable>
             }
             <TaskPriority
