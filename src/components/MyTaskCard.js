@@ -21,7 +21,7 @@ const TaskCard = ({ item, t, navigation, openTaskModal, getStatusColor, }) => {
             case "completed":
                 return { progress: 1, color: "#2ecc71" }; // Green
             case "overdue":
-                return { progress: 0, color: "#D32F2F" }; // Deep Red for Overdue
+                return { progress: 0, color: "#D32F2F" };
             default:
                 return { progress: 0.1, color: COLORS.primary };
         }
@@ -31,7 +31,6 @@ const TaskCard = ({ item, t, navigation, openTaskModal, getStatusColor, }) => {
 
     useEffect(() => {
         const { progress } = getProgressData(item.status);
-
         Animated.timing(progressAnim, {
             toValue: progress,
             duration: 600,
@@ -124,24 +123,38 @@ const TaskCard = ({ item, t, navigation, openTaskModal, getStatusColor, }) => {
                         />
                     </View>
                 </View>
-                {/* Date Section */}
-                {/* Dates */}
+
                 <View style={styles.dateRow}>
-                    <View style={styles.dateBox}>
+                    <View style={[styles.dateBox, {
+                        borderWidth: wp(0.5),
+                        borderColor: COLORS?.primary
+                    }]}>
                         <Text style={styles.dateLabel}>
                             {t("assigned_date")}
                         </Text>
                         <Text numberOfLines={1} style={styles.dateText}>
-                            {item.assigned_date?.split(" ")[0]}
+                            {item.assigned_date_value}
+                        </Text>
+                        <Text numberOfLines={1} style={styles.dateText}>
+                            {item?.assigned_time}
                         </Text>
                     </View>
 
-                    <View style={styles.dateBox}>
+                    <View style={[styles.dateBox, {
+                        borderWidth: wp(0.5),
+                        borderColor: COLORS?.primary
+                    }]}>
                         <Text style={styles.dateLabel}>
                             {t("due_date")}
                         </Text>
                         <Text numberOfLines={1} style={styles.dateText}>
-                            {item.due_date?.split(" ")[0]}
+                            {item?.due_date_value}
+                        </Text>
+                        <Text numberOfLines={1} style={[styles.dateText, {
+                            lineHeight: hp(4)
+
+                        }]}>
+                            {item?.due_time}
                         </Text>
                     </View>
                 </View>
@@ -153,7 +166,8 @@ const TaskCard = ({ item, t, navigation, openTaskModal, getStatusColor, }) => {
                         <Text style={styles.dateLabel}>
                             {t("extend_date")}
                         </Text>
-                        <Text numberOfLines={1} style={styles.dateText}>
+                        <Text numberOfLines={1} style={[styles.dateText, {
+                        }]}>
                             {item?.extend_date}
                         </Text>
                     </View>

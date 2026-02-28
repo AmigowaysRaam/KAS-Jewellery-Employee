@@ -120,7 +120,7 @@ export default function AssignedTasklistScreen() {
 
         setTasks((prev) => {
           if (pageNo === 1) return data;
-       
+
           const newData = data.filter(
             (newItem) =>
               !prev.some((prevItem) => prevItem.id === newItem.id)
@@ -174,22 +174,10 @@ export default function AssignedTasklistScreen() {
         return "#9b59b6";        // Purple
       case "Completed":
         return "#2ecc71";        // Green
+      case "Overdue":
+        return "#ff0000";        // red
       default:
         return COLORS.primary;   // Fallback
-    }
-  };
-  const getPriorityColor = (level) => {
-    switch (level) {
-      case "Critical":
-        return { color: "#C0392B", icon: "x-octagon" }; // very urgent
-      case "High":
-        return { color: "#E74C3C", icon: "alert-circle" };
-      case "Medium":
-        return { color: "#F39C12", icon: "alert-triangle" };
-      case "Low":
-        return { color: "#2ECC71", icon: "check-circle" };
-      default:
-        return { color: "#9E9E9E", icon: "info" };
     }
   };
   /** Open task modal */
@@ -323,7 +311,7 @@ export default function AssignedTasklistScreen() {
         <TaskDetailModal
           visible={modalVisible}
           task={selectedTask}
-          onClose={() => setModalVisible(false)}
+          onClose={() => { setModalVisible(false), onRefresh() }}
           getStatusColor={getStatusColor}
         />
       </View>

@@ -135,6 +135,8 @@ export default function MyTaskListScreen({ route }) {
         return "#9b59b6";        // Purple
       case "Completed":
         return "#2ecc71";        // Green
+        case "Overdue":
+          return "#ff0000";        // red
       default:
         return COLORS.primary;   // Fallback
     }

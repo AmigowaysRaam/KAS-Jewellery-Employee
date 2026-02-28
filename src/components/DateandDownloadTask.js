@@ -4,11 +4,10 @@ import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, View } from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
-import { COLORS } from "../../app/resources/colors";
-import { hp, wp } from "../../app/resources/dimensions";
-
 import { useSelector } from 'react-redux';
 import { getStoredLanguage } from '../../app/i18ns';
+import { COLORS } from "../../app/resources/colors";
+import { hp, wp } from "../../app/resources/dimensions";
 import { useToast } from '../../constants/ToastContext';
 import CustomDateRangePickerModal from "./CustomDatePicker";
 import { fetchData } from './api/Api';
@@ -25,10 +24,6 @@ const DateandDownloadTask = ({ onDateSelect, fromDate, toDate, taskFlag,
   const { showToast } = useToast();
 
   const { t } = useTranslation();
-
-  // ===============================
-  // Save file to Downloads folder
-  // ===============================
   const saveReportToDownloads = async (downloadUrl, fileName = "report.csv", message) => {
     try {
       if (!downloadUrl) {
@@ -151,7 +146,6 @@ const DateandDownloadTask = ({ onDateSelect, fromDate, toDate, taskFlag,
             </Pressable>
           )}
         </Pressable>
-
         <Pressable
           style={[styles.downloadBtn, isDownloading && { opacity: 1 }]}
           onPress={handleDownloadReport}
@@ -160,7 +154,13 @@ const DateandDownloadTask = ({ onDateSelect, fromDate, toDate, taskFlag,
           {isDownloading ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Icon name="download" size={wp(7)} color="#fff" />
+            <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: wp(1) }}>
+              <Icon name="save-alt" size={wp(5)} color="#27ae60" style={{
+                padding: wp(0.7), backgroundColor: "#D1EDDD",
+                borderRadius: wp(5)
+              }} />
+              <Text numberOfLines={1} style={[styles.buttonText]}>{`${t('download')}`}</Text>
+            </View>
           )}
         </Pressable>
       </View>

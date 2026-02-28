@@ -45,6 +45,7 @@ const TaskDetailModal = ({ visible, task, onClose, getStatusColor }) => {
   );
   const [loading, setLoading] = useState(false);
   const handleDelete = async () => {
+    setshowDelCOnfirm(false)
     setLoading(true);
     try {
       const formData = new FormData();
@@ -407,10 +408,10 @@ const TaskDetailModal = ({ visible, task, onClose, getStatusColor }) => {
         </Animated.View>
         <CommanConfirmModal
           visible={showDelCOnfirm}
-          title={t('r_u_want_to_del_task')}
+          title={`${t('r_u_want_to_del_task')} ? `}
           onClose={() => setshowDelCOnfirm(false)}
           onConfirm={handleDelete}
-          confirmText={t('yes')}
+          confirmText={t('delete')}
           cancelText={t('cancel')}
         />
       </View>

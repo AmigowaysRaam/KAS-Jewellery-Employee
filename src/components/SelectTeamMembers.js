@@ -12,13 +12,9 @@ import {
 import { Icon } from "react-native-elements";
 import { COLORS } from "../../app/resources/colors";
 import { hp, wp } from "../../app/resources/dimensions";
-
 export default function SelectTeamMembers({
-    teamMembers,
-    visible,
-    onClose,
-    onDone,
-    preSelected = [], // previously selected users
+    teamMembers, visible, onClose, onDone,
+    preSelected = [],
 }) {
     const { t } = useTranslation();
     const teamUsers = teamMembers?.team_users || [];
@@ -69,7 +65,6 @@ export default function SelectTeamMembers({
             visible={visible}
             animationType="none"
             onRequestClose={() => {
-                // optional: handle back button
             }}
         >
             <View style={styles.modalOverlay}>
@@ -127,8 +122,6 @@ export default function SelectTeamMembers({
                             );
                         })}
                     </ScrollView>
-
-                    {/* Buttons Row */}
                     <View style={styles.buttonRow}>
                         <Pressable
                             onPress={handleCancel}
@@ -146,7 +139,6 @@ export default function SelectTeamMembers({
                             </Text>
                         </Pressable>
                     </View>
-
                 </View>
             </View>
         </Modal>

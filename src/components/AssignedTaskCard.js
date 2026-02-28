@@ -147,20 +147,32 @@ const AssignedTaskCard = ({
 
         {/* Dates */}
         <View style={styles.dateRow}>
-          <View style={styles.dateBox}>
+          <View style={[styles.dateBox,{
+             borderWidth: wp(0.5),
+             borderColor: COLORS?.primary
+          }]}>
             <Text style={styles.dateLabel}>
               {t("assigned_date")}
             </Text>
+            <Text numberOfLines={1} style={[,styles.dateText]}>
+              {item.assigned_date_value}
+            </Text>
             <Text numberOfLines={1} style={styles.dateText}>
-              {item.assigned_date?.split(" ")[0]}
+              {item?.assigned_time}
             </Text>
           </View>
-          <View style={styles.dateBox}>
+          <View style={[styles.dateBox,{
+             borderWidth: wp(0.5),
+             borderColor: COLORS?.primary
+          }]}>
             <Text style={styles.dateLabel}>
               {t("due_date")}
             </Text>
             <Text numberOfLines={1} style={styles.dateText}>
-              {item.due_date?.split(" ")[0]}
+              {item?.due_date_value}
+            </Text>
+            <Text numberOfLines={1} style={styles.dateText}>
+              {item?.due_time}
             </Text>
           </View>
         </View>
@@ -325,6 +337,6 @@ const styles = StyleSheet.create({
     color: "#777", marginBottom: hp(0.5), fontFamily: "Poppins_400Regular", alignSelf: "center"
   }, dateText: {
     fontSize: wp(4.5),
-    color: "#333", fontFamily: "Poppins_700Bold", alignSelf: "center", lineHeight: wp(5.8)
+    color: "#333", fontFamily: "Poppins_500Medium", alignSelf: "center", lineHeight: wp(5.8)
   },
 });

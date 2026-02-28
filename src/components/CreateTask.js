@@ -520,7 +520,8 @@ export default function CreateTask({ route }) {
   const scrollToBottom = () => {
   };
   return (
-    <View style={{ flex: 1, backgroundColor: "#fff", }} pointerEvents={loading ? "none" : "auto"}>
+    <View style={{ flex: 1, backgroundColor: "#fff",
+     }} pointerEvents={loading ? "none" : "auto"}>
       <CommonHeader
         title={t('create_task')}
         showBackButton
@@ -930,7 +931,7 @@ export default function CreateTask({ route }) {
                   padding: wp(2),
                   borderRadius: wp(1.5),
                   borderWidth: 1,
-                  borderColor: selectedParticularUser.length === 0 ? "red" : "#ddd", // red border if no user
+                  borderColor: selectedParticularUser.length === 0 ?  COLORS?.primary: "#ddd", // red border if no user
                   minHeight: wp(12),
                   marginBottom: wp(5),
                   justifyContent: "space-between",
@@ -997,27 +998,26 @@ export default function CreateTask({ route }) {
                     )}
                   </View>
                 ) : (
-                  <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-                    {/* Main alert */}
+                  <View style={{ flex: 1, justifyContent: "space-around", alignItems: "center" ,
+                    flexDirection: "row",
+                  }}>
                     <Text
                       style={{
                         fontSize: wp(4),
                         fontWeight: "500",
-                        color: "red",
+                        color: COLORS?.primary,
                         textAlign: "center",
                       }}
                     >
-                      {t("no_user_selected")}
+                      {`${dropDownData?.team_users?.length} selected`}
                     </Text>
-
-                    {/* Smaller hint with inline add icon */}
                     <View style={{ flexDirection: "row", alignItems: "center", marginTop: hp(0.5) }}>
-                      <Icon
+                      {/* <Icon
                         name="add"
                         size={wp(4.5)}
                         color="#000"
                         style={{ marginRight: wp(1) }}
-                      />
+                      /> */}
                       <Text
                         style={{
                           fontSize: wp(3.2),
@@ -1025,7 +1025,7 @@ export default function CreateTask({ route }) {
                           textAlign: "center",
                         }}
                       >
-                        {t("click_to_add")}
+                        {t("click_to_edit")}
                       </Text>
                     </View>
                   </View>
