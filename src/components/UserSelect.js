@@ -4,10 +4,8 @@ import {
     ActivityIndicator,
     FlatList,
     Image,
-    Keyboard,
     Modal,
     Pressable,
-    RefreshControl,
     StyleSheet,
     Text,
     TextInput,
@@ -20,48 +18,55 @@ import { getStoredLanguage } from "../../app/i18ns";
 import { COLORS } from "../../app/resources/colors";
 import { hp, wp } from "../../app/resources/dimensions";
 import { fetchData } from "./api/Api";
-
-/* ===========================
-   Memoized List Item (NEW)
-=========================== */
-const DropdownItem = React.memo(({ item, isSelected, onSelect }) => {
+const DropdownItem = React.memo(({ item, isSelected, onSelect, showCheckbox }) => {
     return (
         <Pressable
-            style={[styles.item, isSelected && styles.itemSelected]}
+            style={[
+                styles.item,
+                isSelected && styles.itemSelected,
+                {
+                    alignItems: !showCheckbox ? "flex-start" : "center",
+                    borderWidth: showCheckbox ? 1 : 0,
+                }
+            ]}
             onPress={() => onSelect(item)}
         >
-            {item?.image && (
-                <Image
-                    source={{ uri: item.image }}
-                    style={styles.avatar}
+            {showCheckbox && (
+                <Icon
+                    name={isSelected ? "check-box" : "check-box-outline-blank"}
+                    size={wp(5)}
+                    color={isSelected ? COLORS.primary : "#aaa"}
+                    style={styles.checkbox}
                 />
             )}
-            <View style={{ maxWidth: wp(81) }}>
-                <Text style={styles.itemText}>
-                    {item.label}
-                </Text>
+            {item?.image && (
+                <Image source={{ uri: item.image }} style={styles.avatar} />
+            )}
+            <View style={{ alignItems: "center" }}>
+                <Text style={styles.itemText}>{item.label}</Text>
                 {item.phone_number && (
-                    <Text style={styles.itemText}>
-                        {item.phone_number}
-                    </Text>
+                    <Text style={styles.subText}>{item.phone_number}</Text>
                 )}
             </View>
         </Pressable>
     );
 });
-
-export default function UserCustomDropdown({
-    title,
-    data = [],
-    placeholder = "Select",
-    onSelect,
-    onClose,
-    multiSelect = false,
-    selected = null,
-    assignType
-}) {
-
-    const [selectedItems, setSelectedItems] = useState(selected ? [selected] : []);
+function UserCustomDropdown({
+    title, data = [], placeholder = "Select",
+    onSelect, onClose, multiSelect = false,
+    selected = null, assignType }) {
+    const { t } = useTranslation();
+    const profileDetails = useSelector(
+        (state) => state?.auth?.profileDetails?.data
+    );
+    const isMultiMode = multiSelect && assignType === "individual";
+    const [selectedItems, setSelectedItems] = useState(
+        isMultiMode
+            ? (Array.isArray(selected) ? selected : [])
+            : selected
+                ? [selected]
+                : []
+    );
     const [modalVisible, setModalVisible] = useState(false);
     const [searchText, setSearchText] = useState("");
     const [filteredData, setFilteredData] = useState([]);
@@ -69,62 +74,21 @@ export default function UserCustomDropdown({
     const [loading, setLoading] = useState(false);
     const [initialLoading, setInitialLoading] = useState(false);
     const [hasMore, setHasMore] = useState(true);
-    const [refreshing, setRefreshing] = useState(false);
-    const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
-
-    const profileDetails = useSelector(
-        (state) => state?.auth?.profileDetails?.data
-    );
-
-    const { t } = useTranslation();
-
-    /* ===========================
-       Keyboard Listener
-    =========================== */
     useEffect(() => {
-        const show = Keyboard.addListener("keyboardDidShow", () => setIsKeyboardVisible(true));
-        const hide = Keyboard.addListener("keyboardDidHide", () => setIsKeyboardVisible(false));
-        return () => {
-            show.remove();
-            hide.remove();
-        };
-    }, []);
-    /* ===========================
-       Reset Dropdown
-    =========================== */
-    const resetDropdown = () => {
-        setSearchText("");
-        setFilteredData([]);
-        setCurrentPage(1);
-        setHasMore(true);
-    };
-    /* ===========================
-       Local Data Mode
-    =========================== */
-    useEffect(() => {
-        if (assignType !== "individual") {
-            setFilteredData(data || []);
+        if (modalVisible) {
+            if (isMultiMode) {
+                setSelectedItems(Array.isArray(selected) ? selected : []);
+            } else {
+                setSelectedItems(selected ? [selected] : []);
+            }
         }
-        setSearchText("");
-    }, [data, assignType]);
-
-    /* ===========================
-       Reset Selection on assignType change
-    =========================== */
-    useEffect(() => {
-        setSelectedItems([]);
-    }, [assignType]);
-
-    /* ===========================
-       API Fetch (FIXED)
-    =========================== */
+    }, [modalVisible]);
     const fetchDropDownData = useCallback(
         async (page = 1, search = "", replace = false) => {
             if (!profileDetails?.id) return;
 
             try {
-                if (page === 1) setInitialLoading(true);
-                else setLoading(true);
+                page === 1 ? setInitialLoading(true) : setLoading(true);
 
                 const lang = await getStoredLanguage();
 
@@ -134,280 +98,258 @@ export default function UserCustomDropdown({
                     {
                         user_id: profileDetails.id,
                         lang: lang ?? "en",
-                        assignType: assignType,
+                        assignType,
                         current_page: page,
                         per_page: 10,
-                        search: search,
+                        search,
                     }
                 );
-
                 const newData = response?.data?.team_users || [];
-
                 setFilteredData(prev =>
                     page === 1 || replace ? newData : [...prev, ...newData]
                 );
-
                 setHasMore(newData.length === 10);
                 setCurrentPage(page);
 
             } catch (error) {
-                console.error("API Error:", error);
+                console.log("API Error:", error);
             } finally {
                 setLoading(false);
                 setInitialLoading(false);
-                setRefreshing(false);
             }
         },
         [profileDetails?.id, assignType]
     );
-
-    /* ===========================
-       Modal Open
-    =========================== */
     useEffect(() => {
         if (!modalVisible) return;
-
+        if (assignType === "individual") {
+            fetchDropDownData(1, "", true);
+        } else {
+            setFilteredData(data || []);
+        }
+    }, [modalVisible]);
+    useEffect(() => {
+        setSelectedItems([]);
+        setSearchText("");
+        setFilteredData([]);
         setCurrentPage(1);
         setHasMore(true);
+    }, [assignType]);
 
-        if (assignType === "individual") {
-            fetchDropDownData(1, searchText, true);
-        } else {
-            setInitialLoading(true);
-            setFilteredData(data || []);
-            setTimeout(() => setInitialLoading(false), 200);
-        }
-    }, [modalVisible, assignType]);
-
-    /* ===========================
-       Search Handling
-    =========================== */
     useEffect(() => {
         if (!modalVisible) return;
-
         if (assignType === "individual") {
             const delay = setTimeout(() => {
                 fetchDropDownData(1, searchText, true);
-            }, 500);
+            }, 400);
             return () => clearTimeout(delay);
         } else {
-            if (searchText.trim() === "") {
-                setFilteredData(data || []);
-            } else {
-                const filtered = (data || []).filter(item =>
-                    item.label.toLowerCase().includes(searchText.toLowerCase())
-                );
-                setFilteredData(filtered);
-            }
+            const filtered = (data || []).filter(item =>
+                item.label.toLowerCase().includes(searchText.toLowerCase())
+            );
+            setFilteredData(filtered);
         }
-    }, [searchText, modalVisible, assignType, data, fetchDropDownData]);
+    }, [searchText]);
 
-    const handleLoadMore = useCallback(() => {
-        if (loading || !hasMore || assignType !== "individual") return;
-        fetchDropDownData(currentPage + 1, searchText);
-    }, [loading, hasMore, assignType, currentPage, searchText, fetchDropDownData]);
-    const handleRefresh = () => {
-        if (assignType !== "individual") return
-        setRefreshing(true);
-        fetchDropDownData(1, searchText, true);
-    };
     const handleSelect = useCallback((item) => {
-        if (multiSelect) {
-            const exists = selectedItems.some(i => i.value === item.value);
-            const updated = exists
-                ? selectedItems.filter(i => i.value !== item.value)
-                : [...selectedItems, item];
-
-            setSelectedItems(updated);
-            onSelect && onSelect(updated);
+        if (isMultiMode) {
+            setSelectedItems(prev => {
+                const exists = prev.some(i => i.value === item.value);
+                return exists
+                    ? prev.filter(i => i.value !== item.value)
+                    : [...prev, item];
+            });
         } else {
             setSelectedItems([item]);
             onSelect && onSelect(item);
             setModalVisible(false);
             onClose && onClose();
         }
-    }, [multiSelect, selectedItems, onSelect, onClose]);
+    }, [isMultiMode]);
 
-    const renderItem = useCallback(
-        ({ item }) => (
-            <DropdownItem
-                item={item}
-                isSelected={selectedItems?.some(i => i.value === item.value)}
-                onSelect={handleSelect}
-            />
-        ),
-        [selectedItems, handleSelect]
+    const renderItem = ({ item }) => (
+        <DropdownItem
+            item={item}
+            showCheckbox={isMultiMode}
+            isSelected={selectedItems.some(i => i.value === item.value)}
+            onSelect={handleSelect}
+        />
     );
 
     return (
         <View style={{ marginBottom: hp(2) }}>
-            <Text style={{ marginBottom: hp(1), fontSize: wp(4), fontFamily: "Poppins_400Regular" }}>
-                {title || ""}
+            <Text style={{ marginBottom: hp(1), fontSize: wp(4) }}>
+                {title}
             </Text>
             <Pressable style={styles.input} onPress={() => setModalVisible(true)}>
                 <Text style={styles.inputText}>
                     {selectedItems?.length
-                        ? multiSelect
-                            ? selectedItems.map(i => i.label).join(", ")
-                            : selectedItems[0].label
+                        ? isMultiMode
+                            ? `${selectedItems.length} selected`
+                            : selectedItems[0]?.label
                         : placeholder}
                 </Text>
-                <Icon
-                    name={modalVisible ? "arrow-drop-up" : "arrow-drop-down"}
-                    size={wp(6)}
-                    color="#555"
-                />
+                <Icon name="arrow-drop-down" size={wp(6)} />
             </Pressable>
-            <Modal transparent visible={modalVisible} animationType="fade">
-                <TouchableOpacity
-                    style={styles.modalOverlay}
-                    activeOpacity={1}
-                    onPress={() => {
-                        setModalVisible(false);
-                        resetDropdown();
-                        onClose && onClose();
-                    }}
-                >
+            <Modal transparent visible={modalVisible} animationType="slide">
+                <View style={styles.modalOverlay}>
                     <View style={styles.modalContent}>
-                        <View style={styles.modalHeader}>
-                            <Pressable onPress={() => setModalVisible(false)}>
-                                <Icon name="close" size={wp(6.5)} color="#000" />
+                        {/* Header */}
+                        <View style={[styles.modalHeader, {
+                            flexDirection: "row", alignItems: "center"
+                        }]}>
+                            <Pressable
+                                style={{ marginRight: wp(2) }}
+                                onPress={() => setModalVisible(false)}
+                            >
+                                <Icon name="chevron-left" size={wp(8)} color="#111" />
                             </Pressable>
-
+                            <Text style={{ fontSize: wp(4.5), lineHeight: hp(6), fontFamily: "Poppins_600SemiBold" }}>
+                                {title}
+                            </Text>
+                        </View>
+                        <View style={styles.searchContainer}>
                             <TextInput
+                                placeholderTextColor="#555"
                                 style={styles.searchInput}
                                 placeholder={`${t("search")}...`}
                                 value={searchText}
                                 onChangeText={setSearchText}
-                                autoCorrect={false}
-                                autoCapitalize="none"
-                                placeholderTextColor="#999"
                             />
+                            <Pressable
+                                style={styles.closeIcon}
+                                onPress={() => setSearchText('')}
+                            >
+                                <Icon name="close" size={wp(5)} color="#555" />
+                            </Pressable>
                         </View>
-
-                        {initialLoading ? (
-                            <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-                                <ActivityIndicator size="large" color={COLORS.primary} />
+                        <View style={{ flex: 1 }}>
+                            {initialLoading ? (
+                                <ActivityIndicator
+                                    size="large"
+                                    color={COLORS.primary}
+                                    style={{ marginTop: hp(5) }}
+                                />
+                            ) : (
+                                <FlatList
+                                    key={assignType === "individual" ? "GRID" : "LIST"}
+                                    data={filteredData}
+                                    numColumns={assignType === "individual" ? 2 : 1}
+                                    columnWrapperStyle={
+                                        assignType === "individual"
+                                            ? { justifyContent: "space-between" }
+                                            : undefined
+                                    }
+                                    keyExtractor={(item, index) =>
+                                        item?.value?.toString() || index.toString()
+                                    }
+                                    renderItem={renderItem}
+                                    contentContainerStyle={{
+                                        paddingBottom: isMultiMode ? hp(12) : hp(4)
+                                    }}
+                                    ListEmptyComponent={<>
+                                        <Text style={{ fontSize: wp(4.5), lineHeight: hp(6), fontFamily: "Poppins_600SemiBold", alignSelf: "center" }}>
+                                            {t('no_data')}
+                                        </Text>
+                                    </>}
+                                    onEndReachedThreshold={0.5} // fetch when 50% from bottom
+                                    onEndReached={() => {
+                                        if (!loading && hasMore && assignType === "individual") {
+                                            fetchDropDownData(currentPage + 1, searchText);
+                                        }
+                                    }}
+                                    ListFooterComponent={
+                                        loading ? (
+                                            <ActivityIndicator
+                                                size="small"
+                                                color={COLORS.primary}
+                                                style={{ marginVertical: hp(2) }}
+                                            />
+                                        ) : null
+                                    }
+                                />
+                            )}
+                        </View>
+                        {isMultiMode && (
+                            <View style={styles.fixedButtonContainer}>
+                                <TouchableOpacity
+                                    style={styles.doneBtn}
+                                    onPress={() => {
+                                        onSelect && onSelect(selectedItems);
+                                        setModalVisible(false);
+                                        onClose && onClose();
+                                    }}
+                                >
+                                    <Text style={styles.doneText}>
+                                        {t("done")} ({selectedItems.length})
+                                    </Text>
+                                </TouchableOpacity>
                             </View>
-                        ) : (
-                            <FlatList
-                                contentContainerStyle={{
-                                    paddingBottom: hp(isKeyboardVisible ? 35 : 4)
-                                }}
-                                data={filteredData}
-                                keyExtractor={(item, index) =>
-                                    item?.id
-                                        ? item.id.toString()
-                                        : item?.value
-                                            ? item.value.toString()
-                                            : `${index}-${item?.label}`
-                                }
-                                renderItem={renderItem}
-                                refreshControl={
-                                    <RefreshControl
-                                        refreshing={refreshing}
-                                        onRefresh={handleRefresh}
-                                        colors={[COLORS.primary]}
-                                    />
-                                }
-                                onEndReached={handleLoadMore}
-                                onEndReachedThreshold={0.4}
-                                initialNumToRender={10}
-                                maxToRenderPerBatch={10}
-                                windowSize={5}
-                                removeClippedSubviews
-                                ListFooterComponent={
-                                    loading && assignType === "individual" ? (
-                                        <ActivityIndicator
-                                            size="small"
-                                            color={COLORS.primary}
-                                            style={{ padding: 10 }}
-                                        />
-                                    ) : null
-                                }
-                            />
                         )}
+
                     </View>
-                </TouchableOpacity>
+                </View>
             </Modal>
         </View>
     );
 }
-
-/* ===========================
-   Styles
-=========================== */
+export default React.memo(UserCustomDropdown);
 const styles = StyleSheet.create({
     input: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-        borderWidth: 1,
-        borderColor: "#CCC",
-        borderRadius: wp(1),
-        padding: wp(3),
-        backgroundColor: "#fff",
+        flexDirection: "row", justifyContent: "space-between",
+        alignItems: "center", borderWidth: 1,
+        borderColor: "#ddd", borderRadius: 8,
+        padding: wp(3), backgroundColor: "#fff"
     },
     inputText: {
-        fontFamily: "Poppins_400Regular",
-        fontSize: wp(3.5),
-        textTransform: "capitalize"
-    },
-    modalOverlay: {
-        flex: 1,
-        backgroundColor: "rgba(0,0,0,0.3)",
-        justifyContent: "center",
-        paddingHorizontal: wp(5),
+        fontSize: wp(3.8),
+        color: "#333"
+    }, modalOverlay: {
+        flex: 1, backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "flex-end"
     },
     modalContent: {
-        backgroundColor: "#fff",
-        borderRadius: wp(2),
-        height: hp(90),
-        width: wp(95),
-        alignSelf: "center",
-        position: "absolute",
-        bottom: hp(5),
+        backgroundColor: "#fff", height: hp(96),
+        borderRadius: wp(1), paddingTop: wp(1), paddingHorizontal: wp(4),
     },
-    modalHeader: {
-        flexDirection: "row",
-        alignItems: "center",
-        padding: wp(3),
-        borderBottomWidth: 1,
-        borderBottomColor: "#eee",
+    modalHeader: { marginBottom: hp(0.5), },
+    searchContainer: {
+        position: "relative",
+        marginBottom: hp(2),
+    }, searchInput: {
+        borderWidth: 1, borderColor: "#ddd", borderRadius: 10, paddingVertical: wp(3),
+        paddingHorizontal: wp(3), paddingRight: wp(10),
+        fontFamily: "Poppins_600SemiBold"
     },
-    searchInput: {
-        flex: 1,
-        marginLeft: wp(3),
-        borderWidth: 1,
-        borderColor: "#ccc",
-        borderRadius: wp(4),
-        fontSize: wp(3.5),
-        padding: wp(4),
-        lineHeight: wp(4.9),
+    closeIcon: {
+        position: "absolute", right: wp(3),
+        top: "50%", marginTop: -wp(3),
     },
     item: {
-        paddingVertical: hp(1.5),
-        paddingHorizontal: wp(4),
-        borderBottomWidth: 1,
-        borderBottomColor: "#eee",
-        flexDirection: "row",
+        flex: 1, marginBottom: hp(1.5),
+        marginHorizontal: wp(1), padding: wp(3),
+        borderColor: "#eee", borderRadius: 10,
         alignItems: "center",
+    }, itemSelected: {
+        backgroundColor: COLORS.primary + "15"
     },
-    itemSelected: {
-        backgroundColor: COLORS.primary + "20",
+    checkbox: {
+        position: "absolute", top: wp(2), right: wp(2),
+    }, avatar: {
+        width: wp(14), height: wp(14), borderRadius: wp(7),
+        marginBottom: hp(1), borderColor: COLORS.primary, borderWidth: wp(0.5),
+    }, itemText: {
+        fontFamily: "Poppins_600SemiBold",
+        textTransform: "capitalize"
+    }, subText: { fontFamily: "Poppins_600SemiBold" },
+
+    fixedButtonContainer: {
+        position: "absolute", bottom: hp(2),
+        left: wp(4), right: wp(4),
     },
-    itemText: {
-        fontSize: wp(4),
-        fontFamily: "Poppins_400Regular",
-        textTransform: "capitalize",
-        lineHeight: wp(6)
+    doneBtn: {
+        backgroundColor: COLORS.primary, padding: wp(4), borderRadius: 12, alignItems: "center",
     },
-    avatar: {
-        width: wp(12),
-        height: wp(12),
-        borderRadius: wp(6),
-        borderWidth: wp(0.3),
-        borderColor: COLORS?.primary,
-        marginRight: wp(3)
+    doneText: {
+        color: "#fff", fontSize: wp(4), fontFamily: "Poppins_600SemiBold"
     }
 });

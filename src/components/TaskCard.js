@@ -71,9 +71,11 @@ export default function TaskCard({ task, loadData, statusList }) {
             toValue: SCREEN_HEIGHT,
             duration: 280,
             useNativeDriver: true,
-        }).start(() => setShowDetailModal(false));
+        }).start(() => {
+            setShowDetailModal(false),
+            loadData()
+        });
     };
-
     const handleUpdateStatus = async (sta) => {
         setLoading(true);
         try {

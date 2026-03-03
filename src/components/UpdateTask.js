@@ -8,11 +8,9 @@ import * as ImagePicker from "expo-image-picker";
 import React, { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
-  ActivityIndicator,
-  Animated, Easing, FlatList,
+  ActivityIndicator, Animated, Easing, FlatList,
   Keyboard, KeyboardAvoidingView, Modal, Platform, Pressable,
-  StyleSheet, Text,
-  TouchableOpacity,
+  StyleSheet, Text, TouchableOpacity,
   View
 } from "react-native";
 import { Video as VideoCompress } from "react-native-compressor";
@@ -42,12 +40,9 @@ export default function UpdateTask({ route }) {
   const [videos, setVideos] = useState([]);
   const [dueTime, setDueTime] = useState(null); // dayjs object for time
 
-
-
   const saveAudioToDownloads = async (audioUri, fileName = 'audio.mp3') => {
     try {
       setIsDownloading(true);
-      // Step 1: Ensure local file
       let localUri = audioUri;
       if (audioUri.startsWith('http')) {
         const downloadPath = FileSystem.cacheDirectory + fileName;
@@ -123,7 +118,6 @@ export default function UpdateTask({ route }) {
       return;
     }
 
-    // Valid time: clear error and save
     setErrors(prev => ({ ...prev, dueTime: undefined }));
     setDueTime(parsedTime); // store time separately if needed
     setDueDate(combinedDateTime); // save combined datetime
@@ -149,7 +143,6 @@ export default function UpdateTask({ route }) {
   const [errors, setErrors] = useState({});
   const [images, setImages] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
-  // 🎙 AUDIO STATE
   const [descAudio, setDescAudio] = useState(null);
   const [recording, setRecording] = useState(null);
   const [isRecording, setIsRecording] = useState(false);
@@ -158,7 +151,8 @@ export default function UpdateTask({ route }) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [speechTextModal, setspeechTextModal] = useState(false);
   const [speechFlag, setSpeechFlag] = useState('');
-  // ---------------- AUDIO ----------------
+
+
   const startRecording = async () => {
     try {
       await Audio.requestPermissionsAsync();
@@ -188,12 +182,8 @@ export default function UpdateTask({ route }) {
 
   const stopRecording = async () => {
     if (!recording) return;
-
-    // Stop the live timer
     clearInterval(intervalRef.current);
     intervalRef.current = null;
-
-    // Stop recording
     await recording.stopAndUnloadAsync();
     const uri = recording.getURI();
 
@@ -824,6 +814,7 @@ export default function UpdateTask({ route }) {
                   disablePastDates={true}
                   restrictFeatureDate={false}
                   maxExtendDate={ticketDetails?.maxExtendDate}
+                  minExtendedDate={dueDate}
                   visible={showExtendedDatePicker}
                   initialDate={extendedDueDate ? dayjs(extendedDueDate) : new Date()}
                   onClose={() => setShowExtendedDatePicker(false)}
@@ -1059,9 +1050,7 @@ export default function UpdateTask({ route }) {
         }),
       ])
     );
-
     loop.start();
-
     return () => loop.stop(); // cleanup
   }, []);
   return (
@@ -1086,7 +1075,6 @@ export default function UpdateTask({ route }) {
                 ]}
               />
             )}
-
             keyExtractor={(item, index) => `skeleton-${index}`}
             ListFooterComponent={<ActivityIndicator size={wp(8)} color={COLORS?.primary} />}
             contentContainerStyle={{ padding: wp(5), flexGrow: 1 }}

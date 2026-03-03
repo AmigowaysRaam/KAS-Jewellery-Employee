@@ -1,28 +1,17 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import {
-    FlatList,
-    Image,
-    Modal,
-    Pressable,
-    StyleSheet,
-    Text,
+    FlatList, Image, Modal, Pressable, StyleSheet, Text,
     View,
 } from "react-native";
 import { Icon } from "react-native-elements";
 import { COLORS } from "../../app/resources/colors";
 import { hp, wp } from "../../app/resources/dimensions";
 
-export default function ConfirmTaskModal({
-    visible,
-    onClose,
-    taskDetails,
-    selectedUsers = [],
-    onConfirm,
-    loading = false,
+export default function ConfirmTaskModal({ visible,
+    onClose, taskDetails, selectedUsers = [], onConfirm, loading = false,
 }) {
     const { t } = useTranslation();
-
     return (
         <Modal
             transparent
@@ -39,7 +28,8 @@ export default function ConfirmTaskModal({
                             <Icon name="x" type="feather" size={wp(6)} color={COLORS.primary} />
                         </Pressable>
                     </View>
-
+                    {/* <Text style={styles.title}>{JSON.stringify(selectedUsers)}</Text> */}
+                    {/* selectedUsers */}
                     {/* FlatList with Header */}
                     <FlatList
                         data={selectedUsers}
@@ -70,6 +60,7 @@ export default function ConfirmTaskModal({
                                 <Image source={{ uri: item?.image }} style={styles.userImage} />
                                 <Text style={styles.userName} numberOfLines={1}>
                                     {item?.label || "-"}
+                                    {/* {JSON.stringify(item)} */}
                                 </Text>
                             </View>
                         )}
@@ -113,72 +104,51 @@ export default function ConfirmTaskModal({
 
 const styles = StyleSheet.create({
     overlay: {
-        flex: 1,
-        backgroundColor: "rgba(0,0,0,0.55)",
-        justifyContent: "flex-end",
+        flex: 1, backgroundColor: "rgba(0,0,0,0.55)", justifyContent: "flex-end",
     },
     container: {
-        width: "100%",
-        maxHeight: hp(90),
-        backgroundColor: "#fff",
-        borderTopLeftRadius: wp(7),
-        borderTopRightRadius: wp(7),
-        paddingHorizontal: wp(5),
-        paddingTop: hp(2),
-        paddingBottom: hp(4),
-    },
-    header: {
+        width: "100%", maxHeight: hp(90),
+        backgroundColor: "#fff", borderTopLeftRadius: wp(7), borderTopRightRadius: wp(7),
+        paddingHorizontal: wp(5), paddingTop: hp(2), paddingBottom: hp(8),
+        marginBottom: hp(2)
+    }, header: {
         flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
+        justifyContent: "space-between", alignItems: "center",
         marginBottom: hp(1.5),
-    },
-    title: {
-        fontSize: wp(4.2),
-        fontFamily: "Poppins_600SemiBold",
+    }, title: {
+        fontSize: wp(4.2), fontFamily: "Poppins_600SemiBold",
     },
     detailsSection: {
         marginBottom: hp(1),
-    },
-    label: {
-        fontSize: wp(3.9),
-        fontFamily: "Poppins_500Medium",
+    }, label: {
+        fontSize: wp(3.9), fontFamily: "Poppins_500Medium",
         marginTop: hp(1),
         textTransform: "capitalize",
-    },
-    value: {
-        fontSize: wp(4.5),
-        fontFamily: "Poppins_400Regular",
-        marginBottom: hp(0.5),
-        flexWrap: "wrap",
+    }, value: {
+        fontSize: wp(4.5), fontFamily: "Poppins_400Regular",
+        marginBottom: hp(0.5), flexWrap: "wrap",
         flexShrink: 1, color: "#333",
     },
     usersScroll: {
         maxHeight: hp(50), marginBottom: hp(2),
-    },
-    userCard: {
+    }, userCard: {
         flexDirection: "row", alignItems: "center", marginBottom: hp(1),
-    },
-    userImage: {
+    }, userImage: {
         width: wp(6), height: wp(6), borderRadius: wp(3),
         marginRight: wp(3), borderWidth: 1, borderColor: COLORS.accent,
     }, userName: {
-        fontSize: wp(4.5),
-        flexShrink: 1, textTransform: "capitalize", maxWidth: wp(80),
+        fontSize: wp(4.5), flexShrink: 1, textTransform: "capitalize", maxWidth: wp(80),
         lineHeight: wp(5),
     }, actions: {
         flexDirection: "row",
-        justifyContent: "space-between",
-        paddingTop: hp(1),
+        justifyContent: "space-between", paddingTop: hp(1),
         borderTopWidth: 1, borderTopColor: "#eee",
     }, button: {
         flex: 1, marginHorizontal: wp(1),
         paddingVertical: hp(1.5), borderRadius: wp(3),
         alignItems: "center",
-    },
-    buttonText: {
-        fontSize: wp(4),
-        fontFamily: "Poppins_600SemiBold",
+    }, buttonText: {
+        fontSize: wp(4), fontFamily: "Poppins_600SemiBold",
         textAlign: "center",
     },
 });

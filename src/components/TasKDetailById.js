@@ -4,7 +4,8 @@ import * as ImagePicker from "expo-image-picker";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
-  ActivityIndicator, Image, Keyboard, KeyboardAvoidingView, Platform,
+  ActivityIndicator,
+  Image, Keyboard, KeyboardAvoidingView, Platform,
   StyleSheet, Text, TextInput, TouchableOpacity, View
 } from "react-native";
 import { Video as VideoCompress } from "react-native-compressor";
@@ -74,6 +75,9 @@ export default function TaskMessages({ route }) {
         lang,
         user_id: profileDetails?.id,
       });
+      if (!response?.data?.ticket_detail?.status) {
+        navigation?.goBack();
+      }
       setTicketDetails(response?.data?.ticket_detail);
       setComments(response?.data?.ticket_comments || []);
       setstatusList(response?.data?.ticketStatus);
@@ -207,8 +211,6 @@ export default function TaskMessages({ route }) {
           type: img.mimeType || "image/jpeg",
         });
       });
-
-      // Compress and add videos
       for (let i = 0; i < video.length; i++) {
         const originalVideo = video[i];
         const compressedUri = await compressVideoFast(originalVideo.uri);
@@ -219,8 +221,6 @@ export default function TaskMessages({ route }) {
           type: originalVideo.mimeType || "video/mp4",
         });
       }
-
-      // Add audio
       if (audioAttachment) {
         formData.append("audio", {
           uri: audioAttachment.uri,

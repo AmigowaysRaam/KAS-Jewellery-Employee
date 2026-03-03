@@ -236,6 +236,12 @@ export default function CreateTask({ route }) {
       setCompressionProgress(0);
     }
   };
+  useEffect(() => {
+    if (selectedTeam && selectedTeam.length > 0) {
+      setselectedParticularUser([]);
+      setshowParticluarUserModal(true);
+    }
+  }, [selectedTeam]);
 
   // ✅ Handler called when user presses "Done" in child modal
   const handleTeamSelection = (users) => {
@@ -437,7 +443,14 @@ export default function CreateTask({ route }) {
       const formData = new FormData();
       formData.append("user_id", profileDetails.id.toString());
       formData.append("assign_to_type", assignType == "group" ? "team" : assignType == "department" ? "department" : "individual");
-      formData.append("assign_to", selectedTeam?.value?.toString() || "");
+      formData.append("assign_to", selectedTeam?.length ? selectedTeam : []);
+      // formData.append("users", selectedTeam?.length ? selectedTeam : []);
+      formData.append(
+        "users",
+        selectedTeam && selectedTeam?.length > 0
+          ? JSON.stringify(selectedTeam.map(user => user?.value))
+          : "[]"
+      );
       formData.append("title", title);
       formData.append("description", description);
       formData.append("assign_by", profileDetails.id.toString());
@@ -520,8 +533,9 @@ export default function CreateTask({ route }) {
   const scrollToBottom = () => {
   };
   return (
-    <View style={{ flex: 1, backgroundColor: "#fff",
-     }} pointerEvents={loading ? "none" : "auto"}>
+    <View style={{
+      flex: 1, backgroundColor: "#fff",
+    }} pointerEvents={loading ? "none" : "auto"}>
       <CommonHeader
         title={t('create_task')}
         showBackButton
@@ -806,7 +820,9 @@ export default function CreateTask({ route }) {
             <View style={styles.radioContainer}>
               <Pressable
                 style={styles.radioButton}
-                onPress={() => { setAssignType("individual"), setSelectedTeam(null) }}
+                onPress={() => {
+                  setAssignType("individual"), setSelectedTeam(null)
+                }}
               >
                 <Icon
                   name={assignType === "individual" ? "check-circle" : "circle"}
@@ -844,10 +860,10 @@ export default function CreateTask({ route }) {
                 <Text style={styles.radioLabel}>{`${t('department')}  `}</Text>
               </Pressable>
             </View>
-            {/* <Text>{JSON.stringify(selectedTeam?.value)}</Text> */}
             {
               assignType && (
                 <UserCustomDropdown
+                  multiSelect={assignType === "individual"}
                   loading={loading}
                   assignType={assignType}
                   title={`${t(
@@ -865,16 +881,17 @@ export default function CreateTask({ route }) {
                       assignType === 'group' ? 'select_team' :
                         'select_user'
                   )}`}
-                  selected={selectedTeam?.value} // pass selected item
+                  selected={selectedTeam?.length ? selectedTeam : null} // pass selected item
                   onSelect={(item) => {
                     setSelectedTeam(item), setselectedParticularUser([]),
                       setTimeout(() => {
                         setshowParticluarUserModal(true)
-                      }, 20);
+                      }, 100);
                   }} // update selected item
                 />
               )
             }
+            {/* <Text>{JSON.stringify()}</Text> */}
             {errors.selectedTeam && (
               <Text style={styles.errorText}>
                 {t(
@@ -884,19 +901,15 @@ export default function CreateTask({ route }) {
                 )}
               </Text>
             )}
-            {/* {
-              selectedTeam?.value &&
-              <View>
-                <TeamMembersView teamMembers={dropDownData} />
-              </View>
-            } */}
+            {selectedTeam && !loading && 
             <SelectTeamMembers
+              assignType={assignType}
               preSelected={selectedParticularUser}
               teamMembers={dropDownData}
-              visible={showParticluarUserModal && !loading}
+              visible={showParticluarUserModal && !loading && assignType != 'individual' && dropDownData?.length && selectedTeam}
               onClose={() => setshowParticluarUserModal(false)}
               onDone={handleTeamSelection}
-            />
+            />}
             <ConfirmTaskModal
               visible={showConfirmModal}
               onClose={() => setShowConfirmModal(false)}
@@ -911,7 +924,7 @@ export default function CreateTask({ route }) {
               selectedUsers={
                 assignType === "individual"
                   ? selectedTeam
-                    ? [selectedTeam]  // wrap single user in array
+                    ? selectedTeam // wrap single user in array
                     : []
                   : selectedParticularUser || [] // array of users for group/department
               }
@@ -931,7 +944,7 @@ export default function CreateTask({ route }) {
                   padding: wp(2),
                   borderRadius: wp(1.5),
                   borderWidth: 1,
-                  borderColor: selectedParticularUser.length === 0 ?  COLORS?.primary: "#ddd", // red border if no user
+                  borderColor: selectedParticularUser.length === 0 ? COLORS?.primary : "#ddd", // red border if no user
                   minHeight: wp(12),
                   marginBottom: wp(5),
                   justifyContent: "space-between",
@@ -998,7 +1011,8 @@ export default function CreateTask({ route }) {
                     )}
                   </View>
                 ) : (
-                  <View style={{ flex: 1, justifyContent: "space-around", alignItems: "center" ,
+                  <View style={{
+                    flex: 1, justifyContent: "space-around", alignItems: "center",
                     flexDirection: "row",
                   }}>
                     <Text

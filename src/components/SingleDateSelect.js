@@ -1,5 +1,6 @@
 import dayjs from "dayjs";
 import React, { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
     Modal, Pressable, StyleSheet, Text, View
 } from "react-native";
@@ -17,7 +18,8 @@ const CustomSingleDatePickerModal = ({
     onConfirm,
     initialDate,
     title, disablePastDates,
-    maxExtendDate
+    maxExtendDate,
+    minExtendedDate
 }) => {
     const today = dayjs();
 
@@ -26,7 +28,7 @@ const CustomSingleDatePickerModal = ({
 
     );
     const maxDate = maxExtendDate ? dayjs(maxExtendDate) : null;
-
+    const minDate = minExtendedDate ? dayjs(minExtendedDate) : null;
 
     const [currentMonth, setCurrentMonth] = useState(
         initialDate ? dayjs(initialDate).month() : today.month()
@@ -36,28 +38,31 @@ const CustomSingleDatePickerModal = ({
     );
     const [daysInMonth, setDaysInMonth] = useState([]);
     const yearListRef = useRef(null);
+
     const goToPreviousMonth = () => {
         const newDate = dayjs()
             .year(currentYear)
             .month(currentMonth)
             .subtract(1, "month");
+
+        // Prevent going before today if disablePastDates
         if (disablePastDates && newDate.isBefore(today, "month")) return;
+
+        // Prevent going before minDate
+        if (minDate && newDate.isBefore(minDate, "month")) return;
+
         setCurrentMonth(newDate.month());
         setCurrentYear(newDate.year());
     };
+
     const goToNextMonth = () => {
         const newDate = dayjs()
             .year(currentYear)
             .month(currentMonth)
             .add(1, "month");
 
-        // 🚫 Prevent going beyond maxExtendDate month
-        // if (maxDate && newDate.isAfter(maxDate, "month")) return;
-        // In goToNextMonth
-        if (maxDateState && newDate.isAfter(maxDateState, "month")) return;
+        if (maxDate && newDate.isAfter(maxDate, "month")) return;
 
-        // In day grid rendering
-        const isAfterMax = maxDateState && day.isAfter(maxDateState, "day");
         setCurrentMonth(newDate.month());
         setCurrentYear(newDate.year());
     };
@@ -102,10 +107,15 @@ const CustomSingleDatePickerModal = ({
     const selectDate = (day) => {
         setSelectedDate(day);
     };
-
     const confirm = () => {
+        if (selectedDate) {
+            if ((minDate && selectedDate.isBefore(minDate, "day")) ||
+                (maxDate && selectedDate.isAfter(maxDate, "day"))) {
+                return; // Do not confirm
+            }
+        }
         onConfirm(selectedDate?.toDate());
-        onClose(); // maxExtendDate restriction stays for this session
+        onClose();
     };
     const handleClose = () => {
         setMaxDateState(null); // remove maxExtendDate restriction
@@ -114,14 +124,14 @@ const CustomSingleDatePickerModal = ({
     const clearDate = () => {
         setSelectedDate(null);
     };
-
+    const { t } = useTranslation();
     return (
         <Modal visible={visible} transparent animationType="fade">
             <View style={styles.overlay}>
                 <View style={styles.modal}>
                     <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
                         <Text style={styles.title}>
-                            {title || "Select Date"}
+                            {title || t('select_date')}
                         </Text>
                         <Text style={styles.selectedDateText}>
                             {selectedDate
@@ -266,14 +276,14 @@ const CustomSingleDatePickerModal = ({
                                 day.isSame(selectedDate, "day");
                             const isToday = day.isSame(dayjs(), "day");
                             // disablePastDates
-                            const isPast = day.isBefore(today, "day");
-                            const isAfterMax = maxDate && day.isAfter(maxDate, "day"); return (
+                            const isBeforeMin = minDate && day.isBefore(minDate, "day");
+                            const isAfterMax = maxDate && day.isAfter(maxDate, "day");
+                            const isPast = disablePastDates && day.isBefore(today, "day");
+                            return (
+
                                 <Pressable
                                     key={day.format("YYYY-MM-DD")}
-                                    disabled={
-                                        (disablePastDates && isPast) ||
-                                        isAfterMax
-                                    }
+                                    disabled={isPast || isBeforeMin || isAfterMax}
                                     onPress={() => selectDate(day)}
                                     style={[
                                         styles.dayItem,
@@ -286,7 +296,7 @@ const CustomSingleDatePickerModal = ({
                                             styles.dayText,
                                             isToday && !isSelected && styles.todayDayText,
                                             isSelected && styles.activeDayText,
-                                            ((disablePastDates && isPast) || isAfterMax) && { color: "#ccc" },
+                                            (isPast || isBeforeMin || isAfterMax) && { color: "#ccc" },
                                         ]}
                                     >
                                         {day.date()}

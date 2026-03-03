@@ -1,141 +1,199 @@
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
+    Alert,
     Image,
     Modal,
     Pressable,
     ScrollView,
     StyleSheet,
     Text,
+    TextInput,
     View,
 } from "react-native";
 import { Icon } from "react-native-elements";
 import { COLORS } from "../../app/resources/colors";
 import { hp, wp } from "../../app/resources/dimensions";
+
 export default function SelectTeamMembers({
-    teamMembers, visible, onClose, onDone,
+    teamMembers,
+    visible,
+    onClose,
+    onDone,
     preSelected = [],
+    assignType
 }) {
     const { t } = useTranslation();
     const teamUsers = teamMembers?.team_users || [];
     const [selectedUsers, setSelectedUsers] = useState([]);
+    const [searchText, setSearchText] = useState("");
+    const [filteredUsers, setFilteredUsers] = useState(teamUsers);
 
-    // Initialize selected users when modal opens
+    // Initialize selected users & filtered list when modal opens
     useEffect(() => {
         if (visible) {
             setSelectedUsers(preSelected || []);
+            setSearchText("");
+            setFilteredUsers(teamUsers);
         }
-    }, [visible, preSelected]);
+    }, [visible, preSelected, teamUsers]);
 
-    if (!teamUsers || teamUsers.length === 0) return null;
+    // Filter users based on search text
+    useEffect(() => {
+        if (!searchText) {
+            setFilteredUsers(teamUsers);
+        } else {
+            const filtered = teamUsers.filter((user) =>
+                user?.label?.toLowerCase().includes(searchText.toLowerCase())
+            );
+            setFilteredUsers(filtered);
+        }
+    }, [searchText, teamUsers]);
 
-    // Toggle user selection
     const toggleUser = (user) => {
         const exists = selectedUsers.some((u) => u.value === user.value);
         if (exists) {
-            setSelectedUsers((prev) => prev.filter((u) => u.value !== user.value));
+            setSelectedUsers((prev) =>
+                prev.filter((u) => u.value !== user.value)
+            );
         } else {
             setSelectedUsers((prev) => [...prev, user]);
         }
     };
 
-    // Select / unselect all
+    // Select / unselect all (affects filtered list)
     const selectAllUsers = () => {
-        if (selectedUsers.length === teamUsers.length) {
+        if (selectedUsers.length === filteredUsers.length) {
             setSelectedUsers([]);
         } else {
-            setSelectedUsers(teamUsers);
+            setSelectedUsers(filteredUsers);
         }
     };
 
     const handleDone = () => {
+        if (selectedUsers.length === 0) {
+            Alert.alert(t("validation"), t("please_select_at_least_one_member"));
+            return;
+        }
         onDone && onDone(selectedUsers);
         onClose && onClose();
     };
-
     const handleCancel = () => {
         onClose && onClose();
     };
-
-    const isAllSelected = selectedUsers.length === teamUsers.length;
-
+    const isAllSelected =
+        filteredUsers.length > 0 && selectedUsers?.length === filteredUsers?.length;
     return (
         <Modal
             transparent
             visible={visible}
             animationType="none"
-            onRequestClose={() => {
-            }}
+            onRequestClose={() => { }}
         >
             <View style={styles.modalOverlay}>
                 <View style={styles.modalContent}>
+                    {/* Header */}
                     <View style={styles.headerRow}>
                         <Text style={styles.modalTitle}>{t("members")}</Text>
-                        <Pressable onPress={selectAllUsers}>
-                            <Icon
-                                name={isAllSelected ? "check-square" : "square"}
-                                type="feather"
-                                size={wp(7)}
-                                color={COLORS.primary}
-                            />
-                        </Pressable>
+                        {filteredUsers.length > 0 && (
+                            <Pressable onPress={selectAllUsers}>
+                                <Icon
+                                    name={isAllSelected ? "check-square" : "square"}
+                                    type="feather"
+                                    size={wp(7)}
+                                    color={COLORS.primary}
+                                />
+                            </Pressable>
+                        )}
                     </View>
-
-                    <ScrollView
-                        showsVerticalScrollIndicator={false}
-                        contentContainerStyle={styles.gridContainer}
-                    >
-                        {teamUsers?.map((item, index) => {
-                            const isSelected = selectedUsers.some(
-                                (u) => u.value === item.value
-                            );
-                            return (
-                                <Pressable
-                                    key={item?.value || `member-${index}`}
-                                    style={[styles.gridItem, isSelected && styles.selectedCard]}
-                                    onPress={() => toggleUser(item)}
-                                >
-                                    {/* Checkbox */}
-                                    <View style={styles.checkbox}>
-                                        <Icon
-                                            name={isSelected ? "check-circle" : "circle"}
-                                            type="feather"
-                                            size={wp(5.5)}
-                                            color={COLORS.primary}
-                                        />
-                                    </View>
-
-                                    {/* Avatar */}
-                                    <Image
-                                        source={{ uri: item?.image }}
-                                        style={[styles.memberImage, { borderColor: COLORS.accent }]}
-                                    />
-
-                                    {/* Name */}
-                                    <Text
-                                        style={[styles.memberName, isSelected && styles.selectedText]}
-                                        numberOfLines={1}
-                                    >
-                                        {item?.label}
-                                    </Text>
-                                </Pressable>
-                            );
-                        })}
-                    </ScrollView>
-                    <View style={styles.buttonRow}>
-                        <Pressable
-                            onPress={handleCancel}
-                            style={[styles.cancelButton]}
+                    <View style={styles.searchContainer}>
+                        <TextInput
+                            style={styles.searchInput}
+                            placeholder={t("search") + "..."}
+                            placeholderTextColor="#555"
+                            value={searchText}
+                            onChangeText={setSearchText}
+                        />
+                        {searchText?.length > 0 && (
+                            <Pressable
+                                onPress={() => setSearchText("")}
+                                style={styles.clearIcon}
+                            >
+                                <Icon
+                                    name="x"
+                                    type="feather"
+                                    size={wp(5)}
+                                    color="#555"
+                                />
+                            </Pressable>
+                        )}
+                    </View>
+                    {/* )} */}
+                    {filteredUsers?.length > 0 ? (
+                        <ScrollView
+                            showsVerticalScrollIndicator={false}
+                            contentContainerStyle={styles.gridContainer}
                         >
+                            {filteredUsers.map((item, index) => {
+                                const isSelected = selectedUsers.some(
+                                    (u) => u.value === item.value
+                                );
+                                return (
+                                    <Pressable
+                                        key={item?.value || `member-${index}`}
+                                        style={[
+                                            styles.gridItem,
+                                            isSelected && styles.selectedCard,
+                                        ]}
+                                        onPress={() => toggleUser(item)}
+                                    >
+                                        <View style={styles.checkbox}>
+                                            <Icon
+                                                name={
+                                                    isSelected ? "check-circle" : "circle"
+                                                }
+                                                type="feather"
+                                                size={wp(5.5)}
+                                                color={COLORS.primary}
+                                            />
+                                        </View>
+                                        <Image
+                                            source={{ uri: item?.image }}
+                                            style={[
+                                                styles.memberImage,
+                                                { borderColor: COLORS.accent },
+                                            ]}
+                                        />
+                                        <Text
+                                            style={[
+                                                styles.memberName,
+                                                isSelected && styles.selectedText,
+                                            ]}
+                                        // numberOfLines={1}
+                                        >
+                                            {item?.label}
+                                        </Text>
+                                    </Pressable>
+                                );
+                            })}
+                        </ScrollView>
+                    ) : (
+                        <View style={styles.emptyContainer}>
+                            <Text style={styles.emptyText}>
+                                {t("no_data")}
+                            </Text>
+                        </View>
+                    )}
+
+                    {/* Action Buttons */}
+                    <View style={styles.buttonRow}>
+                        <Pressable onPress={handleCancel} style={styles.cancelButton}>
                             <Text style={styles.cancelText}>{t("cancel")}</Text>
                         </Pressable>
 
-                        <Pressable
-                            onPress={handleDone}
-                            style={[styles.doneButton]}
-                        >
+                        <Pressable onPress={handleDone} style={styles.doneButton}>
                             <Text style={styles.doneText}>
-                                {t("confirm")} ({selectedUsers?.length})
+                                {t("confirm")} {selectedUsers?.length}
                             </Text>
                         </Pressable>
                     </View>
@@ -156,7 +214,7 @@ const styles = StyleSheet.create({
         borderTopLeftRadius: wp(7),
         borderTopRightRadius: wp(7),
         padding: wp(5),
-        maxHeight: hp(85),
+        height: hp(95),
         paddingBottom: hp(10),
     },
     headerRow: {
@@ -168,6 +226,26 @@ const styles = StyleSheet.create({
     modalTitle: {
         fontSize: wp(5),
         fontFamily: "Poppins_600SemiBold",
+    },
+    searchContainer: {
+        flexDirection: "row",
+        alignItems: "center",
+        marginBottom: hp(2),
+        position: "relative",
+    },
+    searchInput: {
+        flex: 1,
+        borderWidth: 1,
+        borderColor: "#ddd",
+        borderRadius: wp(3),
+        paddingHorizontal: wp(3),
+        paddingVertical: hp(1.2),
+        fontSize: wp(3.5),
+        color: "#333",
+    },
+    clearIcon: {
+        position: "absolute",
+        right: wp(3),
     },
     gridContainer: {
         flexDirection: "row",
@@ -182,6 +260,8 @@ const styles = StyleSheet.create({
         backgroundColor: "#fafafa",
         paddingVertical: hp(2),
         borderRadius: wp(4),
+        borderWidth: wp(0.3),
+        borderColor: "#ccc",
     },
     selectedCard: {
         backgroundColor: COLORS.primary + "15",
@@ -211,8 +291,6 @@ const styles = StyleSheet.create({
         color: COLORS.primary,
         fontFamily: "Poppins_600SemiBold",
     },
-
-    // Buttons row
     buttonRow: {
         flexDirection: "row",
         justifyContent: "space-between",
@@ -243,5 +321,17 @@ const styles = StyleSheet.create({
         color: "#333",
         fontSize: wp(4.5),
         fontFamily: "Poppins_600SemiBold",
+    },
+    emptyContainer: {
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+        marginTop: hp(10),
+    },
+    emptyText: {
+        fontSize: wp(4.9),
+        color: "#555",
+        fontFamily: "Poppins_500Medium",
+        textAlign: "center",
     },
 });
