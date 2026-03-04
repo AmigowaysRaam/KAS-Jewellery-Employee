@@ -194,9 +194,7 @@ export default function TaskMessages({ route }) {
       return;
     }
     if (!profileDetails?.id || !task?.id) return;
-
     setSending(true);
-
     try {
       const formData = new FormData();
       formData.append("user_id", profileDetails.id.toString());

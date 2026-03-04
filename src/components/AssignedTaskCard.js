@@ -337,6 +337,6 @@ const styles = StyleSheet.create({
     color: "#777", marginBottom: hp(0.5), fontFamily: "Poppins_400Regular", alignSelf: "center"
   }, dateText: {
     fontSize: wp(4.5),
-    color: "#333", fontFamily: "Poppins_500Medium", alignSelf: "center", lineHeight: wp(5.8)
+    color: "#333", fontFamily: "Poppins_700Bold", alignSelf: "center", lineHeight: wp(5.8)
   },
 });

@@ -223,7 +223,10 @@ function UserCustomDropdown({
                                 <Icon name="close" size={wp(5)} color="#555" />
                             </Pressable>
                         </View>
-                        <View style={{ flex: 1 }}>
+                        <View style={{
+                            flex: 1,
+                            // height: hp(50)
+                        }}>
                             {initialLoading ? (
                                 <ActivityIndicator
                                     size="large"
@@ -245,7 +248,8 @@ function UserCustomDropdown({
                                     }
                                     renderItem={renderItem}
                                     contentContainerStyle={{
-                                        paddingBottom: isMultiMode ? hp(12) : hp(4)
+                                        paddingBottom: isMultiMode ? hp(18) : hp(4),
+                                        // height: "80%",
                                     }}
                                     ListEmptyComponent={<>
                                         <Text style={{ fontSize: wp(4.5), lineHeight: hp(6), fontFamily: "Poppins_600SemiBold", alignSelf: "center" }}>
@@ -286,7 +290,6 @@ function UserCustomDropdown({
                                 </TouchableOpacity>
                             </View>
                         )}
-
                     </View>
                 </View>
             </Modal>
@@ -305,11 +308,14 @@ const styles = StyleSheet.create({
         fontSize: wp(3.8),
         color: "#333"
     }, modalOverlay: {
-        flex: 1, backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "flex-end"
+        flex: 1, backgroundColor: "rgba(0,0,0,0.6)",
+        //  justifyContent: "flex-end",
+        justifyContent: "center"
     },
     modalContent: {
-        backgroundColor: "#fff", height: hp(96),
-        borderRadius: wp(1), paddingTop: wp(1), paddingHorizontal: wp(4),
+        backgroundColor: "#fff", height: hp(85), width: wp(95),
+        alignSelf: "center",
+        borderRadius: wp(3), paddingVertical: wp(1), paddingHorizontal: wp(4),
     },
     modalHeader: { marginBottom: hp(0.5), },
     searchContainer: {

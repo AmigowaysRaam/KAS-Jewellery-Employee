@@ -14,7 +14,7 @@ export default function CommentList({
   comments,
   loading, ticketDetails, task, flatListRef,
   openImageViewer,
-  loadData, openVideoViewer,statusList
+  loadData, openVideoViewer, statusList
 }) {
   const { t } = useTranslation();
   const soundRef = useRef(null);
@@ -163,7 +163,7 @@ export default function CommentList({
           <View style={styles.skeletonSubTitle} />
         </View>
       ) : task ? (
-        <TaskCard task={ticketDetails} loadData={loadData} statusList={statusList}/>
+        <TaskCard task={ticketDetails} loadData={loadData} statusList={statusList} />
       ) : null}
     </View>
   );
@@ -191,17 +191,16 @@ export default function CommentList({
         }}
         refreshing={loading}
         onRefresh={loadData}
-
         ListEmptyComponent={() =>
           !loading && (
             <View style={{ marginTop: hp(5), alignItems: "center" }}>
               <Text
                 style={{
                   fontFamily: "Poppins_600SemiBold",
-                  color: "#444",
-                  fontSize: wp(4.9),
-                  textShadowColor: "rgba(0,0,0,0.15)",
-                  textShadowOffset: { width: 1, height: 1 },
+                  color: "#fff",
+                  fontSize: wp(5.6),
+                  textShadowColor: "#000",
+                  textShadowOffset: { width: wp(0.7), height: wp(0.7) },
                   textShadowRadius: 2,
                 }}
               >

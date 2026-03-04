@@ -73,6 +73,7 @@ export default function SelectTeamMembers({
     const handleDone = () => {
         if (selectedUsers.length === 0) {
             Alert.alert(t("validation"), t("please_select_at_least_one_member"));
+            // show
             return;
         }
         onDone && onDone(selectedUsers);
@@ -214,7 +215,7 @@ const styles = StyleSheet.create({
         borderTopLeftRadius: wp(7),
         borderTopRightRadius: wp(7),
         padding: wp(5),
-        height: hp(95),
+        height: hp(90),
         paddingBottom: hp(10),
     },
     headerRow: {
