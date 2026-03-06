@@ -1,28 +1,18 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
-    Animated,
-    Easing,
-    FlatList,
-    Image,
-    Modal,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    Text,
-    View
+    Animated, Easing,
+    FlatList, Image, Modal, Pressable,
+    ScrollView, StyleSheet, Text, View
 } from "react-native";
 import { COLORS } from "../../app/resources/colors";
 import { hp, wp } from "../../app/resources/dimensions";
-
 export default function TeamMembersView({ teamMembers }) {
     const [modalVisible, setModalVisible] = useState(false);
     const scaleAnim = useRef(new Animated.Value(0.8)).current;
     const opacityAnim = useRef(new Animated.Value(0)).current;
     const { t } = useTranslation();
-
     const teamUsers = teamMembers?.team_users || [];
-
     useEffect(() => {
         // console.log("Team Members:", JSON.stringify(teamMembers, null, 2));
     }, [teamUsers]);
@@ -175,88 +165,51 @@ export default function TeamMembersView({ teamMembers }) {
 
 const styles = StyleSheet.create({
     memberItem: {
-        alignItems: "center",
-        marginRight: wp(4),
-        marginBottom: hp(1.5),
-    },
-    memberImage: {
-        width: wp(13),
-        height: wp(13),
-        borderRadius: wp(6.5),
-        borderColor: COLORS.primary,
-        borderWidth: wp(0.4),
+        alignItems: "center", marginRight: wp(4), marginBottom: hp(1.5),
+    }, memberImage: {
+        width: wp(13), height: wp(13), borderRadius: wp(6.5),
+        borderColor: COLORS.primary, borderWidth: wp(0.4),
     },
     memberText: {
-        fontSize: wp(3.5),
-        marginTop: hp(0.5),
-        textAlign: "center",
-        maxWidth: wp(20),
-        textTransform: "capitalize",
+        fontSize: wp(3.5), marginTop: hp(0.5), textAlign: "center",
+        maxWidth: wp(20), textTransform: "capitalize",
     },
     extraItem: {
-        alignItems: "center",
-        justifyContent: "center",
-        marginRight: wp(3),
-    },
-    extraCircle: {
-        width: wp(13),
-        height: wp(13),
-        borderRadius: wp(6.5),
-        backgroundColor: COLORS.primary + 90,
-        alignItems: "center",
-        justifyContent: "center",
-        borderWidth: wp(0.4),
-        borderColor: COLORS.primary,
+        alignItems: "center", justifyContent: "center", marginRight: wp(3),
+    }, extraCircle: {
+        width: wp(13), height: wp(13), borderRadius: wp(6.5),
+        backgroundColor: COLORS.primary + 90, alignItems: "center", justifyContent: "center",
+        borderWidth: wp(0.4), borderColor: COLORS.primary,
     },
     extraText: {
-        color: "#fff",
-        fontWeight: "600",
-        fontSize: wp(4),
+        color: "#fff", fontWeight: "600", fontSize: wp(4),
     },
     modalOverlay: {
-        flex: 1,
-        backgroundColor: "rgba(0,0,0,0.5)",
-        justifyContent: "center",
+        flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "center",
         paddingHorizontal: wp(5),
-    },
-    modalContent: {
-        backgroundColor: "#fff",
-        borderRadius: wp(3),
-        padding: wp(4),
-        maxHeight: hp(70),
-        position: "absolute",
+    }, modalContent: {
+        backgroundColor: "#fff", borderRadius: wp(3),
+        padding: wp(4), maxHeight: hp(70), position: "absolute",
         width: wp(95),
         bottom: hp(4),
         alignSelf: "center",
-    },
-    modalTitle: {
-        fontSize: wp(4),
-        fontFamily: "Poppins_600SemiBold",
+    }, modalTitle: {
+        fontSize: wp(4), fontFamily: "Poppins_600SemiBold",
         marginBottom: hp(2),
-    },
-    modalItem: {
+    }, modalItem: {
         flexDirection: "row",
-        alignItems: "center",
-        marginBottom: hp(2),
+        alignItems: "center", marginBottom: hp(2),
     },
     modalImage: {
         width: wp(12),
-        height: wp(12),
-        borderRadius: wp(6),
-        borderWidth: 1,
-        borderColor: COLORS.primary,
-        marginRight: wp(3),
+        height: wp(12), borderRadius: wp(6), borderWidth: 1,
+        borderColor: COLORS.primary, marginRight: wp(3),
     },
     modalText: {
         fontSize: wp(5),
-        fontFamily: "Poppins_400Regular",
-        textTransform: "capitalize",
-    },
-    closeButton: {
-        backgroundColor: COLORS.primary,
-        paddingVertical: hp(1.1),
-        borderRadius: wp(2),
-        marginTop: hp(2),
-        alignItems: "center",
+        fontFamily: "Poppins_400Regular", textTransform: "capitalize",
+    }, closeButton: {
+        backgroundColor: COLORS.primary, paddingVertical: hp(1.1), borderRadius: wp(2),
+        marginTop: hp(2), alignItems: "center",
     },
 });

@@ -94,8 +94,15 @@ export default function MyTaskListScreen({ route }) {
       } else {
         fetchTasks(1, true, selectedStatus, selectedDateRange);
       }
-    }, [profileDetails?.id])
+    }, [profileDetails?.id, searchText, selectedStatus, selectedDateRange])
   );
+
+  // useFocusEffect(
+  //   React.useCallback(() => {
+  //     setHasMore(true);
+  //     fetchTasks(1, true, selectedStatus, selectedDateRange);
+  //   }, [profileDetails?.id, searchText, selectedStatus, selectedDateRange])
+  // );
 
   /** Handle pull-to-refresh */
 
@@ -135,8 +142,8 @@ export default function MyTaskListScreen({ route }) {
         return "#9b59b6";        // Purple
       case "Completed":
         return "#2ecc71";        // Green
-        case "Overdue":
-          return "#ff0000";        // red
+      case "Overdue":
+        return "#ff0000";        // red
       default:
         return COLORS.primary;   // Fallback
     }
@@ -179,7 +186,7 @@ export default function MyTaskListScreen({ route }) {
         </Text> */}
         <SearchContainer
           value={searchText}
-          onChangeText={setSearchText}
+          onChangeText={(t) => { setSearchText(t) }}
           placeholder={`${t("search_task")}...`}
           selectedStatuss={selectedStatus}
           onStatusSelect={handleStatusSelect}

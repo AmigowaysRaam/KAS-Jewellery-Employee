@@ -103,7 +103,7 @@ async function sendNotification(remoteMessage) {
 
   // Play sound in foreground
   if (AppState.currentState === 'active') {
-    await playForegroundSound();
+    // await playForegroundSound();
   }
 
   await Notifications.scheduleNotificationAsync({
