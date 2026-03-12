@@ -255,7 +255,7 @@ const styles = StyleSheet.create({
     modalWrapper: { flex: 1, flexDirection: "row" }, overlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.3)" },
     container: {
         position: "absolute", top: wp(9),
-        bottom: 0, width: SCREEN_WIDTH * 0.8, backgroundColor: COLORS.white,
+        bottom: hp(4), width: SCREEN_WIDTH * 0.8, backgroundColor: COLORS.white,
         paddingVertical: hp(2.5), paddingHorizontal: wp(3),
         shadowColor: "#000", shadowOpacity: 0.3, shadowOffset: { width: 3, height: 0 }, shadowRadius: 5, elevation: 5,
     },

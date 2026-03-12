@@ -10,6 +10,7 @@ import { hp, wp } from "../../app/resources/dimensions";
 
 export default function ConfirmTaskModal({ visible,
     onClose, taskDetails, selectedUsers = [], onConfirm, loading = false,
+    selectedTeam
 }) {
     const { t } = useTranslation();
     return (
@@ -28,7 +29,7 @@ export default function ConfirmTaskModal({ visible,
                             <Icon name="x" type="feather" size={wp(6)} color={COLORS.primary} />
                         </Pressable>
                     </View>
-                    {/* <Text style={styles.title}>{JSON.stringify(selectedUsers)}</Text> */}
+                    {/* <Text style={styles.title}>{JSON.stringify(selectedTeam?.label)}</Text> */}
                     {/* selectedUsers */}
                     {/* FlatList with Header */}
                     <FlatList
@@ -51,8 +52,8 @@ export default function ConfirmTaskModal({ visible,
                                 </Text>
 
                                 <Text style={[styles.label, { marginTop: hp(2), marginBottom: hp(0.1) }]}>
-                                    {taskDetails?.assignType}:
-                                </Text>
+                                    {taskDetails?.assignType} : {selectedTeam?.label ? selectedTeam?.label : ""}
+                                </Text> 
                             </View>
                         }
                         renderItem={({ item }) => (

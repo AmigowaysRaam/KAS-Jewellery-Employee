@@ -119,8 +119,17 @@ export default function ForgetOtpVerification({ route }) {
               {`${t("enter_the_otp_sent_to")} +91 ${data?.phone_number} ${t("to_reset_your_mpin")}`}
             </Text>
           </View>
-          <Pressable onPress={() => pinRef.current?.focus()}>
-
+          <Pressable
+            onPress={() => pinRef.current?.focus()}
+            // hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
+            style={({ pressed }) => ({
+              paddingVertical: wp(1),
+              paddingHorizontal: wp(2),
+              alignSelf: "center",
+              borderRadius: 12,
+              transform: [{ scale: pressed ? 0.98 : 1 }],
+            })}
+          >
             <View style={{ marginVertical: wp(4) }}>
               <SmoothPinCodeInput
                 ref={pinRef}
@@ -130,8 +139,8 @@ export default function ForgetOtpVerification({ route }) {
                 keyboardType="number-pad"
                 restrictToNumbers
                 autoFocus
-                cellStyle={styles.otpInput}
                 password={true}
+                cellStyle={styles.otpInput}
                 cellStyleFocused={[
                   styles.otpInput,
                   styles.otpInputFocused,

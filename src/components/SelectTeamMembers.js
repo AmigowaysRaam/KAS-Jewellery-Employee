@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
-    Alert,
     Image,
     Modal,
     Pressable,
@@ -9,7 +8,8 @@ import {
     StyleSheet,
     Text,
     TextInput,
-    View,
+    ToastAndroid,
+    View
 } from "react-native";
 import { Icon } from "react-native-elements";
 import { COLORS } from "../../app/resources/colors";
@@ -60,8 +60,6 @@ export default function SelectTeamMembers({
             setSelectedUsers((prev) => [...prev, user]);
         }
     };
-
-    // Select / unselect all (affects filtered list)
     const selectAllUsers = () => {
         if (selectedUsers.length === filteredUsers.length) {
             setSelectedUsers([]);
@@ -69,11 +67,9 @@ export default function SelectTeamMembers({
             setSelectedUsers(filteredUsers);
         }
     };
-
     const handleDone = () => {
         if (selectedUsers.length === 0) {
-            Alert.alert(t("validation"), t("please_select_at_least_one_member"));
-            // show
+            ToastAndroid.show(t(`please_select_at_least_one_member`), ToastAndroid.SHORT);
             return;
         }
         onDone && onDone(selectedUsers);

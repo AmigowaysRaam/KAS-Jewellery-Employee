@@ -133,7 +133,18 @@ export default function OtpVerfication({ route }) {
               {`${t("please_enter_otp")} +91 ${data[0]?.phone_number}`}
             </Text>
           </View>
-          <Pressable onPress={() => pinRef.current?.focus()}>
+          <Pressable
+            onPress={() => pinRef.current?.focus()}
+            hitSlop={10}
+            style={({ pressed }) => ({
+              paddingVertical: 12,
+              paddingHorizontal: 16,
+              alignSelf: "center",
+              borderRadius: 10,
+              // backgroundColor: pressed ? "#f5f5f5" : "transparent",
+              transform: [{ scale: pressed ? 0.98 : 1 }],
+            })}
+          >
             <SmoothPinCodeInput
               ref={pinRef}
               mask="﹡"

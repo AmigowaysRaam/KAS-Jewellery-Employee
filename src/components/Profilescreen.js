@@ -3,10 +3,8 @@ import { useTranslation } from "react-i18next";
 import {
   Animated, Image, ScrollView, StyleSheet, Text, View
 } from "react-native";
-
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { useDispatch, useSelector } from "react-redux";
-
 import { getStoredLanguage } from "../../app/i18ns";
 import { COLORS } from "../../app/resources/colors";
 import { hp, wp } from "../../app/resources/dimensions";
@@ -119,24 +117,8 @@ const ProfileScreen = () => {
       value: formatDate(profileDetails?.created),
     },
   ];
-
-  const departmentData = [
-    { value: "Software Development" },
-    { value: "Chennai HQ" },
-    { value: "QA Team" },
-    { value: "HR Team" },
-  ];
-
-  const teamData = [
-    { value: "Mobile App Team" },
-    { value: "Rahul Sharma" },
-    { value: "Anita Kumar" },
-    { value: "Vikram Singh" },
-  ];
-
   const departmentIcon = "business-outline";
   const teamIcon = "people-outline";
-
   return (
     <View style={styles.container}>
       <CommonHeader title={t("my_account")} showBackButton={false} />
@@ -157,7 +139,6 @@ const ProfileScreen = () => {
             </View>
           ) : (
             <View>
-              {/* Profile Top */}
               <View style={styles.topRow}>
                 <View style={styles.profileIconWrapper}>
                   <Image
@@ -175,8 +156,6 @@ const ProfileScreen = () => {
                   </Text>
                 </View>
               </View>
-
-              {/* Profile Info */}
               <View style={styles.infoCard}>
                 <Text style={styles.infoTitle}>{t("profile_info")}</Text>
                 {infoData.map((item, index) => (
@@ -186,55 +165,44 @@ const ProfileScreen = () => {
                   </View>
                 ))}
               </View>
-              <View style={styles.infoCard}>
-                <Text style={styles.infoTitle}>{t('department')}</Text>
-                <ScrollView
-                  style={{ maxHeight: hp(20) }}
-                  showsVerticalScrollIndicator={true}
-                >
-                  <View style={styles.infoRow}>
-                    <Ionicons name={departmentIcon} size={wp(5)} color={COLORS.primary} />
-                    <Text style={styles.infoValue}>{profileDetails?.department_name}</Text>
-                  </View>
-                </ScrollView>
-              </View>
-              <View style={styles.infoCard}>
-                <Text style={styles.infoTitle}>{t('team')}</Text>
-                <ScrollView
-                  style={{ maxHeight: hp(20) }}
-                  showsVerticalScrollIndicator={true}
-                >
-                  {/* Teams (comma-separated string) */}
-
-                  <View style={styles.infoCard}>
-                    {Array?.isArray(profileDetails?.teams)
-                      ? profileDetails.teams.map((team, index) => (
-                        <View key={index} style={styles.infoRow}>
-                          <Ionicons name={teamIcon} size={wp(5)} color={COLORS.primary} />
-                          <Text style={styles.infoValue}>
-                            {typeof team === "string" ? team.trim() : String(team)}
-                          </Text>
-                        </View>
-                      ))
-                      : typeof profileDetails?.teams === "string" && profileDetails.teams.trim().length > 0
-                        ? profileDetails?.teams
-                          .split(",")
-                          .map((team, index) => (
-                            <View key={index} style={styles.infoRow}>
-                              <Ionicons name={teamIcon} size={wp(5)} color={COLORS.primary} />
-                              <Text style={styles.infoValue}>{team.trim()}</Text>
-                            </View>
-                          ))
-                        : (
-                          <View style={styles.infoRow}>
-                            <Ionicons name={teamIcon} size={wp(5)} color={COLORS.primary} />
-                            <Text style={styles.infoValue}>N/A</Text>
-                          </View>
-                        )
-                    }
-                  </View>
-                </ScrollView>
-              </View>
+              {profileDetails?.department_name?.trim().length > 0 && (
+                <View style={styles.infoCard}>
+                  <Text style={styles.infoTitle}>{t('department')}</Text>
+                  <ScrollView style={{ maxHeight: hp(20) }} showsVerticalScrollIndicator={true}>
+                    <View style={styles.infoRow}>
+                      <Ionicons name={departmentIcon} size={wp(5)} color={COLORS.primary} />
+                      <Text style={styles.infoValue}>{profileDetails.department_name}</Text>
+                    </View>
+                  </ScrollView>
+                </View>
+              )}
+              {Array.isArray(profileDetails?.teams) && profileDetails.teams.length > 0 ? (
+                <View style={styles.infoCard}>
+                  <Text style={styles.infoTitle}>{t('team')}</Text>
+                  <ScrollView style={{ maxHeight: hp(20) }} showsVerticalScrollIndicator={true}>
+                    {profileDetails.teams.map((team, index) => (
+                      <View key={index} style={styles.infoRow}>
+                        <Ionicons name={teamIcon} size={wp(5)} color={COLORS.primary} />
+                        <Text style={styles.infoValue}>
+                          {typeof team === "string" ? team.trim() : String(team)}
+                        </Text>
+                      </View>
+                    ))}
+                  </ScrollView>
+                </View>
+              ) : typeof profileDetails?.teams === "string" && profileDetails.teams.trim().length > 0 ? (
+                <View style={styles.infoCard}>
+                  <Text style={styles.infoTitle}>{t('team')}</Text>
+                  <ScrollView style={{ maxHeight: hp(20) }} showsVerticalScrollIndicator={true}>
+                    {profileDetails.teams.split(",").map((team, index) => (
+                      <View key={index} style={styles.infoRow}>
+                        <Ionicons name={teamIcon} size={wp(5)} color={COLORS.primary} />
+                        <Text style={styles.infoValue}>{team.trim()}</Text>
+                      </View>
+                    ))}
+                  </ScrollView>
+                </View>
+              ) : null}
             </View>
           )}
         </ScrollView>
@@ -250,7 +218,7 @@ const styles = StyleSheet.create({
   },
   card: {
     width: wp(95),
-    maxHeight: hp(85),
+    // maxHeight: hp(85),
     backgroundColor: "#fff",
     borderRadius: wp(4),
     padding: wp(3),

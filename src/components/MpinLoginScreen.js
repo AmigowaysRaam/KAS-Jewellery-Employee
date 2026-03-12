@@ -28,8 +28,7 @@ export default function MpinLoginScreen() {
   const pinRef = useRef(null);
   // Load userId
   useEffect(() => {
-    // Focus the PIN input when the screen mounts
-    // Device {"DeviceType": {"0": "UNKNOWN", "1": "PHONE", "2": "TABLET", "3": "DESKTOP", "4": "TV", "DESKTOP": 3, "PHONE": 1, "TABLET": 2, "TV": 4, "UNKNOWN": 0}, "brand": "realme", "designName": "RE58CE", "deviceName": "Ramm (handset)", "deviceType": 1, "deviceYearClass": 2015, "getDeviceTypeAsync": [Function getDeviceTypeAsync], "getMaxMemoryAsync": [Function getMaxMemoryAsync], "getPlatformFeaturesAsync": [Function getPlatformFeaturesAsync], "getUptimeAsync": [Function getUptimeAsync], "hasPlatformFeatureAsync": [Function hasPlatformFeatureAsync], "isDevice": true, "isRootedExperimentalAsync": [Function isRootedExperimentalAsync], "isSideLoadingEnabledAsync": [Function isSideLoadingEnabledAsync], "manufacturer": "realme", "modelId": null, "modelName": "RMX3762", "osBuildFingerprint": "realme/RMX3762/RE58CE:15/AP3A.240905.015.A2/T.R4T2.1763430238:user/release-keys", "osBuildId": "RMX3762_15_F.96", "osInternalBuildId": "AP3A.240905.015.A2", "osName": "Android", "osVersion": "15", "platformApiLevel": 35, "productName": "RMX3762", "supportedCpuArchitectures": ["arm64-v8a", "armeabi-v7a", "armeabi"], "totalMemory": 3944341504}
+
     const pseudoId = `${Device.brand}${Device.modelName}${Device?.totalMemory}`;
     console.log('DevicepseudoId', pseudoId)
     const timer = setTimeout(() => {
@@ -158,18 +157,30 @@ export default function MpinLoginScreen() {
           <LogoAnimated />
           <Text style={[styles.title, { fontFamily: "Poppins_400Regular" }]}>{t("login_title")}</Text>
           <Text style={styles.subtitle}>{t("enter_mpin_instruction")}</Text>
-          <Pressable onPress={() => pinRef.current?.focus()}>
+          <Pressable
+            onPress={() => pinRef.current?.focus()}
+            hitSlop={10}
+            style={({ pressed }) => [
+              styles.pinContainer,
+              pressed && styles.pinContainerPressed
+            ]}
+          >
             <SmoothPinCodeInput
               ref={pinRef}
               value={mpin}
               onTextChange={setMpin}
               cellStyle={styles.otpInput}
-              cellStyleFocused={{ ...styles.otpInput, borderColor: COLORS.primary, backgroundColor: "#fff", borderWidth: 2 }}
+              cellStyleFocused={{
+                ...styles.otpInput,
+                borderColor: COLORS.primary,
+                backgroundColor: "#fff",
+                borderWidth: 2
+              }}
               codeLength={4}
               keyboardType="number-pad"
               password={true}
               restrictToNumbers
-              autoFocus={true} // optional
+              autoFocus={true}
               onFulfill={(code) => handleLogin(code)}
             />
           </Pressable>
@@ -219,6 +230,17 @@ const styles = StyleSheet.create({
     marginRight: wp(4), otpInputFocused: {
       borderWidth: 2, backgroundColor: "#fff",
     },
+  },
+  pinContainer: {
+    paddingVertical: hp(2),
+    paddingHorizontal: wp(4),
+    borderRadius: wp(3),
+    alignSelf: "center",
+  },
+  
+  pinContainerPressed: {
+    // backgroundColor: "#f5f5f5",
+    transform: [{ scale: 0.98 }],
   },
   errorText: { color: "#e74c3c", marginTop: hp(1.5), textAlign: "center" },
 });

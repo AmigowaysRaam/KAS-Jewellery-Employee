@@ -23,7 +23,7 @@ import { BASE_URL, fetchData } from "./api/Api";
 import AttachmentModal from "./AttacthcModal";
 import CommonHeader from "./CommonHeader";
 import ConfirmTaskModal from "./ConfirmModal";
-import CustomDropdown from "./CustomDropDown";
+import CustomDropDownCreateTask from "./CustomDropDownCreateTask";
 import ImageViewerModal from "./ImageViewver";
 import SelectTeamMembers from "./SelectTeamMembers";
 import CustomSingleDatePickerModal from "./SingleDateSelect";
@@ -444,6 +444,8 @@ export default function CreateTask({ route }) {
       formData.append("user_id", profileDetails.id.toString());
       formData.append("assign_to_type", assignType == "group" ? "team" : assignType == "department" ? "department" : "individual");
       formData.append("assign_to", selectedTeam?.length ? selectedTeam : []);
+      // 
+      formData.append("assign_to_value", selectedTeam?.value ? selectedTeam?.value : null);
       // formData.append("users", selectedTeam?.length ? selectedTeam : []);
       formData.append(
         "users",
@@ -541,6 +543,40 @@ export default function CreateTask({ route }) {
         showBackButton
         onBackPress={() => navigation.goBack()}
       />
+      {/* Loader Overlay */}
+      {loading && (
+        <View
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            justifyContent: "center",
+            alignItems: "center",
+            backgroundColor: "rgba(0,0,0,0.25)",
+            zIndex: 999,
+          }}
+        >
+          <View
+            style={{
+              width: wp(15),
+              height: wp(15),
+              borderRadius: wp(2),
+              backgroundColor: "#fff",
+              justifyContent: "center",
+              alignItems: "center",
+              elevation: 6,
+              shadowColor: "#000",
+              shadowOpacity: 0.2,
+              shadowRadius: 6,
+              shadowOffset: { width: 0, height: 3 },
+            }}
+          >
+            <ActivityIndicator size="small" color={COLORS?.primary} />
+          </View>
+        </View>
+      )}
       {isCompressing && (
         <View style={{ marginVertical: 10 }}>
           <Text>Video Processing: {(compressionProgress * 100).toFixed(0)}%</Text>
@@ -806,7 +842,7 @@ export default function CreateTask({ route }) {
             </Modal>
             {
               canAssign &&
-              <CustomDropdown
+              <CustomDropDownCreateTask
                 title={`${t('assignBy')} *`}
                 data={dropDownData?.users}
                 placeholder={`${t('select_user')}`}
@@ -891,7 +927,7 @@ export default function CreateTask({ route }) {
                 />
               )
             }
-            {/* <Text>{JSON.stringify()}</Text> */}
+            {/* <Text>{JSON.stringify(selectedTeam)}</Text> */}
             {errors.selectedTeam && (
               <Text style={styles.errorText}>
                 {t(
@@ -901,15 +937,15 @@ export default function CreateTask({ route }) {
                 )}
               </Text>
             )}
-            {selectedTeam && !loading && 
-            <SelectTeamMembers
-              assignType={assignType}
-              preSelected={selectedParticularUser}
-              teamMembers={dropDownData}
-              visible={showParticluarUserModal && !loading && assignType != 'individual' && dropDownData?.length && selectedTeam}
-              onClose={() => setshowParticluarUserModal(false)}
-              onDone={handleTeamSelection}
-            />}
+            {selectedTeam && !loading &&
+              <SelectTeamMembers
+                assignType={assignType}
+                preSelected={selectedParticularUser}
+                teamMembers={dropDownData}
+                visible={showParticluarUserModal && !loading && assignType != 'individual' && dropDownData?.length && selectedTeam}
+                onClose={() => setshowParticluarUserModal(false)}
+                onDone={handleTeamSelection}
+              />}
             <ConfirmTaskModal
               visible={showConfirmModal}
               onClose={() => setShowConfirmModal(false)}
@@ -917,10 +953,11 @@ export default function CreateTask({ route }) {
                 title,
                 description,
                 priority: priority?.label || "1",
-                due_date: dayjs(dueDate).format("YYYY-MM-DD"),
-                due_time: dayjs(dueTime).format("HH:mm"),
+                due_date: dayjs(dueDate).format("DD-MM-YYYY"),
+                due_time: dayjs(dueTime).format("hh:mm A"),
                 assignType: assignType
               }}
+              selectedTeam={selectedTeam}
               selectedUsers={
                 assignType === "individual"
                   ? selectedTeam
@@ -1147,20 +1184,23 @@ export default function CreateTask({ route }) {
                 }}
               />
             )}
-            <TouchableOpacity
-              disabled={loading}
-              style={styles.submitButton}
-              onPress={() => {
-                if (!validate()) return; // optional validation
-                setShowConfirmModal(true); // ✅ open confirm modal instead of calling API
-              }}
-            >
-              {loading ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Text style={styles.submitButtonText}>{t("create_task")}</Text>
-              )}
-            </TouchableOpacity>
+            <View >
+              <TouchableOpacity
+                disabled={loading}
+                style={styles.submitButton}
+                onPress={() => {
+                  if (!validate()) return; // optional validation
+                  setShowConfirmModal(true); // ✅ open confirm modal instead of calling API
+                }}
+              >
+                {loading ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.submitButtonText}>{t("create_task")}</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+
           </ScrollView>
         </TouchableWithoutFeedback>
         <AttachmentModal
