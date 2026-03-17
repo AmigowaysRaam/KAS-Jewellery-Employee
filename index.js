@@ -5,7 +5,6 @@ import { Audio } from 'expo-av';
 import * as Notifications from 'expo-notifications';
 import { AppState, NativeModules, Platform } from 'react-native';
 import App from './App';
-
 const { RingtoneModule } = NativeModules;
 
 // -----------------------------
@@ -18,18 +17,16 @@ Notifications.setNotificationHandler({
     shouldSetBadge: true,
   }),
 });
-
 // -----------------------------
 // Setup notification channels
 // -----------------------------
 async function setupNotificationChannel() {
-  console.log(NativeModules,"NativeModules")
   if (Platform.OS === 'android') {
     // Normal notifications
     await Notifications.setNotificationChannelAsync('custom-channel', {
       name: 'Custom Channel',
       importance: Notifications.AndroidImportance.HIGH,
-      sound: 'notification', // matches res/raw/notification.mp3
+      // sound: 'samsung', // matches res/raw/notification.mp3
       vibrationPattern: [0, 250, 250, 250],
       lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
     });
@@ -46,10 +43,6 @@ async function setupNotificationChannel() {
   }
 }
 setupNotificationChannel();
-
-// -----------------------------
-// Foreground custom sound (Expo AV)
-// -----------------------------
 let soundObject = null;
 let stopTimeout = null;
 
@@ -59,7 +52,7 @@ async function playForegroundSound() {
 
     if (AppState.currentState === 'active') {
       soundObject = new Audio.Sound();
-      await soundObject.loadAsync(require('./assets/notification.mp3'));
+      // await soundObject.loadAsync(require('./assets/Samsung.mp3'));
       await soundObject.setIsLoopingAsync(true);
       await soundObject.playAsync();
 
@@ -88,12 +81,11 @@ async function stopForegroundSound() {
 // Handle incoming FCM notifications
 // -----------------------------
 async function sendNotification(remoteMessage) {
+  console?.log(remoteMessage,"remoteMessage")
   const messageBody =
     remoteMessage.notification?.body || remoteMessage.data?.body;
-
   // Foreground: play device ringtone + custom sound
   if (AppState.currentState === 'active') {
-    RingtoneModule.play();      // play actual device ringtone
     await playForegroundSound(); // play Expo custom sound
   }
 
@@ -116,7 +108,6 @@ async function sendNotification(remoteMessage) {
 // Stop ringtone when user interacts
 // -----------------------------
 Notifications.addNotificationResponseReceivedListener(async () => {
-  RingtoneModule.stop();
   await stopForegroundSound();
 });
 

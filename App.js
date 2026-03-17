@@ -16,7 +16,7 @@ import Constants from "expo-constants";
 import * as Device from "expo-device";
 import * as Notifications from "expo-notifications";
 import React, { useEffect, useRef, useState } from "react";
-import { Alert, Linking, Platform, StatusBar, StyleSheet, Text, TextInput, useColorScheme } from 'react-native';
+import { Alert, Linking, NativeModules, Platform, StatusBar, StyleSheet, Text, TextInput, useColorScheme } from 'react-native';
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Provider } from "react-redux";
 import { COLORS } from "./app/resources/colors";
@@ -26,6 +26,9 @@ import NoInternetScreen from "./NoInternetScreen";
 import StackNavi from "./src/components/navigation/StackNavi";
 import { store } from "./src/components/store/store";
 export const navigationRef = createNavigationContainerRef();
+
+const { AlarmModule } = NativeModules;
+
 export function navigate(name, params) {
   if (navigationRef.isReady()) {
     navigationRef.navigate(name, params);
@@ -58,23 +61,24 @@ export default function App() {
     Poppins_900Black, Poppins_900Black_Italic,
   });
   /** 🔔 Push notifications */
-  useEffect(() => {
-    notificationListener.current =
-      Notifications.addNotificationReceivedListener(notification => {
-        console.log("📩 Foreground notification:", notification);
-      });
-    // Tap notification
-    responseListener.current =
-      Notifications.addNotificationResponseReceivedListener(response => {
-        console.log("👉 Notification tapped:", response);
-        // Navigate to NotificationScreen
-        navigate("Notification");
-      });
-    return () => {
-      notificationListener.current?.remove();
-      responseListener.current?.remove();
-    };
-  }, []);
+  // useEffect(() => {
+  //   // Alert.alert('', JSON.stringify(NativeModules))
+  //   notificationListener.current =
+  //     Notifications.addNotificationReceivedListener(notification => {
+  //       console.log("📩 Foreground notification:", notification);
+  //     });
+  //   // Tap notification
+  //   responseListener.current =
+  //     Notifications.addNotificationResponseReceivedListener(response => {
+  //       console.log("👉 Notification tapped:", response);
+  //       // Navigate to NotificationScreen
+  //       navigate("Notification");
+  //     });
+  //   return () => {
+  //     notificationListener.current?.remove();
+  //     responseListener.current?.remove();
+  //   };
+  // }, []);
   /** 🌐 Network listener */
   useEffect(() => {
 
@@ -106,13 +110,13 @@ export default function App() {
         />
 
         {!isConnected ? (
-         <NoInternetScreen
-         onRetry={() => {
-           NetInfo.fetch().then(state => {
-             setIsConnected(state.isConnected);
-           });
-         }}
-       />
+          <NoInternetScreen
+            onRetry={() => {
+              NetInfo.fetch().then(state => {
+                setIsConnected(state.isConnected);
+              });
+            }}
+          />
         ) : (
           <ToastProvider>
             <NavigationContainer ref={navigationRef}>
