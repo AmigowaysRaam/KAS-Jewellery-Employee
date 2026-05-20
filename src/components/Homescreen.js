@@ -1,9 +1,10 @@
 import messaging from "@react-native-firebase/messaging";
-import { useFocusEffect } from "@react-navigation/native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import React, { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
-  RefreshControl, ScrollView, StyleSheet, Text, View,
+  // Pressable,
+  RefreshControl, ScrollView, StyleSheet, Text, View
 } from "react-native";
 import { useSelector } from "react-redux";
 import { getStoredLanguage } from "../../app/i18ns";
@@ -14,13 +15,11 @@ import AssignedTask from "./AssignedTask";
 import Banner from "./Banner";
 import Header from "./Header";
 // import HomeMenuRow from "./HomeMenuRow";
-import AttendanceDetails from "./AttendanceDetails";
 import InAppNotificationModal from "./InappNotification";
 import LanguageMenu from "./LanguageMenu";
 import MyTask from "./MyTask";
 import SideMenu from "./Sidemenu";
 import TaskRow from "./TaskRow";
-
 export default function Homescreen() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [langMenuMOdal, setOpenLangMenu] = useState(false);
@@ -32,6 +31,9 @@ export default function Homescreen() {
   const [notifModalVisible, setNotifModalVisible] = useState(false);
   const [notifData, setNotifData] = useState(null);
   const { t } = useTranslation();
+
+  const navigation = useNavigation();
+
   const siteDetails = useSelector(
     (state) => state.auth?.siteDetails?.data[0]
   );
@@ -45,7 +47,6 @@ export default function Homescreen() {
   }, []);
   const fetchHomepageData = async () => {
     if (!profileDetails?.id) return;
-
     try {
       if (!refreshing) setLoading(true);
 
@@ -108,7 +109,6 @@ export default function Homescreen() {
   };
   return (
     <View style={[styles.container, {
-      // opacity: punchLoading ? 0.5 : 1,
     }]}>
       <Header
         openMenu={() => setIsMenuOpen(!isMenuOpen)}
@@ -116,6 +116,11 @@ export default function Homescreen() {
         openLanguageMenu={() => setOpenLangMenu(true)}
         notificationCount={homepageData?.notification_count}
       />
+      {/* <Pressable onPress={() => navigation.navigate('CalendarTest')} style={{ padding: 20, backgroundColor: "red" }}>
+        <Text>
+          test
+        </Text>
+      </Pressable> */}
       <ScrollView
         style={styles.scrollContainer}
         refreshControl={
@@ -133,10 +138,10 @@ export default function Homescreen() {
         ) : homepageData ? (
           <>
             <Banner homepageData={homepageData} />
-            {
+            {/* {
               __DEV__ &&
               <AttendanceDetails homepageData={homepageData} />
-            }
+            } */}
             {/* <PunchCard homepageData={homepageData} onLoading={setpunchLoading} />
             <HomeMenuRow homepageData={homepageData} /> */}
             <TaskRow homepageData={homepageData} />

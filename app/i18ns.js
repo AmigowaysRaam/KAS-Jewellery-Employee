@@ -31,7 +31,6 @@ export const loadTranslationsFromAPI = async (lang = "en") => {
     console.error("Failed to load translations from API:", error);
   }
 };
-
 // Load stored language on app start
 export const loadStoredLanguage = async () => {
   try {

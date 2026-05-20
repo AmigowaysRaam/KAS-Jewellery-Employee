@@ -1204,10 +1204,7 @@ const styles = StyleSheet.create({
     textAlignVertical: "top"
   }, audioInfo: {
     flexDirection: "row", alignItems: "center", gap: wp(2), flex: 1,
-
-  }, audioName: { fontSize: wp(3), lineHeight: hp(3), fontFamily: "Poppins_400Regular", color: COLORS.black, }, playingDot: {
-    width: wp(2.5), height: wp(2.5), borderRadius: wp(1.25), backgroundColor: COLORS.primary,
-  },
+  }, 
   updateButton: { backgroundColor: COLORS.primary, paddingVertical: hp(1.5), borderRadius: wp(2), alignItems: "center", marginTop: hp(2) },
   updateButtonText: { color: "#fff", fontSize: wp(4.5), fontFamily: "Poppins_600SemiBold" },
   errorText: { color: "red", marginTop: hp(0.5), fontSize: wp(3.5) },

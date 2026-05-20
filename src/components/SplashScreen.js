@@ -1,10 +1,20 @@
 // src/screens/SplashScreen.js
+
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
+import * as Calendar from "expo-calendar";
 import * as Notifications from "expo-notifications";
 import React, { useEffect, useRef } from "react";
-import { Alert, Animated, Easing, Platform, StyleSheet, View } from "react-native";
-import { useDispatch, useSelector } from "react-redux";
+import {
+  Alert,
+  Animated,
+  Easing,
+  Platform,
+  StyleSheet,
+  View,
+} from "react-native";
+import { useDispatch } from "react-redux";
+
 import { loadStoredLanguage } from "../../app/i18ns";
 import { COLORS } from "../../app/resources/colors";
 import { hp, wp } from "../../app/resources/dimensions";
@@ -12,15 +22,19 @@ import { fetchData } from "./api/Api";
 import { setSiteDetails, setTokens } from "./store/store";
 
 export default function SplashScreen() {
-  const tokenDetail = useSelector((state) => state?.auth);
   const navigation = useNavigation();
   const dispatch = useDispatch();
-  const [siteData, setSiteData] = React.useState(null);
-  const scaleAnim = useRef(new Animated.Value(0)).current; // logo scale
-  const pulseAnim = useRef(new Animated.Value(0)).current; // dots pulse
+
+  const scaleAnim = useRef(new Animated.Value(0)).current;
+  const pulseAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    // Start logo & dot animation
+    startAnimation();
+    initializeApp();
+  }, []);
+
+  // 🔹 Start Animations
+  const startAnimation = () => {
     Animated.sequence([
       Animated.timing(scaleAnim, {
         toValue: 1,
@@ -30,39 +44,61 @@ export default function SplashScreen() {
       }),
       Animated.loop(
         Animated.sequence([
-          Animated.timing(pulseAnim, { toValue: 1, duration: 500, useNativeDriver: true }),
-          Animated.timing(pulseAnim, { toValue: 0, duration: 500, useNativeDriver: true }),
+          Animated.timing(pulseAnim, {
+            toValue: 1,
+            duration: 500,
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulseAnim, {
+            toValue: 0,
+            duration: 500,
+            useNativeDriver: true,
+          }),
         ])
       ),
     ]).start();
+  };
 
-    // Request notification permissions & get token
-    requestNotificationPermission();
+  // 🔹 Initialize everything
+  const initializeApp = async () => {
+    await requestAllPermissions();
+    await fnGetToken();
+  };
 
-    // Fetch token & site data
-    fnGetToken();
-  }, []);
+  // 🔹 Request all permissions together
+  const requestAllPermissions = async () => {
+    try {
+      await Promise.all([
+        requestNotificationPermission(),
+        requestCalendarPermission(),
+      ]);
+    } catch (error) {
+      console.log("Permission Error:", error);
+    }
+  };
 
-  // Request permission and get Expo push token
+  // 🔹 Notification Permission
   const requestNotificationPermission = async () => {
     try {
-      const { status: existingStatus } = await Notifications.getPermissionsAsync();
+      const { status: existingStatus } =
+        await Notifications.getPermissionsAsync();
+
       let finalStatus = existingStatus;
 
       if (existingStatus !== "granted") {
-        const { status } = await Notifications.requestPermissionsAsync();
+        const { status } =
+          await Notifications.requestPermissionsAsync();
         finalStatus = status;
       }
 
       if (finalStatus !== "granted") {
-        Alert.alert("Permission not granted for notifications");
+        Alert.alert("Notification permission not granted");
         return;
       }
 
       const tokenData = await Notifications.getExpoPushTokenAsync();
       console.log("📱 Expo Push Token:", tokenData.data);
 
-      // For Android: Configure notification channel
       if (Platform.OS === "android") {
         await Notifications.setNotificationChannelAsync("default", {
           name: "default",
@@ -70,60 +106,95 @@ export default function SplashScreen() {
         });
       }
     } catch (error) {
-      console.error("Notification Permission Error:", error);
+      console.error("Notification Error:", error);
     }
   };
 
-  // Fetch token & site settings
+  // 🔹 Calendar Permission
+  const requestCalendarPermission = async () => {
+    try {
+      const { status } =
+        await Calendar.requestCalendarPermissionsAsync();
+
+      if (status !== "granted") {
+        Alert.alert("Calendar permission denied");
+      }
+    } catch (error) {
+      console.error("Calendar Error:", error);
+    }
+  };
+
+  // 🔹 API Calls
   const fnGetToken = async () => {
     try {
       await loadStoredLanguage();
-      const data = await fetchData("app-employee-generate-token", "POST");
-      if (data?.text === "Success") {
-        dispatch(setTokens(data));
-        try {
-          const siteDetailsData = await fetchData("app-employee-site-settings", "POST", {
-            Authorization: `${tokenDetail?.token}`,
-          });
-          if (siteDetailsData?.text === "Success") {
-            if (siteDetailsData?.data[0].site_mode == "1") {
-              navigation.replace("MaintainancePage");
-              return;
-            }
-            setSiteData(siteDetailsData);
-            dispatch(setSiteDetails(siteDetailsData));
-            // Alert.alert("Login Success", JSON.stringify(siteDetailsData));
-            const userDataString = await AsyncStorage.getItem("USER_DATA");
-            const userData = JSON.parse(userDataString);
 
-            setTimeout(() => {
-              if (userData?.data?.[0]?.id || userData?.id || userData?.data?.id) {
-                navigation.replace("MpinLoginScreen");
-              } else {
-                navigation.replace("MobileLogin");
-              }
-            }, 1000); // delay for animation
+      const tokenResponse = await fetchData(
+        "app-employee-generate-token",
+        "POST"
+      );
+
+      if (tokenResponse?.text === "Success") {
+        dispatch(setTokens(tokenResponse));
+
+        const siteDetailsData = await fetchData(
+          "app-employee-site-settings",
+          "POST",
+          {
+            Authorization: `${tokenResponse?.token}`,
           }
-        } catch (error) {
-          console.error("SITE API Error:", error);
+        );
+
+        if (siteDetailsData?.text === "Success") {
+          if (siteDetailsData?.data?.[0]?.site_mode == "1") {
+            navigation.replace("MaintainancePage");
+            return;
+          }
+
+          dispatch(setSiteDetails(siteDetailsData));
+
+          const userDataString =
+            await AsyncStorage.getItem("USER_DATA");
+
+          const userData = JSON.parse(userDataString);
+
+          setTimeout(() => {
+            if (
+              userData?.data?.[0]?.id ||
+              userData?.id ||
+              userData?.data?.id
+            ) {
+              navigation.replace("MpinLoginScreen");
+            } else {
+              navigation.replace("MobileLogin");
+            }
+          }, 1000);
         }
+      } else {
+        navigation.replace("MobileLogin");
       }
     } catch (error) {
-      console.error("TOKEN API Error:", error);
-      // Alert.alert("TOKEN fetching error", error.message);
+      console.error("Init Error:", error);
+      navigation.replace("MobileLogin");
     }
   };
 
-  // Animated loading dots
+  // 🔹 Animated Dot
   const AnimatedDot = ({ delay }) => (
     <Animated.View
       style={[
         styles.dot,
         {
-          opacity: pulseAnim.interpolate({ inputRange: [0, 1], outputRange: [0.3, 1] }),
+          opacity: pulseAnim.interpolate({
+            inputRange: [0, 1],
+            outputRange: [0.3, 1],
+          }),
           transform: [
             {
-              scale: pulseAnim.interpolate({ inputRange: [0, 1], outputRange: [0.8, 1.2] }),
+              scale: pulseAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0.8, 1.2],
+              }),
             },
           ],
           marginLeft: delay ? wp(2) : 0,
@@ -136,18 +207,23 @@ export default function SplashScreen() {
     <View style={styles.container}>
       <Animated.Image
         source={require("../../assets/amigowayslogo.jpg")}
-        style={[styles.logo, { transform: [{ scale: scaleAnim }] }]}
+        style={[
+          styles.logo,
+          { transform: [{ scale: scaleAnim }] },
+        ]}
         resizeMode="contain"
       />
+
       <View style={styles.loader}>
-        <AnimatedDot delay={false} />
-        <AnimatedDot delay={true} />
-        <AnimatedDot delay={true} />
+        <AnimatedDot />
+        <AnimatedDot delay />
+        <AnimatedDot delay />
       </View>
     </View>
   );
 }
 
+// 🔹 Styles
 const styles = StyleSheet.create({
   container: {
     flex: 1,

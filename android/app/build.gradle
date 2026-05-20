@@ -90,16 +90,16 @@ android {
         applicationId 'kas.employee'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-    versionCode 1
-        versionName "1.1.9"
+        versionCode 24
+        versionName "1.2.3"
         buildConfigField "String", "REACT_NATIVE_RELEASE_LEVEL", "\"${findProperty('reactNativeReleaseLevel') ?: 'stable'}\""
     }
     signingConfigs {
         debug {
-             storeFile file('kasemployee.jks')
-        storePassword 'kasemployee'
-        keyAlias 'kasemployee'
-        keyPassword 'kasemployee'
+            storeFile file('kasemployee.jks')
+            storePassword 'kasemployee'
+            keyAlias 'kasemployee'
+            keyPassword 'kasemployee'
         }
     }
     buildTypes {

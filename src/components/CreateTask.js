@@ -23,7 +23,6 @@ import { BASE_URL, fetchData } from "./api/Api";
 import AttachmentModal from "./AttacthcModal";
 import CommonHeader from "./CommonHeader";
 import ConfirmTaskModal from "./ConfirmModal";
-import CustomDropDownCreateTask from "./CustomDropDownCreateTask";
 import ImageViewerModal from "./ImageViewver";
 import SelectTeamMembers from "./SelectTeamMembers";
 import CustomSingleDatePickerModal from "./SingleDateSelect";
@@ -347,7 +346,7 @@ export default function CreateTask({ route }) {
     if (!title.trim()) newErrors.title = t('title_Required');
     if (!description.trim()) newErrors.description = t('desc_Required');
     if (!priority?.value.trim()) newErrors.priority = t('priority_required');
-    if (!assignedBy && canAssign) newErrors.assignedBy = t('pls_Selct_user');
+    // if (!assignedBy && canAssign) newErrors.assignedBy = t('pls_Selct_user');
     if (
       // assignType === "group" && 
       !selectedTeam)
@@ -487,7 +486,7 @@ export default function CreateTask({ route }) {
           name: `${descAudio.name}.mp3` || "DummyAudio.mp3",
         });
       }
-      console?.log(JSON.stringify(formData), 'resp')
+      // console?.log(JSON.stringify(formData), 'resp')
       const response = await fetch(`${BASE_URL}app-employee-create-task`, {
         method: "POST",
         body: formData,
@@ -655,17 +654,16 @@ export default function CreateTask({ route }) {
                   style={{
                     flexDirection: "row",
                     alignItems: "center",
+                    justifyContent: "space-between",
                     borderWidth: wp(0.3), borderColor: COLORS?.gray, paddingHorizontal: wp(2), paddingVertical: hp(0.4), borderRadius: wp(1), gap: wp(2), height: hp(6), marginVertical: hp(2)
                   }}
                 >
-                  <Icon
-                    name={"mic"}
-                    size={wp(7)}
-                    color={"#777"}
-                  />
                   <Text numberOfLines={1} style={{ fontFamily: "Poppins_400Regular", color: "#777", fontSize: wp(3.2), lineHeight: hp(3) }} ellipsizeMode="tail">
                     {t("add_description_audio")}
                   </Text>
+                  <Icon
+                    type="feather" name={"mic"} size={wp(5)}
+                    color={"#000"} />
                 </Pressable>
               }
               {
@@ -677,10 +675,8 @@ export default function CreateTask({ route }) {
                   }}>
                     <Text
                       style={{
-                        fontFamily: "Poppins_400Regular",
-                        fontSize: wp(3.5),
-                        marginRight: wp(1),
-                        lineHeight: wp(6)
+                        fontFamily: "Poppins_400Regular", fontSize: wp(3.5),
+                        marginRight: wp(1), lineHeight: wp(6)
 
                       }}
                     >
@@ -840,7 +836,7 @@ export default function CreateTask({ route }) {
                 </View>
               </View>
             </Modal>
-            {
+            {/* {
               canAssign &&
               <CustomDropDownCreateTask
                 title={`${t('assignBy')} *`}
@@ -849,7 +845,7 @@ export default function CreateTask({ route }) {
                 onSelect={(item) => setAssignedBy(item)}
                 selected={assignedBy?.label}
               />
-            }
+            } */}
             {/* <Text style={styles.label}>{JSON.stringify(assignedBy?.value)}</Text> */}
             {errors.assignedBy && <Text style={styles.errorText}>{errors.assignedBy}</Text>}
             <Text style={styles.label}>{`${t('assignto')} *`}</Text>

@@ -85,9 +85,7 @@ const ProfileScreen = () => {
       animateCard();
     }
   };
-
   useEffect(() => {
-    //  console.log("", JSON.stringify(profileDetails, null, 2))
     fetchProfile();
   }, []);
 

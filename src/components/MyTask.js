@@ -163,7 +163,6 @@ const MyTask = ({ homepageData }) => {
 
     );
   };
-
   return (
     <View style={{
       backgroundColor: "#FFF0F0", width: wp(100), alignItems: "center", paddingVertical: hp(2), marginTop: hp(1)
@@ -193,10 +192,10 @@ const MyTask = ({ homepageData }) => {
             }}
           >
             <Text style={[styles.taskCountText, { color: COLORS.primary }]}>
-              {`${t("todays_task")}: ${todayTasks.count || 0}`}
+              {formattedDate}
             </Text>
             <Text style={[styles.taskCountText, { color: COLORS.primary }]}>
-              {formattedDate}
+              {`${t("todays_task")}: ${todayTasks.count || 0}`}
             </Text>
           </View>
         </Pressable>

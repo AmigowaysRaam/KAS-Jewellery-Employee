@@ -64,8 +64,73 @@ const TaskRow = ({ homepageData }) => {
     }, [])
   );
 
+
   return (
     <>
+      {/* 🔥 Create New Task at Top */}
+      {homepageData?.allowCreateTask && (
+        <Pressable
+          style={{
+            alignSelf: "center",
+            marginTop: hp(2),
+            // marginBottom: hp(2),
+            width: wp(94),
+          }}
+          onPress={() =>
+            navigation?.navigate("CreateTask", {
+              canAssign: homepageData?.canAssign,
+            })
+          }
+        >
+          <Animated.View>
+            <View>
+              <ImageBackground
+                resizeMode="cover"
+                source={require("../../assets/cardBg.png")}
+                style={[
+                  styles.card,
+                  {
+                    width: wp(94),
+                    alignItems: "center",
+                    justifyContent: "center",
+                    height: hp(7),
+                  },
+                ]}
+                imageStyle={[
+                  styles.cardImage,
+                  {
+                    borderRadius: wp(2),
+                  },
+                ]}
+              >
+                <Icon
+                  name="add-circle"
+                  size={wp(8)}
+                  color="#fff"
+                  style={{ marginRight: hp(2) }}
+                />
+
+                <Text
+                  style={[
+                    styles.greeting,
+                    {
+                      maxWidth: wp(70),
+                      fontSize: wp(4.3),
+                      lineHeight: wp(6),
+                    },
+                  ]}
+                  numberOfLines={2}
+                  ellipsizeMode="tail"
+                >
+                  {t("create_new_task")}
+                </Text>
+              </ImageBackground>
+            </View>
+          </Animated.View>
+        </Pressable>
+      )}
+
+      {/* 🔥 Task Cards Below */}
       <View style={styles.container}>
         {TAB_ITEMS.map((item, index) => {
           const isLeft = index === 0;
@@ -75,9 +140,13 @@ const TaskRow = ({ homepageData }) => {
           return (
             <Pressable
               key={item.key}
-              onPress={() => navigation.navigate(item.route, { status: null })}
+              onPress={() =>
+                navigation.navigate(item.route, { status: null })
+              }
             >
-              <Animated.View style={{ transform: [{ translateX }], opacity }}>
+              <Animated.View
+                style={{ transform: [{ translateX }], opacity }}
+              >
                 <View style={styles.wrapper}>
                   <ImageBackground
                     resizeMode="cover"
@@ -92,7 +161,6 @@ const TaskRow = ({ homepageData }) => {
                       resizeMode="contain"
                     />
 
-                    {/* 🔥 Tamil-safe text */}
                     <Text
                       style={styles.greeting}
                       numberOfLines={2}
@@ -107,48 +175,6 @@ const TaskRow = ({ homepageData }) => {
           );
         })}
       </View>
-      {/* <Text>{JSON.stringify(homepageData?.canAssign, null, 2)}</Text> */}
-      {
-        homepageData?.allowCreateTask && (
-          <>
-            <Pressable
-              style={{ alignSelf: "center", marginBottom: hp(1), width: wp(94) }}
-              onPress={() => navigation?.navigate('CreateTask',{
-                canAssign: homepageData?.canAssign,
-              })}
-            >
-              <Animated.View>
-                <View>
-                  <ImageBackground
-                    resizeMode="cover"
-                    source={require("../../assets/cardBg.png")}
-                    style={[styles.card, {
-                      width: wp(94), alignItems: "center", justifyContent: "center", height: hp(7)
-                    }]}
-                    imageStyle={[styles.cardImage, {
-                      borderRadius: wp(2)
-                    }]}
-                  >
-                    <Icon name="add-circle" size={wp(8)} color="#fff" style={{ marginRight: hp(2) }} />
-                    <Text
-                      style={[styles.greeting, {
-                        maxWidth: wp(70), fontSize: wp(4.3), lineHeight: wp(6)
-                      }]}
-                      numberOfLines={2}
-                      ellipsizeMode="tail"
-
-                    >
-                      {t("create_new_task")}
-                    </Text>
-                  </ImageBackground>
-                </View>
-              </Animated.View>
-            </Pressable>
-          </>
-        )
-      }
-
-
     </>
   );
 };

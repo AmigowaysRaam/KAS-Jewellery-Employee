@@ -67,7 +67,7 @@ const TaskCard = ({ item, t, navigation, openTaskModal, getStatusColor, }) => {
                 style={[
                     styles.card,
                     {
-                        borderLeftColor: getStatusColor(item.status),
+                        borderColor: getStatusColor(item.status),
                     },
                 ]}
             >
@@ -85,7 +85,13 @@ const TaskCard = ({ item, t, navigation, openTaskModal, getStatusColor, }) => {
                         <Text style={styles.statusText}>{item.status}</Text>
                     </View>
                 </View>
-
+                <Text numberOfLines={1} style={[{
+                    fontSize: wp(3.2),
+                    fontFamily: "Poppins_600SemiBold",
+                    color: "#1e1e1e",
+                }]}>
+                    {item?.task_id || `T-${item?.id}`}
+                </Text>
                 {/* Assigned By Section */}
                 <View style={styles.assignedRow}>
                     <View style={{ flexDirection: "row", justifyContent: "center", alignItems: "center" }}>
@@ -177,9 +183,10 @@ const TaskCard = ({ item, t, navigation, openTaskModal, getStatusColor, }) => {
                     <ViewButton
                         status={item?.status?.toLowerCase() !== 'completed'}
                         priority={item.priority}
-                        onPress={() =>
-                            navigation?.navigate("TasKDetailById", { task: item })
-                        }
+                        onPress={() => openTaskModal(item)}
+                        // onPress={() =>
+                        //     navigation?.navigate("TasKDetailById", { task: item })
+                        // }
                         label={t("View")}
                     />
                 </View>
@@ -191,8 +198,8 @@ export default React.memo(TaskCard);
 const styles = StyleSheet.create({
     animatedContainer: { marginHorizontal: wp(4), marginBottom: hp(2), }, card: {
         backgroundColor: "#fff", padding: wp(4),
-        borderRadius: wp(3), borderLeftWidth: wp(1), shadowColor: "#000", shadowOpacity: 0.08,
-        shadowOffset: { width: 0, height: 6 }, shadowRadius: 8, elevation: 4,
+        borderRadius: wp(3),
+        borderWidth: wp(0.5), borderLeftWidth: wp(0.5), borderRightWidth: wp(0.5)
     },
     // 
     progressWrapper: {

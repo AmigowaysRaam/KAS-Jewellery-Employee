@@ -1,123 +1,191 @@
-// index.js
 import messaging from '@react-native-firebase/messaging';
 import { registerRootComponent } from 'expo';
-import { Audio } from 'expo-av';
+import * as Calendar from 'expo-calendar';
 import * as Notifications from 'expo-notifications';
-import { AppState, NativeModules, Platform } from 'react-native';
+import { Alert, Linking, Platform } from 'react-native';
 import App from './App';
-const { RingtoneModule } = NativeModules;
 
-// -----------------------------
-// Notification handler
-// -----------------------------
+// 🔔 Notification behavior
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: true,
-    shouldPlaySound: false, // foreground sound handled manually
+    shouldPlaySound: true,
     shouldSetBadge: true,
   }),
 });
-// -----------------------------
-// Setup notification channels
-// -----------------------------
+
+// 🔔 Android channel
 async function setupNotificationChannel() {
   if (Platform.OS === 'android') {
-    // Normal notifications
-    await Notifications.setNotificationChannelAsync('custom-channel', {
-      name: 'Custom Channel',
-      importance: Notifications.AndroidImportance.HIGH,
-      // sound: 'samsung', // matches res/raw/notification.mp3
-      vibrationPattern: [0, 250, 250, 250],
-      lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
-    });
-
-    // Alarm notifications (device default sound)
     await Notifications.setNotificationChannelAsync('alarm-channel', {
       name: 'Alarm Channel',
       importance: Notifications.AndroidImportance.MAX,
-      sound: 'default', // device default alarm/notification tone
-      vibrationPattern: [0, 500, 500, 500],
-      lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
-      bypassDnd: true,
+      sound: 'default',
     });
   }
 }
 setupNotificationChannel();
-let soundObject = null;
-let stopTimeout = null;
 
-async function playForegroundSound() {
+let defaultCalendarId: string | null = null;
+
+// 📅 Parse "2026-04-08 13:05:12" safely
+function parseEventDate(dateString?: string): Date {
+  if (!dateString) return new Date();
+
   try {
-    await stopForegroundSound();
+    // Convert to ISO format
+    const formatted = dateString.replace(' ', 'T');
+    const date = new Date(formatted);
 
-    if (AppState.currentState === 'active') {
-      soundObject = new Audio.Sound();
-      // await soundObject.loadAsync(require('./assets/Samsung.mp3'));
-      await soundObject.setIsLoopingAsync(true);
-      await soundObject.playAsync();
+    if (!isNaN(date.getTime())) return date;
+  } catch {}
 
-      // Stop after 3 seconds
-      stopTimeout = setTimeout(stopForegroundSound, 3000);
-    }
+  console.log('⚠️ Invalid date, fallback to now');
+  return new Date();
+}
+
+// 📅 Get calendar
+async function getCalendarId(): Promise<string | null> {
+  if (defaultCalendarId) return defaultCalendarId;
+
+  const { status } = await Calendar.requestCalendarPermissionsAsync();
+  if (status !== 'granted') {
+    Alert.alert('Permission denied', 'Calendar access required');
+    return null;
+  }
+
+  const calendars = await Calendar.getCalendarsAsync(
+    Calendar.EntityTypes.EVENT
+  );
+
+  const cal = calendars.find(c => c.allowsModifications) || calendars[0];
+
+  if (cal) {
+    defaultCalendarId = cal.id;
+    return cal.id;
+  }
+
+  return null;
+}
+
+// 📅 Create event
+async function createCalendarReminder(remoteMessage: any) {
+  try {
+    if (remoteMessage.data?.scope !== 'create_event') return false;
+
+    const calId = await getCalendarId();
+    if (!calId) return false;
+
+    const title =
+      remoteMessage.notification?.title ||
+      remoteMessage.data?.title ||
+      'Reminder';
+
+    const body =
+      remoteMessage.notification?.body ||
+      remoteMessage.data?.body ||
+      '';
+
+    const start = parseEventDate(remoteMessage.data?.event_date);
+    const end = new Date(start.getTime() + 5 * 60 * 1000);
+
+    await Calendar.createEventAsync(calId, {
+      title,
+      notes: body,
+      startDate: start,
+      endDate: end,
+      timeZone: 'Asia/Kolkata',
+      alarms: [{ relativeOffset: -5 }],
+    });
+
+    console.log('✅ Event created:', start);
+    return true;
   } catch (e) {
-    console.log('Sound error:', e);
+    console.log('❌ Calendar error:', e);
+    return false;
   }
 }
 
-async function stopForegroundSound() {
-  if (stopTimeout) {
-    clearTimeout(stopTimeout);
-    stopTimeout = null;
-  }
+// 🔔 Show notification
+async function showNotification(remoteMessage: any, created: boolean) {
+  const title =
+    remoteMessage.notification?.title ||
+    remoteMessage.data?.title ||
+    '';
 
-  if (soundObject) {
-    await soundObject.stopAsync();
-    await soundObject.unloadAsync();
-    soundObject = null;
-  }
-}
+  const body =
+    remoteMessage.notification?.body ||
+    remoteMessage.data?.body ||
+    '';
 
-// -----------------------------
-// Handle incoming FCM notifications
-// -----------------------------
-async function sendNotification(remoteMessage) {
-  console?.log(remoteMessage,"remoteMessage")
-  const messageBody =
-    remoteMessage.notification?.body || remoteMessage.data?.body;
-  // Foreground: play device ringtone + custom sound
-  if (AppState.currentState === 'active') {
-    await playForegroundSound(); // play Expo custom sound
-  }
+  // ✅ Convert "1" → true
+  const shouldOpen =
+    remoteMessage.data?.openCalendar === '1' && created;
 
-  // Schedule notification for background/killed state
   await Notifications.scheduleNotificationAsync({
     content: {
-      title: remoteMessage.notification?.title ?? 'New Message',
-      body: messageBody ?? '',
-      data: remoteMessage.data ?? {},
-      sound: 'default', // device default alarm/notification tone
+      title,
+      body,
+      sound: 'default',
+      data: {
+        ...remoteMessage.data,
+        openCalendar: shouldOpen,
+      },
     },
     trigger: null,
-    android: {
-      channelId: 'alarm-channel', // high-priority alarm channel
-    },
   });
 }
 
-// -----------------------------
-// Stop ringtone when user interacts
-// -----------------------------
-Notifications.addNotificationResponseReceivedListener(async () => {
-  await stopForegroundSound();
+// 🧠 Main handler
+async function handleMessage(remoteMessage: any) {
+  console.log('📩 Message received:', remoteMessage);
+
+  const created = await createCalendarReminder(remoteMessage);
+  await showNotification(remoteMessage, created);
+}
+
+// 📩 Foreground
+messaging().onMessage(handleMessage);
+
+// 📩 Background / killed
+messaging().setBackgroundMessageHandler(async remoteMessage => {
+  await handleMessage(remoteMessage);
 });
 
-// -----------------------------
-// Firebase listeners
-// -----------------------------
-messaging().setBackgroundMessageHandler(sendNotification);
-messaging().onMessage(sendNotification);
+// 📅 Open calendar
+async function openCalendarApp() {
+  try {
+    console.log('📅 Opening calendar');
 
-// -----------------------------
-// Register main component
-// -----------------------------
+    if (Platform.OS === 'android') {
+      await Linking.openURL('content://com.android.calendar/time/');
+    } else {
+      await Linking.openURL('calshow:');
+    }
+  } catch (e) {
+    console.log('❌ Failed to open calendar:', e);
+  }
+}
+
+// 🔔 Notification click (foreground + background)
+Notifications.addNotificationResponseReceivedListener(response => {
+  const data = response.notification.request.content.data;
+
+  if (data?.openCalendar) {
+    openCalendarApp();
+  }
+});
+
+// 🔥 KILLED STATE FIX
+async function checkInitialNotification() {
+  const response = await Notifications.getLastNotificationResponseAsync();
+
+  if (response?.notification?.request?.content?.data?.openCalendar) {
+    openCalendarApp();
+  }
+}
+
+checkInitialNotification();
+
+// 🚀 App entry
 registerRootComponent(App);

@@ -17,7 +17,7 @@ import CommonHeader from "./CommonHeader";
 import DateandDownloadTask from "./DateandDownloadTask";
 import MyTaskCard from "./MyTaskCard.js";
 import SearchContainer from "./SearchContainer";
-import TaskDetailModal from "./TaskDetailModal";
+import ShowTaskDetailModal from "./ShowTaskDetailModal.js";
 
 export default function MyTaskListScreen({ route }) {
   const flatListRef = React.useRef(null);
@@ -258,11 +258,13 @@ export default function MyTaskListScreen({ route }) {
             }
           />
         )}
-        <TaskDetailModal
+        <ShowTaskDetailModal
           visible={modalVisible}
           task={selectedTask}
-          onClose={() => setModalVisible(false)}
+          onClose={() => { setModalVisible(false)}}
           getStatusColor={getStatusColor}
+          statusList={[]}
+          onRefresh={onRefresh}
         />
       </View>
     </KeyboardAvoidingView>

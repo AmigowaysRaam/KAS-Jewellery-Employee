@@ -2,7 +2,7 @@ package kas.employee
 
 import android.app.Application
 import android.content.res.Configuration
-
+import kas.employee.AlarmPackage
 import com.facebook.react.PackageList
 import com.facebook.react.ReactApplication
 import com.facebook.react.ReactNativeApplicationEntryPoint.loadReactNative
@@ -25,6 +25,7 @@ class MainApplication : Application(), ReactApplication {
             PackageList(this).packages.apply {
               // Packages that cannot be autolinked yet can be added manually here, for example:
               // add(MyReactNativePackage())
+               add(AlarmPackage()) // 🔥 your alarm module
             }
 
           override fun getJSMainModuleName(): String = ".expo/.virtual-metro-entry"

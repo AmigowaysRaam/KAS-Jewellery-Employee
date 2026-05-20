@@ -201,7 +201,6 @@ const AssignedTask = ({ homepageData }) => {
         </View>
         {/* Total Tasks Header */}
         <Pressable onPress={() => navigation.navigate("AssignTaskListScreen", { status: null })}>
-
           <Text style={[styles.taskCountText, { color: COLORS.primary, marginTop: hp(0) }]}>
             {`${t("total_tasks")} : ${totalTasks.count || 0}`}
           </Text>

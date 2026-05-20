@@ -2,7 +2,7 @@
   "expo": {
     "name": "KAS Employee",
     "slug": "KasHrms",
-    "version": "1.1.9",
+    "version": "1.2.3",
     "orientation": "portrait",
     "icon": "./assets/images/KASEmpLogo.png",
     "scheme": "kashrms",
@@ -39,7 +39,8 @@
         "CAMERA",
         "RECORD_AUDIO",
         "READ_MEDIA_IMAGES",
-        "READ_EXTERNAL_STORAGE"
+        "READ_EXTERNAL_STORAGE",
+        "READ_CALENDAR", "WRITE_CALENDAR"
       ]
     },
     "web": {
@@ -47,19 +48,7 @@
       "favicon": "./assets/images/KASEmpLogo.png"
     },
     "plugins": [
-      "expo-router",
-      [
-        "expo-splash-screen",
-        {
-          "image": "./assets/images/KASEmpLogo.png",
-          "imageWidth": 200,
-          "resizeMode": "contain",
-          "backgroundColor": "#ffffff",
-          "dark": {
-            "backgroundColor": "#ffffff"
-          }
-        }
-      ]
+      "expo-router"
     ],
     "experiments": {
       "typedRoutes": true,

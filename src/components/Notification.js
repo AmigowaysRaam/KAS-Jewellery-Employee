@@ -27,7 +27,6 @@ export default function Notification() {
   useEffect(() => {
     fetchNotifications(1, true);
   }, []);
-
   const fetchNotifications = async (pageNo = 1, isRefresh = false) => {
     if (loading) return;
     if (!hasMore && !isRefresh) return;
@@ -39,12 +38,12 @@ export default function Notification() {
         "POST",
         {
           user_id: profileDetails.id,
-          per_page: 10,
-          current_page: pageNo,
+          per_page: 10, current_page: pageNo,
         }
       );
       if (response?.success) {
         const data = response?.data?.notifications || [];
+        // alert(JSON.stringify(data[0].task_id,null,2))
         setNotifications((prev) =>
           pageNo === 1 ? data : [...prev, ...data]
         );
@@ -68,10 +67,14 @@ export default function Notification() {
       onEndReachedCalledDuringMomentum.current = true;
     }
   };
-
-  /* ---------- RENDER NOTIFICATION ---------- */
   const renderItem = ({ item }) => (
     <TouchableOpacity
+      disabled={!item?.task_id}
+      onPress={() => {
+        navigation?.navigate('TaskDetails', {
+          taskId: item?.task_id
+        })
+      }}
       style={[
         styles.notificationContainer,
         !item.is_read && styles.unread,
@@ -198,77 +201,35 @@ export default function Notification() {
     </View>
   );
 }
-/* ---------- STYLES ---------- */
 const styles = StyleSheet.create({
   notificationContainer: {
-    flexDirection: "row",
-    backgroundColor: "#fff",
-    padding: wp(4),
-    borderRadius: wp(2),
-    alignItems: "center",
-    minHeight: hp(10),
+    flexDirection: "row", backgroundColor: "#fff", padding: wp(4),
+    borderRadius: wp(2), alignItems: "center", minHeight: hp(10),
   },
-  unread: {
-    backgroundColor: "#f9f9f9",
-  },
+  unread: { backgroundColor: "#f9f9f9", },
   title: {
-    fontSize: wp(4),
-    fontWeight: "600",
-    marginBottom: hp(0.5),
-    color: COLORS.black,
+    fontSize: wp(4), fontWeight: "600", marginBottom: hp(0.5), color: COLORS.black,
     fontFamily: 'Poppins_600SemiBold'
-  },
-  message: {
-    fontSize: wp(3.2),
-    color: COLORS.gray,
-    fontFamily: 'Poppins_400Regular'
-
-  },
-  timestamp: {
-    fontSize: wp(3),
-    color: COLORS.gray,
-    marginTop: hp(0.5),
-  },
-  unreadDot: {
-    marginLeft: wp(2),
-    justifyContent: "center",
-    alignItems: "center",
-  },
-
-  /* ---------- SKELETON STYLES ---------- */
+  }, message: {
+    fontSize: wp(3.2), color: COLORS.gray, fontFamily: 'Poppins_400Regular'
+  }, timestamp: { fontSize: wp(3), color: COLORS.gray, marginTop: hp(0.5), },
+  unreadDot: { marginLeft: wp(2), justifyContent: "center", alignItems: "center", },
   skeletonContainer: {
-    flexDirection: "row",
-    backgroundColor: "#f2f2f2",
-    padding: wp(4),
-    borderRadius: wp(2),
+    flexDirection: "row", backgroundColor: "#f2f2f2",
+    padding: wp(4), borderRadius: wp(2), marginBottom: hp(1), alignItems: "center",
+  }, skeletonTitle: {
+    height: hp(2), width: "60%", backgroundColor: COLORS?.primary + "40",
+    borderRadius: wp(1), marginBottom: hp(1),
+  }, skeletonText: {
+    height: hp(1.8), width: "80%",
+    backgroundColor: COLORS?.primary + "40", borderRadius: wp(1),
     marginBottom: hp(1),
-    alignItems: "center",
-  },
-  skeletonTitle: {
-    height: hp(2),
-    width: "60%",
-    backgroundColor: COLORS?.primary + "40",
-    borderRadius: wp(1),
-    marginBottom: hp(1),
-  },
-  skeletonText: {
-    height: hp(1.8),
-    width: "80%",
-    backgroundColor: COLORS?.primary + "40",
-    borderRadius: wp(1),
-    marginBottom: hp(1),
-  },
-  skeletonSmallText: {
+  }, skeletonSmallText: {
     height: hp(1.5),
-    width: "40%",
-    backgroundColor: COLORS?.primary + "40",
-    borderRadius: wp(1),
+    width: "40%", backgroundColor: COLORS?.primary + "40", borderRadius: wp(1),
   },
   skeletonImage: {
-    width: wp(10),
-    height: wp(10),
-    backgroundColor: COLORS?.primary + "40",
-    borderRadius: wp(1),
-    marginLeft: wp(2),
+    width: wp(10), height: wp(10), backgroundColor: COLORS?.primary + "40",
+    borderRadius: wp(1), marginLeft: wp(2),
   },
 });

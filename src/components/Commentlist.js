@@ -10,6 +10,7 @@ import { useSelector } from "react-redux";
 import { COLORS } from "../../app/resources/colors";
 import { hp, wp } from "../../app/resources/dimensions";
 import TaskCard from "./TaskCard";
+
 export default function CommentList({
   comments,
   loading, ticketDetails, task, flatListRef,
@@ -179,7 +180,8 @@ export default function CommentList({
       <FlatList
         ref={flatListRef}
         data={comments}
-        renderItem={renderComment}
+        // renderItem={renderComment}
+        renderItem={null}
         keyExtractor={(item, index) =>
           item.id?.toString() || index.toString()
         }

@@ -17,7 +17,7 @@ import AssignedTaskCard from "./AssignedTaskCard.js";
 import CommonHeader from "./CommonHeader";
 import DateandDownloadTask from "./DateandDownloadTask";
 import SearchContainer from "./SearchContainer";
-import TaskDetailModal from "./TaskDetailModal";
+import ShowTaskDetailModal from "./ShowTaskDetailModal.js";
 export default function AssignedTasklistScreen() {
   const navigation = useNavigation();
   const { t } = useTranslation();
@@ -308,11 +308,13 @@ export default function AssignedTasklistScreen() {
             <Text style={styles.fabText}>{t('create_task')}</Text>
           </Pressable>
         }
-        <TaskDetailModal
+        <ShowTaskDetailModal
           visible={modalVisible}
           task={selectedTask}
-          onClose={() => { setModalVisible(false), onRefresh() }}
           getStatusColor={getStatusColor}
+          onClose={() => { setModalVisible(false)}}
+          statusList={[]}
+          onRefresh={onRefresh}
         />
       </View>
     </KeyboardAvoidingView>

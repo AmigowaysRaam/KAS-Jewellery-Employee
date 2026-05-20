@@ -1,11 +1,8 @@
 import { useNavigation } from "@react-navigation/native";
 import React, { useEffect, useRef } from "react";
 import {
-  Animated,
-  Image,
-  Pressable,
-  StyleSheet,
-  Text,
+  Animated, Image,
+  Pressable, StyleSheet, Text,
   View,
 } from "react-native";
 import { COLORS } from "../../app/resources/colors";

@@ -96,12 +96,14 @@ const DescriptionFormSection = ({
                             />
                         </TouchableOpacity>
 
-                        <TouchableOpacity onPress={() => setModalVisible(true)}>
+                        <TouchableOpacity onPress={() => setModalVisible(true)} style={{
+                            backgroundColor: "#ff0000", padding: wp(1), borderRadius: wp(1), marginHorizontal: wp(0.1)
+                        }}>
                             <Icon
                                 name="trash"
                                 type="feather"
                                 size={wp(6)}
-                                color={COLORS.primary}
+                                color={COLORS.white}
                             />
                         </TouchableOpacity>
 
@@ -126,7 +128,7 @@ const DescriptionFormSection = ({
                 ) : (
                     <TouchableOpacity
                         style={{
-                            justifyContent: "flex-start",
+                            justifyContent: "space-between",
                             borderWidth: wp(0.3),
                             borderColor: "#ccc",
                             borderRadius: wp(2),
@@ -139,7 +141,6 @@ const DescriptionFormSection = ({
                         }}
                         onPress={startRecording}
                     >
-                        <Icon name="mic" size={wp(6)} color={COLORS.gray} />
                         <Text
                             numberOfLines={1}
                             style={{
@@ -151,6 +152,8 @@ const DescriptionFormSection = ({
                         >
                             {t("add_description_audio")}
                         </Text>
+                        {/* <Icon name="mic" size={wp(6)} color={COLORS.gray} /> */}
+                        <Icon name="mic" type="feather" size={wp(6)} color={COLORS.gray} />
                     </TouchableOpacity>
                 )}
             </View>

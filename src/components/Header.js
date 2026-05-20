@@ -5,7 +5,6 @@ import {
 } from "react-native";
 import { COLORS } from "../../app/resources/colors";
 import { wp } from "../../app/resources/dimensions";
-import VersionUpgradeModal from "./VersionUpgradeModal";
 export default function Header({
   openMenu, headerL,
   openLanguageMenu,
@@ -52,7 +51,6 @@ export default function Header({
         </Pressable>
         {/* Notification Icon */}
         <Pressable style={styles.iconContainer} onPress={() => navigation.navigate(
-
           'Notification'
         )}>
           <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
@@ -69,7 +67,7 @@ export default function Header({
             )}
           </Animated.View>
         </Pressable>
-        <VersionUpgradeModal />
+        {/* <VersionUpgradeModal /> */}
       </View>
 
     </View>

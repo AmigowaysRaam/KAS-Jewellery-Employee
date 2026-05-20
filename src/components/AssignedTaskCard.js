@@ -65,22 +65,26 @@ const AssignedTaskCard = ({
       ]}
     >
       <Pressable
-        android_ripple={{ color: "#eee" }}
+        // android_ripple={{ color: "#eee" }}
         onPress={() => openTaskModal(item)}
         style={[
           styles.card,
           {
-            borderRightColor: getStatusColor(item.status),
+            borderColor: getStatusColor(item.status),
+            backgroundColor: '#fff',
+
           },
           isCritical && styles.criticalShadow,
         ]}
       >
         {/* Header */}
+        {/* <Text  style={{}}>
+            {JSON.stringify(item,null,2)}
+          </Text> */}
         <View style={styles.cardHeader}>
           <Text numberOfLines={1} style={styles.taskTitle}>
             {item.title || t("Untitled Task")}
           </Text>
-
           <View
             style={[
               styles.statusBadge,
@@ -96,7 +100,13 @@ const AssignedTaskCard = ({
             </Text>
           </View>
         </View>
-
+        <Text numberOfLines={1} style={[{
+          fontSize: wp(3.2),
+          fontFamily: "Poppins_600SemiBold",
+          color: "#1e1e1e",
+        }]}>
+          {item?.task_id || `T-${item?.id}`}
+        </Text>
         {/* Assigned */}
         <View style={styles.assignedRow}>
           <Image
@@ -147,23 +157,23 @@ const AssignedTaskCard = ({
 
         {/* Dates */}
         <View style={styles.dateRow}>
-          <View style={[styles.dateBox,{
-             borderWidth: wp(0.5),
-             borderColor: COLORS?.primary
+          <View style={[styles.dateBox, {
+            borderWidth: wp(0.5),
+            borderColor: COLORS?.primary
           }]}>
             <Text style={styles.dateLabel}>
               {t("assigned_date")}
             </Text>
-            <Text numberOfLines={1} style={[,styles.dateText]}>
+            <Text numberOfLines={1} style={[, styles.dateText]}>
               {item.assigned_date_value}
             </Text>
             <Text numberOfLines={1} style={styles.dateText}>
               {item?.assigned_time}
             </Text>
           </View>
-          <View style={[styles.dateBox,{
-             borderWidth: wp(0.5),
-             borderColor: COLORS?.primary
+          <View style={[styles.dateBox, {
+            borderWidth: wp(0.5),
+            borderColor: COLORS?.primary
           }]}>
             <Text style={styles.dateLabel}>
               {t("due_date")}
@@ -194,11 +204,12 @@ const AssignedTaskCard = ({
           <ViewButton
             status={taskCompStatus}
             priority={item.priority}
-            onPress={() =>
-              navigation?.navigate("TasKDetailById", {
-                task: item,
-              })
-            }
+            onPress={() => openTaskModal(item)}
+            // onPress={() =>
+            //   navigation?.navigate("TasKDetailById", {
+            //     task: item,
+            //   })
+            // }
             label={t("View")}
           />
         </View>
@@ -250,28 +261,15 @@ const styles = StyleSheet.create({
     height: "100%",
     borderRadius: wp(3),
   },
-
-
   card: {
-    backgroundColor: "#fff",
     padding: wp(4),
-    borderRadius: wp(3),
-    borderRightWidth: wp(1.2),
-    elevation: 4,
-    shadowColor: "#000",
-    shadowOpacity: 0.08,
-    shadowOffset: { width: 0, height: 6 },
-    shadowRadius: 8,
+    borderRadius: wp(3), borderWidth: wp(0.5), borderRightWidth: wp(0.5)
   },
-
-  /* 🔥 Extra glow for critical */
   criticalShadow: {
-    elevation: 10,
-    shadowColor: "#ff3b30",
+    elevation: 10, shadowColor: "#ff3b30",
     shadowOpacity: 0.3,
     shadowRadius: 15,
   },
-
   cardHeader: {
     flexDirection: "row",
     justifyContent: "space-between",

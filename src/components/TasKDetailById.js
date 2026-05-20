@@ -1,17 +1,15 @@
-import { FontAwesome, Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import * as ImagePicker from "expo-image-picker";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
-  ActivityIndicator,
-  Image, Keyboard, KeyboardAvoidingView, Platform,
-  StyleSheet, Text, TextInput, TouchableOpacity, View
+  Keyboard, KeyboardAvoidingView, Platform,
+  StyleSheet, Text,
+  View
 } from "react-native";
 import { Video as VideoCompress } from "react-native-compressor";
 import { useSelector } from "react-redux";
 import { getStoredLanguage } from "../../app/i18ns";
-import { COLORS } from "../../app/resources/colors";
 import { hp, wp } from "../../app/resources/dimensions";
 import { useToast } from "../../constants/ToastContext";
 import { BASE_URL, fetchData } from "./api/Api";
@@ -293,7 +291,6 @@ export default function TaskMessages({ route }) {
         title={task?.title}
         onBackPress={() => navigation.goBack()}
       />
-
       <CommentList
         statusList={statusList}
         comments={comments}
@@ -304,6 +301,7 @@ export default function TaskMessages({ route }) {
         openImageViewer={(uri) => openMediaViewer({ uri, type: "image" })}
         openVideoViewer={(uri) => openMediaViewer({ uri, type: "video" })} loadData={loadCommentsD}
       />
+      {/* <>
       <View style={styles.inputWrapper}>
         {audioAttachment && (
           <View style={styles.audioPreviewContainer}>
@@ -326,8 +324,6 @@ export default function TaskMessages({ route }) {
                       source={{ uri: item.uri }}
                       style={styles.selectedImage}
                     />
-
-                    {/* Show play icon if video */}
                     {isVideo && (
                       <View style={styles.playIconContainer}>
                         <Text style={styles.playIcon}>▶</Text>
@@ -412,6 +408,7 @@ export default function TaskMessages({ route }) {
           )}
         </View>
       </View>
+      </> */}
       <AttachmentModal
         visible={modalVisible}
         onClose={() => setModalVisible(false)}

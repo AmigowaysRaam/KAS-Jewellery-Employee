@@ -17,9 +17,7 @@ import { useToast } from "../../constants/ToastContext";
 import { BASE_URL } from "./api/Api";
 import StatusSelectModal from "./statusSelectModal";
 import TaskDetailModal from "./TaskDetailModal";
-
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
-
 export default function TaskCard({ task, loadData, statusList }) {
     const { t } = useTranslation();
     const { showToast } = useToast();
